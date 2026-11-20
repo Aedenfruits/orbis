@@ -91,6 +91,7 @@ const mins = (a, b) => Math.max(0, Math.round(((b ? new Date(b) : new Date()) - 
 const hmm = m => `${Math.floor(m / 60)}h ${pad(m % 60)}m`;
 const mmss = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`; };
 const hhmmss = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`; };
+const PW = p => String(p ?? '');
 const codeToEmail = c => `${String(c).trim().toLowerCase().replace(/[^a-z0-9]/g, '')}@${EMAIL_DOMAIN}`;
 const errMsg = e => (e?.message || String(e || 'Something went wrong')).replace(/^.*?ERROR:\s*/, '');
 function toast(t, bad) { const el = $('#toast'); el.textContent = t; el.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toast.t); toast.t = setTimeout(() => el.className = '', 3800); }
@@ -158,6 +159,7 @@ let need = false; try { need = await rpc('needs_setup'); } catch { }
 if (need) return renderSetup();
 return renderFatal(new Error('Your login is not linked to an employee. Ask HR.'));
 }
+if (S.me.must_change_pw) await forcePw();
 const today = loadToday().catch(() => { });
 if (!S.splashed) { S.splashed = true; await splash(); }
 await today;
@@ -174,7 +176,7 @@ $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div>
 <p class="small muted center" id="fsWrap" style="display:none">First time setting up ORBIS? <a href="#" id="firstSetup">Create the first HR account</a></p></div>`;
 $('#loginF').onsubmit = async e => {
 e.preventDefault(); const b = e.submitter; b.disabled = true; $('#l_msg').textContent = 'Signing in…';
-const { error } = await sb.auth.signInWithPassword({ email: codeToEmail($('#l_code').value), password: $('#l_pw').value });
+const em = codeToEmail($('#l_code').value), lp = $('#l_pw').value; let { error } = await sb.auth.signInWithPassword({ email: em, password: PW(lp) });
 b.disabled = false; if (error) { $('#l_msg').textContent = 'Wrong employee code or password.'; const cd = $('#loginF'); cd.classList.remove('shake'); void cd.offsetWidth; cd.classList.add('shake'); return; }
 b.textContent = 'Welcome ✨'; S.splashed = true; await launchFx(); location.hash = 'punch'; boot();
 };
@@ -192,8 +194,8 @@ $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div>
 $('#suF').onsubmit = async e => {
 e.preventDefault(); const m = $('#s_msg'); m.textContent = 'Creating…';
 const code = $('#s_code').value.trim().toUpperCase(), name = $('#s_name').value.trim(), pw = $('#s_pw').value;
-let { data, error } = await sb.auth.signUp({ email: codeToEmail(code), password: pw });
-if (error && /registered/i.test(error.message)) ({ data, error } = await sb.auth.signInWithPassword({ email: codeToEmail(code), password: pw }));
+let { data, error } = await sb.auth.signUp({ email: codeToEmail(code), password: PW(pw) });
+if (error && /registered/i.test(error.message)) ({ data, error } = await sb.auth.signInWithPassword({ email: codeToEmail(code), password: PW(pw) }));
 if (error) { m.textContent = error.message; return; }
 if (!data.session) { m.innerHTML = 'Account created, but Supabase needs "Confirm email" turned OFF (Authentication → Sign In / Providers → Email). Turn it off, then sign in.'; return; }
 try { await rpc('bootstrap_first_admin', { p_code: code, p_name: name }); } catch (er) { m.textContent = errMsg(er); return; }
@@ -246,7 +248,7 @@ function shell(body) {
 const nav = navList().map(([k, l, i]) => `<a href="#${k}" class="${S.view === k ? 'on' : ''}"><span>${i}</span>${l}</a>`).join('');
 const qn = queue().length;
 return `<header class="top"><div class="alg">${LOGO}</div><div class="brand"><b>ORBIS</b><small>Everything. Connected.</small></div>
-<div class="who"><button class="btn sm inst" type="button" ${S.canInstall ? '' : 'hidden'}>⬇ Install app</button>${qn ? `<span class="chip warn">⏳ ${qn} waiting to sync</span>` : ''}${navigator.onLine ? '' : '<span class="chip crit">Offline</span>'}<span class="hide-s">${esc(S.me.name)}</span><button class="btn sm" onclick="signOut()">Sign out</button></div></header>
+<div class="who"><button class="btn sm inst" type="button" ${S.canInstall ? '' : 'hidden'}>⬇ Install app</button>${qn ? `<span class="chip warn">⏳ ${qn} waiting to sync</span>` : ''}${navigator.onLine ? '' : '<span class="chip crit">Offline</span>'}<span class="hide-s">${esc(S.me.name)}</span><button class="btn sm" onclick="pwDlg()" title="Change my password">🔑</button><button class="btn sm" onclick="signOut()">Sign out</button></div></header>
 <nav class="side">${nav}</nav><main id="main">${body}</main><nav class="bottom">${nav}</nav>`;
 }
 const VIEWS = {};
@@ -575,7 +577,7 @@ dlg(id ? 'Edit employee' : 'Add employee', `<div class="grid2"><label>Employee c
 <label>Reports to<select id="e_mgr"><option value="">— nobody —</option>${S.emps.filter(o => o.id !== id && o.active).map(o => `<option value="${o.id}" ${x.reports_to === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
 <label>Access level<select id="e_acc"><option value="" ${!x.access ? 'selected' : ''}>Employee — own data (+ team if manager)</option><option value="hr" ${x.access === 'hr' ? 'selected' : ''}>HR — all employees</option><option value="md" ${x.access === 'md' ? 'selected' : ''}>MD / Director — all employees</option></select></label></div>
 ${id ? `<label class="chk"><input type="checkbox" id="e_active" ${x.active ? 'checked' : ''}> Active (untick when the person leaves)</label>` : ''}
-<div class="card soft"><b>${id ? (x.auth_uid ? 'Reset password' : 'Create login') : 'Login password'}</b><p class="small muted">They sign in with their employee code and this password.${id && x.auth_uid ? ' Leave empty to keep the current password.' : ''}</p><input id="e_pw" type="text" placeholder="at least 8 characters" autocomplete="off"></div>`,
+<div class="card soft"><b>${id ? (x.auth_uid ? 'Reset password' : 'Create login') : 'Login password'}</b><p class="small muted">They sign in with their employee code and this password.${id && x.auth_uid ? ' Leave empty to keep the current password.' : ''}</p><input id="e_pw" type="text" placeholder="e.g. 123456 — they must change it at first login" autocomplete="off"></div>`,
 `<button class="btn pri" data-emp="save" data-id="${id || ''}">Save</button>`);
 }
 if (a === 'save') {
@@ -590,11 +592,11 @@ let emp = id ? empById(id) : null;
 if (!id) { const code = v('e_code').toUpperCase(); if (!code) throw new Error('Enter the employee code'); if (S.emps.some(e => e.code === code)) throw new Error('That employee code already exists');
 row.code = code; emp = (await q(sb.from('employees').insert(row).select().single())); }
 else await q(sb.from('employees').update(row).eq('id', id));
-if (pw) { if (pw.length < 8) throw new Error('Password must be at least 8 characters');
-if (emp.auth_uid) await rpc('hr_set_password', { p_emp: emp.id, p_password: pw });
+if (pw) { if (pw.length < 6) throw new Error('Password must be at least 6 characters');
+if (emp.auth_uid) await rpc('hr_set_password', { p_emp: emp.id, p_password: PW(pw) });
 else { const tmp = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'orbis.tmp' } });
-const { data, error } = await tmp.auth.signUp({ email: codeToEmail(emp.code), password: pw }); if (error) throw error;
-await q(sb.from('employees').update({ auth_uid: data.user.id }).eq('id', emp.id)); } }
+const { data, error } = await tmp.auth.signUp({ email: codeToEmail(emp.code), password: PW(pw) }); if (error) throw error;
+await q(sb.from('employees').update({ auth_uid: data.user.id, must_change_pw: true }).eq('id', emp.id)); } }
 closeDlg(); toast('Employee saved'); await loadCore(); render();
 } catch (er) { toast(errMsg(er), true); } finally { b.disabled = false; }
 }
@@ -876,7 +878,7 @@ const acc = s('access').toLowerCase(); x.access = /^hr/.test(acc) ? 'hr' : /^(md
 if (!x.code) x.errs.push('no employee code'); if (!x.name) x.errs.push('no name');
 if (x.code && codes.has(x.code)) x.errs.push('code repeated in sheet'); codes.add(x.code);
 if (x.join === 'bad') { x.errs.push('joining date not understood'); x.join = null; }
-if (x.pw && x.pw.length < 8) x.errs.push('password under 8 characters');
+if (x.pw && x.pw.length < 6) x.errs.push('password under 6 characters');
 x.exists = S.emps.some(e => e.code === x.code);
 return x;
 });
@@ -916,7 +918,7 @@ ${newDepts.length || newOffs.length ? `<p class="small">New ${newDepts.length ? 
 <div class="scroll" style="max-height:38vh"><table class="imptbl"><thead><tr><th>Row</th><th>Code</th><th>Name</th><th>Designation</th><th>Department</th><th>Office</th><th>Joined</th><th>Reports to</th><th>Access</th><th>Status</th></tr></thead><tbody>
 ${res.rows.map(r => `<tr class="${r.errs.length ? 'bad' : ''}"><td>${r.line}</td><td><b>${esc(r.code)}</b></td><td>${esc(r.name)}</td><td>${esc(r.desig)}</td><td>${esc(r.dept)}</td><td>${esc(r.office)}</td><td>${r.join ? fmtD(r.join) : ''}</td><td>${esc(r.mgr)}</td><td>${r.access ? r.access.toUpperCase() : 'Employee'}</td>
 <td>${r.errs.length ? `<span class="chip crit">✗ ${esc(r.errs.join(', '))}</span>` : r.exists ? '<span class="chip">↻ update</span>' : '<span class="chip good">✓ new</span>'}</td></tr>`).join('')}</tbody></table></div>
-${ok.length ? `${needPw ? `<div class="card soft"><b>Starting password for new logins</b><p class="small muted">Used for everyone whose password column is empty. Staff sign in with their employee code and this password.</p><input id="impPw" type="text" value="Aeden@${new Date().getFullYear()}" autocomplete="off"></div>` : ''}
+${ok.length ? `${needPw ? `<div class="card soft"><b>Starting password for new logins</b><p class="small muted">Used for everyone whose password column is empty. Staff sign in with their employee code and this password, then ORBIS makes them set their own password.</p><input id="impPw" type="text" value="123456" autocomplete="off"></div>` : ''}
 <button class="btn pri" data-imp="go">Import ${ok.length} employee${ok.length > 1 ? 's' : ''}</button>` : ''}`;
 }
 document.addEventListener('change', async e => { if (e.target.id !== 'impFile') return; const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -929,7 +931,7 @@ if (a === 'tpl') { b.disabled = true; await impTemplate(); b.disabled = false; }
 if (a === 'paste') { const t = $('#impPaste').value; if (!t.trim()) return toast('Paste the rows first', true); impShow(impRows(impText(t.trim()))); }
 if (a === 'go') {
 const rows = (S.impRows || []).filter(r => !r.errs.length); const common = $('#impPw')?.value?.trim() || '';
-if (rows.some(r => !r.pw && !(S.emps.find(x => x.code === r.code)?.auth_uid)) && common.length < 8) return toast('Starting password must be at least 8 characters', true);
+if (rows.some(r => !r.pw && !(S.emps.find(x => x.code === r.code)?.auth_uid)) && common.length < 6) return toast('Starting password must be at least 6 characters', true);
 b.disabled = true; const log = []; let done = 0;
 const prog = t => { b.textContent = t; };
 const depts = [...(C().depts || [])], offs = [...(C().offices || [])]; let setChg = false;
@@ -950,9 +952,9 @@ for (const r of rows) {   // pass 3: logins
 if (!r.id) continue; const pw = r.pw || common;
 prog(`Creating logins ${++done}/${rows.length}…`);
 try {
-if (r.auth) { if (r.pw) await rpc('hr_set_password', { p_emp: r.id, p_password: r.pw }); continue; }
-const { data, error } = await tmp.auth.signUp({ email: codeToEmail(r.code), password: pw });
-if (error) throw error; await q(sb.from('employees').update({ auth_uid: data.user.id }).eq('id', r.id));
+if (r.auth) { if (r.pw) await rpc('hr_set_password', { p_emp: r.id, p_password: PW(r.pw) }); continue; }
+const { data, error } = await tmp.auth.signUp({ email: codeToEmail(r.code), password: PW(pw) });
+if (error) throw error; await q(sb.from('employees').update({ auth_uid: data.user.id, must_change_pw: true }).eq('id', r.id));
 } catch (er) { log.push(`${r.code}: login not created (${errMsg(er)})`); }
 }
 await loadCore(); const okN = rows.filter(r => r.id).length;
@@ -962,5 +964,25 @@ render();
 }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; }
 });
+function pwRules(p1, p2) {
+if (p1.length < 6) return 'Use at least 6 characters'; if (p1 !== p2) return 'The two passwords do not match';
+if (/^(123|1234|12345|123456|password|aeden)$/i.test(p1) || p1.toUpperCase() === (S.me?.code || '')) return 'Choose a password that others cannot guess';
+return '';
+}
+async function setMyPw(p1) { const { error } = await sb.auth.updateUser({ password: PW(p1) }); if (error) throw error; await rpc('pw_changed'); if (S.me) S.me.must_change_pw = false; }
+function forcePw() {
+document.body.className = 'auth';
+$('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div><h1 class="fpw-h">Welcome, ${esc(S.me.name.split(' ')[0])} 👋</h1><p class="tag">First, set your own password. You will use it every time you sign in.</p>
+<form id="fpwF" class="card"><label>New password<input id="f_p1" type="password" autocomplete="new-password" required></label><label>Type it again<input id="f_p2" type="password" autocomplete="new-password" required></label>
+<p class="small muted">At least 6 characters. Don't use 123456 or your employee code.</p><button class="btn pri wide" type="submit">Save my password</button><div id="f_msg" class="msg"></div></form>
+<p class="small muted center"><a href="#" onclick="signOut();return false">Sign out</a></p></div>`;
+return new Promise(res => { $('#fpwF').onsubmit = async e => { e.preventDefault(); const p1 = $('#f_p1').value, bad = pwRules(p1, $('#f_p2').value); if (bad) { $('#f_msg').textContent = bad; return; }
+const b = e.submitter; b.disabled = true; $('#f_msg').textContent = 'Saving…'; try { await setMyPw(p1); toast('✓ Password saved'); res(); } catch (er) { b.disabled = false; $('#f_msg').textContent = errMsg(er); } }; });
+}
+function pwDlg() {
+dlg('Change my password', `<label>New password<input id="c_p1" type="password" autocomplete="new-password"></label><label>Type it again<input id="c_p2" type="password" autocomplete="new-password"></label><p class="small muted">At least 6 characters. Don't use 123456 or your employee code.</p>`,
+`<button class="btn pri" id="c_save">Save</button>`);
+$('#c_save').onclick = async () => { const p1 = $('#c_p1').value, bad = pwRules(p1, $('#c_p2').value); if (bad) return toast(bad, true); try { await setMyPw(p1); closeDlg(); toast('✓ Password changed'); } catch (er) { toast(errMsg(er), true); } };
+}
 boot();
 </script></body></html>
