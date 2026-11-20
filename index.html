@@ -559,7 +559,7 @@ const heads = await q(sb.from('dept_heads').select('*')); S.heads = heads;
 const list = S.emps.filter(e => S.showLeft || e.active);
 return `<div class="stack"><div class="row"><div><span class="eyebrow">Employee master</span><h2>Employees <span class="pink">${S.emps.filter(e => e.active).length}</span></h2></div><div class="row" style="gap:8px"><button class="btn" data-imp="open">⬆ Import from Excel / Google Sheet</button><button class="btn pri" data-emp="new">+ Add employee</button></div></div>
 <div class="card flush scroll"><table><thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Office</th><th>Reports to</th><th>Access</th><th>Login</th><th></th></tr></thead><tbody>
-${list.map(e => `<tr class="${e.active ? '' : 'muted'}"><td>${esc(e.code)}</td><td><b>${esc(e.name)}</b><div class="small muted">${esc(e.desig)}</div></td><td>${esc(e.dept)}${heads.find(h => h.employee_id === e.id && h.dept === e.dept) ? ' <span class="chip">Head</span>' : ''}</td><td>${esc(e.office)}</td><td>${esc(empById(e.reports_to)?.name || '—')}</td><td>${e.access ? `<span class="chip good">${e.access.toUpperCase()}</span>` : 'Employee'}</td><td>${e.auth_uid ? '✓' : '<span class="chip warn">none</span>'}</td><td><button class="btn sm" data-emp="edit" data-id="${e.id}">Edit</button></td></tr>`).join('')}</tbody></table></div>
+${list.map(e => `<tr class="${e.active ? '' : 'muted'}"><td>${esc(e.code)}</td><td><b>${esc(e.name)}</b><div class="small muted">${esc(e.desig)}</div></td><td>${esc(e.dept)}${heads.find(h => h.employee_id === e.id && h.dept === e.dept) ? ' <span class="chip">Head</span>' : ''}</td><td>${esc(e.office)}</td><td>${esc(empById(e.reports_to)?.name || '—')}</td><td>${e.access ? `<span class="chip good">${e.access.toUpperCase()}</span>` : 'Employee'}</td><td>${e.auth_uid ? '✓' : '<span class="chip warn">none</span>'}</td><td><button class="btn sm" data-emp="edit" data-id="${e.id}">Edit</button><button class="btn sm" data-priv="${e.id}" title="Private details (encrypted)">🔒</button></td></tr>`).join('')}</tbody></table></div>
 <label class="chk"><input type="checkbox" id="showLeft" ${S.showLeft ? 'checked' : ''}> Show staff who left</label>
 <div class="card"><h3>Department heads</h3><p class="small muted">Department heads see their department's attendance, leave and work plans. HR does not see work plans.</p><div class="grid2">${(C().depts || []).map(d => `<label>${esc(d)}<select data-dh="${esc(d)}"><option value="">— none —</option>${S.emps.filter(e => e.active).map(e => `<option value="${e.id}" ${heads.find(h => h.dept === d)?.employee_id === e.id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></label>`).join('')}</div></div></div>`;
 };
@@ -833,33 +833,67 @@ document.addEventListener('click', e => {
 const b = e.target.closest('[data-lbm]'); if (!b) return; const [y, m] = (S.lbMonth || todayStr().slice(0, 7)).split('-').map(Number);
 const d = new Date(y, m - 1 + Number(b.dataset.lbm), 1); const v = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; if (v > todayStr().slice(0, 7)) return; S.lbMonth = v; render();
 });
-const IMP_COLS = [['code', 'Employee code', /code|emp.?id|id/], ['name', 'Full name', /name/], ['desig', 'Designation', /desig|title|position|role/], ['dept', 'Department', /dep/],
-['office', 'Office', /office|branch|location/], ['join', 'Joining date (DD-MM-YYYY)', /join|doj|date/], ['mgr', 'Reports to (employee code)', /report|manager|head/],
-['access', 'Access (Employee / HR / MD)', /access|level|admin/], ['pw', 'Login password (optional)', /pass|pw/]];
+// [key, template heading, fallback header regex, private?, hint for the Instructions sheet]
+const IMP_COLS = [
+['code', 'Employee code', /emp.*(code|id|no)|^code$|^id$/, 0, 'Required. Unique code, e.g. ADN0072'],
+['name', 'Full name', /^(full )?name$|employee name/, 0, 'Required. As per official records'],
+['desig', 'Designation', /desig|title|position/, 0, 'e.g. Accounts Executive'],
+['dept', 'Department', /^dep/, 0, 'e.g. Accounts, Sales, Warehouse'],
+['office', 'Office', /office|branch|location/, 0, 'Kochi, Bengaluru or Mumbai'],
+['join', 'Joining date (DD-MM-YYYY)', /join|doj/, 0, 'e.g. 01-04-2024'],
+['mgr', 'Reports to (employee code)', /report|manager/, 0, 'Employee code of their manager'],
+['access', 'Access (Employee / HR / MD)', /access|level/, 0, 'Leave empty for Employee'],
+['pw', 'Login password (optional)', /pass/, 0, 'Leave empty: everyone starts with 123456'],
+['dob', 'Date of birth (DD-MM-YYYY)', /birth|dob/, 1, 'e.g. 15-08-1995'],
+['gender', 'Gender', /gender|sex/, 1, 'Male / Female / Other'],
+['blood', 'Blood group', /blood/, 1, 'e.g. O+'],
+['marital', 'Marital status', /marital/, 1, 'Single / Married'],
+['relname', "Father's / Spouse name", /father|spouse|guardian/, 1, 'As per records'],
+['mobile', 'Mobile number', /^(mobile|phone|contact)/, 1, '10 digits, e.g. 9876543210'],
+['email', 'Personal email', /mail/, 1, 'e.g. name@gmail.com'],
+['caddr', 'Current address', /current|present|^address/, 1, 'Full address with PIN code'],
+['paddr', 'Permanent address', /perman/, 1, 'Full address with PIN code'],
+['ename', 'Emergency contact name', /emerg.*name/, 1, 'Person to call in an emergency'],
+['erel', 'Emergency contact relation', /emerg.*rel|^relation/, 1, 'e.g. Father, Spouse'],
+['ephone', 'Emergency contact phone', /emerg.*(phone|mob|no|num)/, 1, '10 digits'],
+['pan', 'PAN number', /\bpan\b/, 1, 'e.g. ABCDE1234F'],
+['aadhaar', 'Aadhaar (last 4 digits only)', /aadh/, 1, 'Only the LAST 4 digits, e.g. 4321'],
+['uan', 'UAN (PF) number', /uan|\bpf\b/, 1, '12 digits, if any'],
+['esi', 'ESI number', /\besi/, 1, 'If any'],
+['bank', 'Bank name', /bank( name)?$/, 1, 'e.g. Federal Bank'],
+['acct', 'Bank account number', /account|a\/c/, 1, 'Salary account'],
+['ifsc', 'IFSC code', /ifsc/, 1, 'e.g. FDRL0001234'],
+['ctc', 'Monthly salary (CTC)', /ctc|salary/, 1, 'Number only, e.g. 25000']];
+const PRIV = IMP_COLS.filter(c => c[3]);
+const normH = s => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 function loadXLSX() {
 if (window.XLSX) return Promise.resolve(window.XLSX);
 return new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; s.onload = () => ok(window.XLSX); s.onerror = () => bad(new Error('Could not load the Excel reader. Check the internet and try again.')); document.head.appendChild(s); });
 }
 async function impTemplate() {
-const X = await loadXLSX(); const wb = X.utils.book_new();
-const ws = X.utils.aoa_to_sheet([IMP_COLS.map(c => c[1]), ['ADN0072', 'Riya Thomas', 'Accounts Executive', (C().depts || [])[0] || 'Accounts', (C().offices || [])[0] || 'Kochi', '01-04-2024', 'ADN71', 'Employee', ''],
-['ADN0073', 'Arun Kumar', 'Sales Manager', (C().depts || [])[1] || 'Sales', (C().offices || [])[0] || 'Kochi', '15-06-2023', '', 'Employee', '']]);
-ws['!cols'] = IMP_COLS.map(c => ({ wch: Math.max(14, c[1].length + 2) }));
+const X = await loadXLSX(); const wb = X.utils.book_new(), d0 = (C().depts || [])[0] || 'Accounts', o0 = (C().offices || [])[0] || 'Kochi';
+const ex = { code: 'ADN0072', name: 'Riya Thomas', desig: 'Accounts Executive', dept: d0, office: o0, join: '01-04-2024', mgr: 'ADN71', access: 'Employee', pw: '', dob: '15-08-1996', gender: 'Female', blood: 'O+', marital: 'Single',
+relname: 'Thomas George', mobile: '9876543210', email: 'riya@gmail.com', caddr: 'House no, Street, Kochi 682001', paddr: 'Same as current', ename: 'Thomas George', erel: 'Father', ephone: '9876500000', pan: 'ABCDE1234F', aadhaar: '4321',
+uan: '', esi: '', bank: 'Federal Bank', acct: '12345678901234', ifsc: 'FDRL0001234', ctc: '25000' };
+const ws = X.utils.aoa_to_sheet([IMP_COLS.map(c => c[1]), IMP_COLS.map(c => ex[c[0]])]);
+ws['!cols'] = IMP_COLS.map(c => ({ wch: Math.max(14, c[1].length + 2) })); ws['!freeze'] = { xSplit: 2, ySplit: 1 };
 X.utils.book_append_sheet(wb, ws, 'Employees');
-const info = [['How to fill'], ['• One employee per row. Employee code and Full name are required.'], ['• Delete the two example rows before importing.'], ['• Reports to: the employee code of their manager (can be someone in this same sheet).'],
-['• Access: Employee, HR or MD. Leave empty for Employee.'], ['• Login password: leave empty to use the common starting password you choose in ORBIS.'], ['• An existing employee code updates that person instead of adding a new one.'], [''],
+const info = [['ORBIS · Employee data sheet — how to fill'], [''], ['• One employee per row. Delete the example row (Riya Thomas) before importing.'], ['• Only Employee code and Full name are required — fill the rest when you have it. You can import again later to add more details.'],
+['• Dates as DD-MM-YYYY (e.g. 01-04-2024). Phone numbers: 10 digits.'], ['• 🔒 = stored ENCRYPTED in ORBIS. Only HR and the MD can see it, after unlocking with the vault password.'], ['• Aadhaar: write ONLY the last 4 digits. Never the full number.'], [''],
+['Column', 'Required?', 'Encrypted?', 'How to fill'], ...IMP_COLS.map(c => [c[1], c[0] === 'code' || c[0] === 'name' ? 'Yes' : 'No', c[3] ? '🔒 Yes' : 'No', c[4]]), [''],
 ['Departments in ORBIS'], ...(C().depts || []).map(d => [d]), [''], ['Offices in ORBIS'], ...(C().offices || []).map(o => [o])];
-X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet(info), 'Instructions');
-X.writeFile(wb, 'ORBIS-employee-import-template.xlsx');
+const wi = X.utils.aoa_to_sheet(info); wi['!cols'] = [{ wch: 34 }, { wch: 11 }, { wch: 12 }, { wch: 60 }];
+X.utils.book_append_sheet(wb, wi, 'Instructions');
+X.writeFile(wb, 'ORBIS-employee-data-sheet.xlsx');
 }
-function impDate(v) { const r = impDate0(v); if (!r || r === 'bad') return r; const [y, m, d] = r.split('-').map(Number), t = new Date(y, m - 1, d); return t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d && y > 1950 && y < 2100 ? r : 'bad'; }
+function impDate(v) { const r = impDate0(v); if (!r || r === 'bad') return r; const [y, m, d] = r.split('-').map(Number), t = new Date(y, m - 1, d); return t.getFullYear() === y && t.getMonth() === m - 1 && t.getDate() === d && y > 1930 && y < 2100 ? r : 'bad'; }
 function impDate0(v) {
 if (v == null || v === '') return null;
 if (v instanceof Date && !isNaN(v)) return `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`;
-if (typeof v === 'number' && v > 20000 && v < 80000) { const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; }
+if (typeof v === 'number' && v > 10000 && v < 80000) { const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; }
 const s = String(v).trim(); let m;
 if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/))) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
-if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/))) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${pad(+m[2])}-${pad(+m[1])}`; }
+if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/))) { const y = m[3].length === 2 ? (+m[3] > 40 ? '19' : '20') + m[3] : m[3]; return `${y}-${pad(+m[2])}-${pad(+m[1])}`; }
 const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 if ((m = s.match(/^(\d{1,2})[\s-]([a-z]{3})[a-z]*[\s-,]+(\d{4})$/i)) && MON[m[2].toLowerCase()]) return `${m[3]}-${pad(MON[m[2].toLowerCase()])}-${pad(+m[1])}`;
 return 'bad';
@@ -867,18 +901,27 @@ return 'bad';
 function impRows(aoa) {
 const rows = aoa.filter(r => r && r.some(c => String(c ?? '').trim() !== ''));
 if (!rows.length) return { err: 'The sheet is empty.' };
-const head = rows[0].map(h => String(h ?? '').toLowerCase()), map = {};
-IMP_COLS.forEach(([k, , re]) => { const i = head.findIndex((h, j) => re.test(h) && !Object.values(map).includes(j)); if (i >= 0) map[k] = i; });
-if (map.code == null || map.name == null) return { err: 'Could not find the "Employee code" and "Full name" columns. Please use the template headings.' };
+const head = rows[0].map(h => String(h ?? '').toLowerCase().trim()), map = {}, used = new Set();
+IMP_COLS.forEach(([k, lab]) => { const i = head.findIndex(h => normH(h) === normH(lab)); if (i >= 0) { map[k] = i; used.add(i); } });
+IMP_COLS.forEach(([k, , re]) => { if (map[k] != null) return; const i = head.findIndex((h, j) => !used.has(j) && re.test(h)); if (i >= 0) { map[k] = i; used.add(i); } });
+if (map.code == null || map.name == null) return { err: 'Could not find the "Employee code" and "Full name" columns. Please use the ORBIS template headings.' };
 const codes = new Set(), out = rows.slice(1).map((r, n) => {
 const g = k => map[k] == null ? '' : r[map[k]]; const s = k => String(g(k) ?? '').trim();
 const x = { line: n + 2, code: s('code').toUpperCase().replace(/\s+/g, ''), name: s('name').replace(/\s+/g, ' '), desig: s('desig'), dept: s('dept'), office: s('office'),
-join: impDate(g('join')), mgr: s('mgr').toUpperCase().replace(/\s+/g, ''), pw: s('pw'), errs: [] };
+join: impDate(g('join')), mgr: s('mgr').toUpperCase().replace(/\s+/g, ''), pw: s('pw'), errs: [], warns: [], priv: {} };
 const acc = s('access').toLowerCase(); x.access = /^hr/.test(acc) ? 'hr' : /^(md|dir|managing)/.test(acc) ? 'md' : '';
 if (!x.code) x.errs.push('no employee code'); if (!x.name) x.errs.push('no name');
 if (x.code && codes.has(x.code)) x.errs.push('code repeated in sheet'); codes.add(x.code);
 if (x.join === 'bad') { x.errs.push('joining date not understood'); x.join = null; }
 if (x.pw && x.pw.length < 6) x.errs.push('password under 6 characters');
+PRIV.forEach(([k]) => { let v = k === 'dob' ? g(k) : s(k); if (v === '' || v == null) return;
+if (k === 'dob') { v = impDate(v); if (v === 'bad') { x.warns.push('date of birth not understood'); return; } }
+if (['mobile', 'ephone'].includes(k)) { const d = String(v).replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, ''); if (d.length !== 10) x.warns.push(`check ${k === 'mobile' ? 'mobile' : 'emergency phone'}`); v = d || v; }
+if (k === 'pan') { v = v.toUpperCase().replace(/\s/g, ''); if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(v)) x.warns.push('check PAN format'); }
+if (k === 'ifsc') { v = v.toUpperCase().replace(/\s/g, ''); if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(v)) x.warns.push('check IFSC'); }
+if (k === 'aadhaar') { const d = String(v).replace(/\D/g, ''); if (d.length > 4) x.warns.push('Aadhaar: only last 4 digits kept'); v = d.slice(-4); }
+if (k === 'acct') v = String(v).replace(/\s/g, '');
+x.priv[k] = String(v); });
 x.exists = S.emps.some(e => e.code === x.code);
 return x;
 });
@@ -901,37 +944,48 @@ return rows;
 }
 function impDlg() {
 dlg('Import employees', `<p>Add all employees at once from <b>Excel</b> or <b>Google Sheets</b>.</p>
-<div class="impstep"><b>1.</b> <button class="btn sm" data-imp="tpl">⬇ Download the Excel template</button> <span class="small muted">fill one row per employee</span></div>
+<div class="impstep"><b>1.</b> <button class="btn sm" data-imp="tpl">⬇ Download the employee data sheet</button> <span class="small muted">see the Instructions tab · 🔒 columns are stored encrypted</span></div>
 <div class="impstep"><b>2.</b> <label class="btn sm pri" style="margin:0">⬆ Choose the filled Excel / CSV file<input type="file" id="impFile" accept=".xlsx,.xls,.csv,.tsv,.ods" hidden></label></div>
-<div class="small muted">Using Google Sheets? Either <b>File → Download → Microsoft Excel (.xlsx)</b> and choose that file, or select the rows including the heading row, press <b>Ctrl + C</b>, and paste here:</div>
+<div class="small muted">Using Google Sheets? Upload the sheet to Google Drive and open it with Google Sheets to fill it. Then either <b>File → Download → Microsoft Excel (.xlsx)</b> and choose that file, or select the rows including the heading row, press <b>Ctrl + C</b>, and paste here:</div>
 <textarea id="impPaste" rows="4" placeholder="Paste rows copied from Google Sheets or Excel here (include the heading row)"></textarea>
 <button class="btn sm" data-imp="paste">Check pasted rows</button><div id="impPrev"></div>`, '');
 $('#dlg').classList.add('wide'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('wide'), { once: true });
 }
-function impShow(res) {
+async function impShow(res) {
 const el = $('#impPrev'); if (res.err) { el.innerHTML = `<p class="msg bad">${esc(res.err)}</p>`; return; }
 S.impRows = res.rows; const ok = res.rows.filter(r => !r.errs.length), bad = res.rows.length - ok.length, newC = ok.filter(r => !r.exists).length, upd = ok.length - newC;
 const needPw = ok.some(r => !r.pw && !(S.emps.find(e => e.code === r.code)?.auth_uid));
+const privN = ok.filter(r => Object.keys(r.priv).length).length; let vault = null; if (privN) { try { vault = await vaultLoad(); } catch { } }
 const newDepts = [...new Set(ok.map(r => r.dept).filter(d => d && !(C().depts || []).includes(d)))], newOffs = [...new Set(ok.map(r => r.office).filter(o => o && !(C().offices || []).includes(o)))];
+const privBox = !privN ? '' : !vault ? `<div class="msg bad">🔒 ${privN} rows have private details (phone, PAN, bank…). These are stored encrypted, so first set up the <b>Document Vault</b> on the <a href="#docs" onclick="closeDlg()">Documents</a> page, then import again. Or import now without them — basic details only.</div>`
+: S.dek ? `<div class="card soft">🔒 Private details for ${privN} employees will be <b>encrypted</b> (vault unlocked).</div>`
+: `<div class="card soft">🔒 Private details for ${privN} employees will be <b>encrypted</b>. Enter the vault password:<input id="impVault" type="password" autocomplete="off" placeholder="Vault password"></div>`;
 el.innerHTML = `<div class="card soft"><b>${res.rows.length} rows found:</b> <span class="chip good">${newC} new</span> ${upd ? `<span class="chip">${upd} update</span>` : ''} ${bad ? `<span class="chip crit">${bad} with problems (skipped)</span>` : ''}
 ${newDepts.length || newOffs.length ? `<p class="small">New ${newDepts.length ? 'departments: <b>' + newDepts.map(esc).join(', ') + '</b>' : ''}${newDepts.length && newOffs.length ? ' · ' : ''}${newOffs.length ? 'offices: <b>' + newOffs.map(esc).join(', ') + '</b>' : ''} will be added to the lists.</p>` : ''}</div>
-<div class="scroll" style="max-height:38vh"><table class="imptbl"><thead><tr><th>Row</th><th>Code</th><th>Name</th><th>Designation</th><th>Department</th><th>Office</th><th>Joined</th><th>Reports to</th><th>Access</th><th>Status</th></tr></thead><tbody>
+<div class="scroll" style="max-height:38vh"><table class="imptbl"><thead><tr><th>Row</th><th>Code</th><th>Name</th><th>Designation</th><th>Department</th><th>Office</th><th>Joined</th><th>Reports to</th><th>Access</th><th>🔒 Private</th><th>Status</th></tr></thead><tbody>
 ${res.rows.map(r => `<tr class="${r.errs.length ? 'bad' : ''}"><td>${r.line}</td><td><b>${esc(r.code)}</b></td><td>${esc(r.name)}</td><td>${esc(r.desig)}</td><td>${esc(r.dept)}</td><td>${esc(r.office)}</td><td>${r.join ? fmtD(r.join) : ''}</td><td>${esc(r.mgr)}</td><td>${r.access ? r.access.toUpperCase() : 'Employee'}</td>
-<td>${r.errs.length ? `<span class="chip crit">✗ ${esc(r.errs.join(', '))}</span>` : r.exists ? '<span class="chip">↻ update</span>' : '<span class="chip good">✓ new</span>'}</td></tr>`).join('')}</tbody></table></div>
+<td>${Object.keys(r.priv).length ? `${Object.keys(r.priv).length} fields` : '—'}</td>
+<td>${r.errs.length ? `<span class="chip crit">✗ ${esc(r.errs.join(', '))}</span>` : (r.exists ? '<span class="chip">↻ update</span>' : '<span class="chip good">✓ new</span>')}${r.warns.length ? ` <span class="chip warn">⚠ ${esc(r.warns.join(', '))}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>
+${privBox}
 ${ok.length ? `${needPw ? `<div class="card soft"><b>Starting password for new logins</b><p class="small muted">Used for everyone whose password column is empty. Staff sign in with their employee code and this password, then ORBIS makes them set their own password.</p><input id="impPw" type="text" value="123456" autocomplete="off"></div>` : ''}
 <button class="btn pri" data-imp="go">Import ${ok.length} employee${ok.length > 1 ? 's' : ''}</button>` : ''}`;
 }
+async function privGet(empId) { const r = await q(sb.from('employee_private').select('blob').eq('employee_id', empId).maybeSingle()); if (!r) return {}; return JSON.parse(new TextDecoder().decode(await unseal(S.dek, b64d(r.blob)))); }
+async function privPut(empId, obj) { const blob = b64e(await seal(S.dek, new TextEncoder().encode(JSON.stringify(obj)))); await q(sb.from('employee_private').upsert({ employee_id: empId, blob, updated_at: new Date().toISOString(), updated_by: S.me.id })); }
 document.addEventListener('change', async e => { if (e.target.id !== 'impFile') return; const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-$('#impPrev').innerHTML = '<p class="muted">Reading the file…</p>'; try { impShow(impRows(await impReadFile(f))); } catch (er) { $('#impPrev').innerHTML = `<p class="msg bad">${esc(errMsg(er))}</p>`; } });
+$('#impPrev').innerHTML = '<p class="muted">Reading the file…</p>'; try { await impShow(impRows(await impReadFile(f))); } catch (er) { $('#impPrev').innerHTML = `<p class="msg bad">${esc(errMsg(er))}</p>`; } });
 document.addEventListener('click', async e => {
 const b = e.target.closest('[data-imp]'); if (!b) return; const a = b.dataset.imp;
 try {
 if (a === 'open') impDlg();
 if (a === 'tpl') { b.disabled = true; await impTemplate(); b.disabled = false; }
-if (a === 'paste') { const t = $('#impPaste').value; if (!t.trim()) return toast('Paste the rows first', true); impShow(impRows(impText(t.trim()))); }
+if (a === 'paste') { const t = $('#impPaste').value; if (!t.trim()) return toast('Paste the rows first', true); await impShow(impRows(impText(t.trim()))); }
 if (a === 'go') {
 const rows = (S.impRows || []).filter(r => !r.errs.length); const common = $('#impPw')?.value?.trim() || '';
 if (rows.some(r => !r.pw && !(S.emps.find(x => x.code === r.code)?.auth_uid)) && common.length < 6) return toast('Starting password must be at least 6 characters', true);
+const vp = $('#impVault'); if (vp && !S.dek) { if (!vp.value) return toast('Enter the vault password to encrypt private details', true); b.disabled = true; b.textContent = 'Unlocking vault…';
+try { const raw = await vaultOpenRaw(vp.value, false); S.dek = await importDek(raw); raw.fill(0); vaultTouch(); } catch (er) { b.disabled = false; b.textContent = 'Import'; return toast(errMsg(er), true); } }
+const encOk = !!S.dek;
 b.disabled = true; const log = []; let done = 0;
 const prog = t => { b.textContent = t; };
 const depts = [...(C().depts || [])], offs = [...(C().offices || [])]; let setChg = false;
@@ -947,6 +1001,13 @@ else { const n = await q(sb.from('employees').insert({ ...row, code: r.code, act
 }
 await loadCore();
 for (const r of rows) if (r.id && r.mgr) { const m = S.emps.find(x => x.code === r.mgr); if (m) await q(sb.from('employees').update({ reports_to: m.id }).eq('id', r.id)).catch(er => log.push(`${r.code}: manager not set (${errMsg(er)})`)); }
+done = 0;
+for (const r of rows) {   // pass 2: encrypted private details
+if (!r.id || !Object.keys(r.priv).length) continue;
+if (!encOk) { log.push(`${r.code}: private details skipped (vault not set up)`); continue; }
+prog(`Encrypting details ${++done}…`);
+try { const cur = await privGet(r.id).catch(() => ({})); await privPut(r.id, { ...cur, ...r.priv }); } catch (er) { log.push(`${r.code}: private details not saved (${errMsg(er)})`); }
+}
 done = 0; const tmp = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'orbis.tmp' } });
 for (const r of rows) {   // pass 3: logins
 if (!r.id) continue; const pw = r.pw || common;
@@ -959,11 +1020,24 @@ if (error) throw error; await q(sb.from('employees').update({ auth_uid: data.use
 }
 await loadCore(); const okN = rows.filter(r => r.id).length;
 dlg('Import finished', `<p class="msg ${log.length ? 'bad' : ''}">✓ ${okN} of ${rows.length} employees saved.${log.length ? ' Some items need attention:' : ''}</p>${log.length ? `<ul class="small">${log.map(l => `<li>${esc(l)}</li>`).join('')}</ul><p class="small muted">You can fix these one by one with Edit, or import the same sheet again — existing codes are updated, not duplicated.</p>` : ''}
-${common ? `<div class="card soft">Starting password for new logins: <b>${esc(common)}</b><br><span class="small muted">Tell staff to sign in with their employee code and this password.</span></div>` : ''}`, '');
+${common ? `<div class="card soft">Starting password for new logins: <b>${esc(common)}</b><br><span class="small muted">Staff sign in with their employee code and this password, then set their own.</span></div>` : ''}`, '');
 render();
 }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; }
 });
+async function privDlg(id) {
+const x = empById(id); if (!x) return;
+if (!(await vaultLoad())) return dlg('🔒 Private details', '<p>Private details (phone, PAN, bank…) are stored encrypted. First set up the <b>Document Vault</b> on the <a href="#docs" onclick="closeDlg()">Documents</a> page.</p>', '');
+if (!S.dek) { dlg(`🔒 ${esc(x.name)} — private details`, '<label>Vault password<input id="pv_pw" type="password" autocomplete="off"></label>', `<button class="btn pri" id="pv_un">Unlock</button>`);
+$('#pv_un').onclick = async () => { try { const raw = await vaultOpenRaw($('#pv_pw').value, false); S.dek = await importDek(raw); raw.fill(0); vaultTouch(); privDlg(id); } catch (er) { toast(errMsg(er), true); } }; return; }
+vaultTouch(); let cur = {}; try { cur = await privGet(id); } catch (er) { return toast('Could not unlock these details: ' + errMsg(er), true); }
+dlg(`🔒 ${esc(x.name)} — private details`, `<p class="small muted">Encrypted with the vault key. Only HR and the MD can open this.</p><div class="grid2">${PRIV.map(([k, lab, , , hint]) => `<label>${esc(lab)}${k.endsWith('addr') ? `<textarea id="pv_${k}" rows="2">${esc(cur[k] || '')}</textarea>` : `<input id="pv_${k}" ${k === 'dob' ? 'type="date"' : ''} value="${esc(cur[k] || '')}" placeholder="${esc(hint)}">`}</label>`).join('')}</div>`,
+`<button class="btn pri" id="pv_save">Save encrypted</button>`);
+$('#dlg').classList.add('wide'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('wide'), { once: true });
+$('#pv_save').onclick = async () => { const o = {}; PRIV.forEach(([k]) => { let v = $('#pv_' + k).value.trim(); if (k === 'aadhaar') v = v.replace(/\D/g, '').slice(-4); if (v) o[k] = v; });
+try { await privPut(id, o); closeDlg(); toast('🔒 Private details saved (encrypted)'); } catch (er) { toast(errMsg(er), true); } };
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-priv]'); if (b) privDlg(b.dataset.priv); });
 function pwRules(p1, p2) {
 if (p1.length < 6) return 'Use at least 6 characters'; if (p1 !== p2) return 'The two passwords do not match';
 if (/^(123|1234|12345|123456|password|aeden)$/i.test(p1) || p1.toUpperCase() === (S.me?.code || '')) return 'Choose a password that others cannot guess';
