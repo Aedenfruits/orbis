@@ -153,24 +153,25 @@ route(); flushQueue();
 }
 function renderLogin(msg) {
 document.body.className = 'auth';
-$('#app').innerHTML = `<div class="authbox"><div class="alg big"></div><h1>ORBIS</h1><p class="tag">Everything. Connected.</p>
+$('#app').innerHTML = `<div class="authbox"><div class="alg w big"></div><h1>ORBIS</h1><p class="tag">Everything. Connected.</p>
 <form id="loginF" class="card"><label>Employee code<input id="l_code" autocomplete="username" placeholder="e.g. ADN0071" required></label>
 <label>Password<input id="l_pw" type="password" autocomplete="current-password" required></label>
 <button class="btn pri wide" type="submit">Sign in</button><div id="l_msg" class="msg">${msg ? esc(msg) : ''}</div>
 <p class="small muted">Forgot your password? Ask HR to reset it.</p></form>
-<p class="small muted center">First time setting up ORBIS? <a href="#" id="firstSetup">Create the first HR account</a></p></div>`;
+<p class="small muted center" id="fsWrap" style="display:none">First time setting up ORBIS? <a href="#" id="firstSetup">Create the first HR account</a></p></div>`;
 $('#loginF').onsubmit = async e => {
 e.preventDefault(); const b = e.submitter; b.disabled = true; $('#l_msg').textContent = 'Signing in…';
 const { error } = await sb.auth.signInWithPassword({ email: codeToEmail($('#l_code').value), password: $('#l_pw').value });
 b.disabled = false; if (error) { $('#l_msg').textContent = 'Wrong employee code or password.'; return; }
 location.hash = 'punch'; boot();
 };
+rpc('needs_setup').then(n => { if (n === true && $('#fsWrap')) $('#fsWrap').style.display = ''; }).catch(() => { });
 $('#firstSetup').onclick = async e => { e.preventDefault(); let need = false; try { need = await rpc('needs_setup'); } catch (er) { need = null; }
 if (need === false) return toast('ORBIS is already set up. Sign in with your employee code.', true); renderSignupFirst(); };
 }
 function renderSignupFirst() {
 document.body.className = 'auth';
-$('#app').innerHTML = `<div class="authbox"><div class="alg big"></div><h1>Set up ORBIS</h1><p class="tag">Create the first HR account. Only works once.</p>
+$('#app').innerHTML = `<div class="authbox"><div class="alg w big"></div><h1>Set up ORBIS</h1><p class="tag">Create the first HR account. Only works once.</p>
 <form id="suF" class="card"><label>Your name<input id="s_name" required></label><label>Your employee code<input id="s_code" placeholder="e.g. ADN0071" required></label>
 <label>Choose a password (min 8)<input id="s_pw" type="password" minlength="8" required autocomplete="new-password"></label>
 <button class="btn pri wide" type="submit">Create HR account</button><div id="s_msg" class="msg"></div></form>
@@ -187,7 +188,7 @@ toast('Welcome! You are the first HR user.'); location.hash = 'employees'; boot(
 };
 }
 function renderSetup() { renderSignupFirst(); }
-function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg big"></div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><button class="btn" onclick="signOut()">Sign out</button></div></div>`; }
+function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big"></div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><button class="btn" onclick="signOut()">Sign out</button></div></div>`; }
 async function signOut() { await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
 function navList() {
 const n = [['punch', 'Punch', '⏱️'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['policies', 'HR policies', '📘']];
