@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231D2B53'/%3E%3Ctext x='32' y='44' font-size='34' font-family='Arial' font-weight='900' fill='white' text-anchor='middle'%3EO%3C/text%3E%3Ccircle cx='48' cy='16' r='6' fill='%23FF004D'/%3E%3C/svg%3E">
+<link rel="icon" href="/icon-192.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ORBIS">
 <style>
 :root{--navy:#1D2B53;--pink:#FF004D;--bg:#F4F6FB;--card:#fff;--line:#e3e7f0;--muted:#6b7590;--good:#17834f;--warn:#c77700;--crit:#cf2450;--r:14px}
 *{box-sizing:border-box}html,body{margin:0}body{font-family:"Segoe UI",Inter,system-ui,sans-serif;background:var(--bg);color:#1b2440;font-size:14.5px}
@@ -163,6 +163,7 @@ $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div>
 <label>Password<input id="l_pw" type="password" autocomplete="current-password" required></label>
 <button class="btn pri wide" type="submit">Sign in</button><div id="l_msg" class="msg">${msg ? esc(msg) : ''}</div>
 <p class="small muted">Forgot your password? Ask HR to reset it.</p></form>
+<p class="center"><button class="btn sm inst" type="button" ${S.canInstall ? '' : 'hidden'}>⬇ Install ORBIS app on this computer</button></p>
 <p class="small muted center" id="fsWrap" style="display:none">First time setting up ORBIS? <a href="#" id="firstSetup">Create the first HR account</a></p></div>`;
 $('#loginF').onsubmit = async e => {
 e.preventDefault(); const b = e.submitter; b.disabled = true; $('#l_msg').textContent = 'Signing in…';
@@ -224,7 +225,7 @@ function shell(body) {
 const nav = navList().map(([k, l, i]) => `<a href="#${k}" class="${S.view === k ? 'on' : ''}"><span>${i}</span>${l}</a>`).join('');
 const qn = queue().length;
 return `<header class="top"><div class="alg">${LOGO}</div><div class="brand"><b>ORBIS</b><small>Everything. Connected.</small></div>
-<div class="who">${qn ? `<span class="chip warn">⏳ ${qn} waiting to sync</span>` : ''}${navigator.onLine ? '' : '<span class="chip crit">Offline</span>'}<span class="hide-s">${esc(S.me.name)}</span><button class="btn sm" onclick="signOut()">Sign out</button></div></header>
+<div class="who"><button class="btn sm inst" type="button" ${S.canInstall ? '' : 'hidden'}>⬇ Install app</button>${qn ? `<span class="chip warn">⏳ ${qn} waiting to sync</span>` : ''}${navigator.onLine ? '' : '<span class="chip crit">Offline</span>'}<span class="hide-s">${esc(S.me.name)}</span><button class="btn sm" onclick="signOut()">Sign out</button></div></header>
 <nav class="side">${nav}</nav><main id="main">${body}</main><nav class="bottom">${nav}</nav>`;
 }
 const VIEWS = {};
@@ -774,5 +775,14 @@ if (a === 'del') dlg('Delete document?', `<p>Delete <b>${esc(d._m.name)}</b> (${
 if (a === 'delok') { await sb.storage.from(DOC_BUCKET).remove([d.path]); await q(sb.from('emp_docs').delete().eq('id', d.id)); closeDlg(); toast('Deleted'); render(); }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; if (a === 'create') b.textContent = 'Create the vault'; }
 });
+let installEvt = null;
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; S.canInstall = true; document.querySelectorAll('.inst').forEach(b => b.hidden = false); });
+addEventListener('appinstalled', () => { installEvt = null; S.canInstall = false; document.querySelectorAll('.inst').forEach(b => b.hidden = true); toast('✓ ORBIS app installed — find it on your desktop / Start menu'); });
+document.addEventListener('click', async e => {
+const b = e.target.closest('.inst'); if (!b) return;
+if (!installEvt) return toast('Use the browser menu → "Install ORBIS" (or "Add to Home screen" on phones)');
+installEvt.prompt(); const r = await installEvt.userChoice; if (r.outcome === 'accepted') { installEvt = null; S.canInstall = false; document.querySelectorAll('.inst').forEach(x => x.hidden = true); }
+});
+if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
 boot();
 </script></body></html>
