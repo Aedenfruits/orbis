@@ -58,6 +58,7 @@ main{padding:18px 16px 90px;max-width:1150px;margin:0 auto}.loading{padding:40px
 table.reg td,table.reg th{padding:6px 4px;font-size:12px}table.reg .c{text-align:center;min-width:24px}table.reg .nm{position:sticky;left:0;background:#fff;min-width:150px;padding-left:12px}table.reg .nm small{display:block;color:var(--muted)}td.p{color:var(--good);font-weight:800}td.p.lt{color:var(--warn)}td.a{color:var(--crit);font-weight:800}td.l{color:#5b6bd8;font-weight:800}td.wo,th.wo{color:#aab2c8;background:#fafbfd}
 dialog{border:0;border-radius:18px;padding:0;width:min(560px,94vw);box-shadow:0 30px 80px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(29,43,83,.45)}.dh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}.dh h3{margin:0}.db{padding:16px 18px;max-height:65vh;overflow:auto;display:flex;flex-direction:column;gap:10px}.df{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:12px 18px;border-radius:99px;font-weight:700;opacity:0;pointer-events:none;transition:all .25s;z-index:60;max-width:90vw;text-align:center}#toast.show{opacity:1;transform:translateX(-50%)}#toast.bad{background:var(--crit)}
+.docrow{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}.docrow .pi{font-size:22px}.docrow.miss{border-left:4px solid #f0b429}.docf{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}.reckey{font:700 20px/1.5 ui-monospace,Consolas,monospace;letter-spacing:.06em;background:#fff7e6;border:2px dashed #f0b429;padding:14px;border-radius:12px;text-align:center;word-break:break-all;color:#1d2b53}dialog.wide{width:min(960px,96vw)}.docview{display:block;max-width:100%;max-height:70vh;margin:0 auto;border-radius:8px}.docview.pdf{width:100%;height:70vh;border:0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body><div id="app"><div class="loading">Loading ORBIS…</div></div><dialog id="dlg"></dialog><div id="toast"></div>
@@ -189,9 +190,9 @@ toast('Welcome! You are the first HR user.'); location.hash = 'employees'; boot(
 }
 function renderSetup() { renderSignupFirst(); }
 function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big"></div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><button class="btn" onclick="signOut()">Sign out</button></div></div>`; }
-async function signOut() { await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
+async function signOut() { S.dek = null; clearTimeout(S.vaultT); await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
 function navList() {
-const n = [['punch', 'Punch', '⏱️'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['policies', 'HR policies', '📘']];
+const n = [['punch', 'Punch', '⏱️'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['policies', 'HR policies', '📘'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂']];
 if (S.team.length || isAdmin()) n.push(['team', isAdmin() ? 'All staff' : 'My team', '👥']);
 if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['employees', 'Employees', '🧑‍💼'], ['setup', 'Computers & settings', '⚙️']);
 return n;
@@ -584,6 +585,173 @@ if (b.id === 'cfgSave') { const lines = id => $('#' + id).value.split('\n').map(
 await saveSettings({ shiftStart: $('#c_ss').value, shiftEnd: $('#c_se').value, graceMin: Number($('#c_gr').value) || 0, extraMonthlyMin: Number($('#c_x').value) || 0,
 breaks: brCfg().map((x, i) => ({ ...x, min: Number($('#c_b' + i).value) || x.min })), leaveTypes: ltypes().map((t, i) => ({ ...t, days: Number($('#c_l' + i).value) || 0 })), depts: lines('c_depts'), offices: lines('c_offs') }); toast('Rules saved'); render(); }
 } catch (er) { toast(errMsg(er), true); }
+});
+const DOC_KINDS = [
+['aadhaar', 'Aadhaar (masked)', '🪪', 'Upload the masked Aadhaar: only the last 4 digits visible. Download it from myAadhaar.'],
+['pan', 'PAN card', '💳'], ['photo', 'Passport-size photo', '🖼️'], ['edu', 'Educational certificates', '🎓'],
+['exp', 'Experience / relieving letters', '📄'], ['bank', 'Bank details', '🏦', 'Cancelled cheque or passbook front page.'],
+['offer', 'Offer / appointment letter', '✉️'], ['ack', 'Signed HR policy acknowledgement', '✍️'], ['other', 'Other', '📎']];
+const VAULT_ITER = 600000, DOC_BUCKET = 'orbis-docs', VAULT_IDLE_MIN = 15;
+const b64e = u => { u = new Uint8Array(u); let s = ''; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return btoa(s); };
+const b64d = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const rnd = n => crypto.getRandomValues(new Uint8Array(n));
+const fmtSize = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+async function kdf(secret, salt, iter) {
+const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), 'PBKDF2', false, ['deriveKey']);
+return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function seal(key, data) { const iv = rnd(12); const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data)); const out = new Uint8Array(12 + ct.length); out.set(iv); out.set(ct, 12); return out; }
+async function unseal(key, buf) { buf = new Uint8Array(buf); return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, key, buf.slice(12))); }
+const importDek = raw => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+function makeRecovery() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from(rnd(24), b => A[b % 32]).join('').match(/.{4}/g).join('-'); }
+const normRec = s => (String(s).toUpperCase().replace(/[^A-Z0-9]/g, '').match(/.{1,4}/g) || []).join('-');
+function vaultLock(msg) { S.dek = null; clearTimeout(S.vaultT); if (msg) toast(msg); if (S.view === 'docs' && S.me) render(); }
+function vaultTouch() { clearTimeout(S.vaultT); S.vaultT = setTimeout(() => vaultLock('🔒 Document vault locked after 15 minutes'), VAULT_IDLE_MIN * 60000); }
+async function vaultLoad() { S.vault = await q(sb.from('doc_vault').select('*').maybeSingle()); return S.vault; }
+async function vaultCreate(pw) {
+const raw = rnd(32), salt = rnd(16), rsalt = rnd(16), rec = makeRecovery();
+const [kpw, krec, dek] = await Promise.all([kdf(pw, salt, VAULT_ITER), kdf(rec, rsalt, VAULT_ITER), importDek(raw)]);
+const row = { id: 1, iter: VAULT_ITER, salt: b64e(salt), wrap_pw: b64e(await seal(kpw, raw)), rec_salt: b64e(rsalt), wrap_rec: b64e(await seal(krec, raw)),
+check_ct: b64e(await seal(dek, new TextEncoder().encode('ORBIS'))), updated_at: new Date().toISOString(), updated_by: S.me.id };
+await q(sb.from('doc_vault').insert(row));
+raw.fill(0); S.vault = row; S.dek = dek; vaultTouch(); return rec;
+}
+async function vaultOpenRaw(secret, useRec) {
+const v = S.vault; const k = await kdf(useRec ? normRec(secret) : secret, b64d(useRec ? v.rec_salt : v.salt), v.iter);
+try { return await unseal(k, b64d(useRec ? v.wrap_rec : v.wrap_pw)); }
+catch { throw new Error(useRec ? 'That recovery key is not correct.' : 'Wrong vault password.'); }
+}
+async function vaultSetPw(raw, pw) {
+const salt = rnd(16), k = await kdf(pw, salt, VAULT_ITER);
+const patch = { salt: b64e(salt), wrap_pw: b64e(await seal(k, raw)), updated_at: new Date().toISOString(), updated_by: S.me.id };
+await q(sb.from('doc_vault').update(patch).eq('id', 1)); Object.assign(S.vault, patch);
+}
+async function prepFile(f) {
+if (/^image\/(jpeg|png|webp)$/.test(f.type) && f.size > 700 * 1024) {
+try {
+const img = await createImageBitmap(f), s = Math.min(1, 2000 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+const b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+if (b && b.size < f.size) return { bytes: new Uint8Array(await b.arrayBuffer()), mime: 'image/jpeg', name: f.name.replace(/\.\w+$/, '') + '.jpg' };
+} catch { }
+}
+return { bytes: new Uint8Array(await f.arrayBuffer()), mime: f.type || 'application/octet-stream', name: f.name };
+}
+async function docUpload(empId, kind, f) {
+if (f.size > 30 * 1048576) throw new Error(`${f.name} is too large. Keep files under 10 MB.`);
+const p = await prepFile(f); if (p.bytes.length > 10 * 1048576 - 64) throw new Error(`${f.name} is over 10 MB. Scan it at a lower resolution.`);
+const ct = await seal(S.dek, p.bytes), meta = await seal(S.dek, new TextEncoder().encode(JSON.stringify({ name: p.name, mime: p.mime })));
+const path = `${empId}/${crypto.randomUUID()}.bin`;
+const { error } = await sb.storage.from(DOC_BUCKET).upload(path, new Blob([ct], { type: 'application/octet-stream' })); if (error) throw error;
+try { await q(sb.from('emp_docs').insert({ employee_id: empId, kind, path, iv: 'gcm1', meta_enc: b64e(meta), size: ct.length, uploaded_by: S.me.id })); }
+catch (e) { await sb.storage.from(DOC_BUCKET).remove([path]); throw e; }
+}
+async function docMeta(d) {
+if (d._m) return d._m;
+try { d._m = JSON.parse(new TextDecoder().decode(await unseal(S.dek, b64d(d.meta_enc)))); } catch { d._m = { name: '(cannot unlock)', mime: 'application/octet-stream' }; }
+return d._m;
+}
+async function docOpen(d) {
+const { data, error } = await sb.storage.from(DOC_BUCKET).download(d.path); if (error) throw error;
+const raw = await unseal(S.dek, await data.arrayBuffer()); const m = await docMeta(d);
+return { blob: new Blob([raw], { type: m.mime }), ...m };
+}
+function saveBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000); }
+function recoveryFile(rec) {
+const t = `ORBIS · Document Vault RECOVERY KEY\nAeden Fruits International Pvt Ltd\nCreated ${new Date().toLocaleString('en-IN', { timeZone: TZ })} by ${S.me.name} (${S.me.code})\n\n    ${rec}\n\nKeep this in a safe place (office safe / MD). It can reset the vault password.\nWithout the vault password AND this key, employee documents can never be opened again.\n`;
+saveBlob(new Blob([t], { type: 'text/plain' }), 'ORBIS-vault-recovery-key.txt');
+}
+VIEWS.docs = async () => {
+if (!isAdmin()) {
+const docs = await q(sb.from('emp_docs').select('id,kind,size,uploaded_at').eq('employee_id', S.me.id));
+return `<div class="stack narrow"><div><span class="eyebrow">Your records</span><h2>My documents</h2></div>
+<div class="card"><p class="small muted">🔒 Your documents are encrypted. Only HR and the MD can open them. Ask HR if you need a copy or something is missing.</p>
+<div class="stack" style="gap:6px">${DOC_KINDS.map(([k, n, i]) => { const c = docs.filter(d => d.kind === k).length;
+return `<div class="docrow"><span class="pi">${i}</span><b class="grow">${n}</b>${c ? `<span class="chip good">✓ ${c} on file</span>` : '<span class="chip">Not on file</span>'}</div>`; }).join('')}</div></div></div>`;
+}
+await vaultLoad();
+if (!S.vault) return `<div class="stack narrow"><div><span class="eyebrow">One-time setup</span><h2>Set up the Document Vault</h2></div>
+<div class="card"><p>Employee documents are <b>encrypted on this computer before upload</b>. The vault password unlocks them. Nobody without it can open them — not Supabase, not a manager, not anyone who steals the files.</p>
+<p class="msg bad">⚠️ If the vault password <b>and</b> the recovery key are both lost, the documents can never be opened again. You will get a recovery key in the next step — print it and keep it in the office safe.</p>
+<label>Vault password (at least 10 characters)<input id="v_p1" type="password" autocomplete="new-password"></label>
+<label>Type it again<input id="v_p2" type="password" autocomplete="new-password"></label>
+<p class="small muted">Use a different password from your ORBIS sign-in. Share it only with the MD.</p>
+<button class="btn pri" data-doc="create">Create the vault</button></div></div>`;
+if (!S.dek) return `<div class="stack narrow"><div><span class="eyebrow">Employee documents</span><h2>🔒 Documents are locked</h2></div>
+<div class="card"><form id="vUnlockF" class="stack" style="gap:10px"><label>Vault password<input id="v_pw" type="password" autocomplete="off"></label>
+<button class="btn pri" type="submit">Unlock</button></form>
+<p class="small"><a href="#" data-doc="recshow">Forgot the vault password? Use the recovery key</a></p>
+<div id="recBox" class="stack" style="gap:10px;display:none"><label>Recovery key<input id="v_rec" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" autocomplete="off"></label>
+<label>New vault password (at least 10 characters)<input id="v_np1" type="password" autocomplete="new-password"></label><label>Type it again<input id="v_np2" type="password" autocomplete="new-password"></label>
+<button class="btn" data-doc="recover">Reset vault password</button></div>
+<p class="small muted">The vault locks itself after ${VAULT_IDLE_MIN} minutes and when you sign out.</p></div></div>`;
+vaultTouch();
+const emps = S.emps.filter(e => e.active || e.id === S.docEmp);
+if (!emps.find(e => e.id === S.docEmp)) S.docEmp = (emps[0] || {}).id;
+const all = await q(sb.from('emp_docs').select('*').order('uploaded_at'));
+const docs = all.filter(d => d.employee_id === S.docEmp); await Promise.all(docs.map(docMeta)); S.docList = docs;
+const done = new Set(docs.map(d => d.kind));
+const cnt = id => new Set(all.filter(d => d.employee_id === id).map(d => d.kind)).size;
+return `<div class="stack"><div class="row"><div><span class="eyebrow">🔓 Vault unlocked · AES-256</span><h2>Employee documents</h2></div>
+<div class="row" style="gap:8px"><button class="btn sm" data-doc="chpw">Change vault password</button><button class="btn sm" data-doc="lock">🔒 Lock now</button></div></div>
+<div class="card"><label>Employee<select id="docEmp">${emps.map(e => `<option value="${e.id}" ${e.id === S.docEmp ? 'selected' : ''}>${esc(e.code)} · ${esc(e.name)} — ${cnt(e.id)}/${DOC_KINDS.length - 1} types</option>`).join('')}</select></label>
+<div class="small muted" style="margin-top:6px">${done.size} of ${DOC_KINDS.length} document types on file · ${docs.length} files · ${fmtSize(docs.reduce((s, d) => s + d.size, 0))}</div></div>
+<input type="file" id="docFile" multiple accept="image/*,application/pdf,.doc,.docx" style="display:none">
+<div class="stack" style="gap:8px">${DOC_KINDS.map(([k, n, i, tip]) => { const ds = docs.filter(d => d.kind === k);
+return `<div class="card docrow ${ds.length ? '' : 'miss'}"><span class="pi">${i}</span><div class="grow"><b>${n}</b>${tip ? `<div class="small muted">${tip}</div>` : ''}
+${ds.map(d => `<div class="docf"><span class="grow">📄 ${esc(d._m.name)} <span class="small muted">· ${fmtSize(d.size)} · ${fmtD(ymd(d.uploaded_at))}</span></span>
+<button class="btn sm" data-doc="view" data-id="${d.id}">View</button><button class="btn sm" data-doc="dl" data-id="${d.id}">Download</button><button class="btn sm" data-doc="del" data-id="${d.id}">Delete</button></div>`).join('')}</div>
+${ds.length ? '<span class="chip good">✓</span>' : '<span class="chip warn">Missing</span>'}<button class="btn sm pri" data-doc="up" data-kind="${k}">+ Upload</button></div>`; }).join('')}</div>
+<p class="small muted">Files are encrypted on this computer before upload. Photos are shrunk automatically. Max 10 MB per file.</p></div>`;
+};
+document.addEventListener('submit', async e => {
+if (e.target.id !== 'vUnlockF') return; e.preventDefault(); const b = e.submitter; b.disabled = true; b.textContent = 'Unlocking…';
+try { const raw = await vaultOpenRaw($('#v_pw').value, false); S.dek = await importDek(raw); raw.fill(0); toast('🔓 Vault unlocked'); render(); }
+catch (er) { toast(errMsg(er), true); b.disabled = false; b.textContent = 'Unlock'; }
+});
+document.addEventListener('change', async e => {
+if (e.target.id === 'docEmp') { S.docEmp = e.target.value; render(); }
+if (e.target.id === 'docFile') {
+const files = [...e.target.files], kind = e.target.dataset.kind; e.target.value = ''; if (!files.length || !S.dek) return;
+vaultTouch(); let ok = 0;
+for (const f of files) { toast(`Encrypting & uploading ${f.name}…`); try { await docUpload(S.docEmp, kind, f); ok++; } catch (er) { toast(errMsg(er), true); } }
+if (ok) { toast(`🔒 ${ok} file${ok > 1 ? 's' : ''} encrypted and saved`); render(); }
+}
+});
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-doc]'); if (!b) return; e.preventDefault(); const a = b.dataset.doc, d = (S.docList || []).find(x => x.id === b.dataset.id);
+try {
+if (a === 'create') {
+const p1 = $('#v_p1').value, p2 = $('#v_p2').value;
+if (p1.length < 10) return toast('Use at least 10 characters', true); if (p1 !== p2) return toast('The two passwords do not match', true);
+b.disabled = true; b.textContent = 'Creating…'; const rec = await vaultCreate(p1); S.lastRec = rec;
+dlg('Save your recovery key', `<p>This key can reset the vault password. <b>It is shown only once.</b> Print it or save the file, and keep it in the office safe or with the MD.</p><div class="reckey">${rec}</div>
+<p class="msg bad">Without the vault password and this key, the documents can never be opened again.</p><label class="chk"><input type="checkbox" id="recOk"> I have printed or saved the recovery key</label>`,
+`<button class="btn" data-doc="recfile">⬇ Save as file</button><button class="btn" data-doc="recprint">🖨 Print</button><button class="btn pri" data-doc="recdone">Done</button>`);
+$('#dlg').oncancel = ev => { if (!$('#recOk')?.checked) ev.preventDefault(); };
+}
+if (a === 'recfile') recoveryFile(S.lastRec);
+if (a === 'recprint') { const w = open('', '_blank', 'width=600,height=400'); if (w) { w.document.write(`<pre style="font:16px monospace;padding:30px">ORBIS · Document Vault RECOVERY KEY\nAeden Fruits International Pvt Ltd\n${new Date().toLocaleString('en-IN', { timeZone: TZ })}\n\n<b style="font-size:22px">${S.lastRec}</b>\n\nKeep in the office safe.</pre>`); w.document.close(); w.print(); } }
+if (a === 'recdone') { if (!$('#recOk').checked) return toast('Please tick the box after saving the key', true); S.lastRec = null; $('#dlg').oncancel = null; closeDlg(); toast('🔓 Vault ready'); render(); }
+if (a === 'recshow') { const x = $('#recBox'); x.style.display = x.style.display === 'none' ? '' : 'none'; }
+if (a === 'recover') {
+const p1 = $('#v_np1').value; if (p1.length < 10) return toast('Use at least 10 characters', true); if (p1 !== $('#v_np2').value) return toast('The two passwords do not match', true);
+b.disabled = true; const raw = await vaultOpenRaw($('#v_rec').value, true); await vaultSetPw(raw, p1); S.dek = await importDek(raw); raw.fill(0); toast('✓ New vault password set'); render();
+}
+if (a === 'lock') vaultLock('🔒 Vault locked');
+if (a === 'chpw') dlg('Change vault password', `<label>Current vault password<input id="cv_o" type="password"></label><label>New vault password (at least 10 characters)<input id="cv_1" type="password"></label><label>Type it again<input id="cv_2" type="password"></label><p class="small muted">Documents stay the same; only the password that unlocks them changes. The recovery key keeps working.</p>`, `<button class="btn pri" data-doc="chpwsave">Save</button>`);
+if (a === 'chpwsave') { const p1 = $('#cv_1').value; if (p1.length < 10) return toast('Use at least 10 characters', true); if (p1 !== $('#cv_2').value) return toast('The two passwords do not match', true);
+const raw = await vaultOpenRaw($('#cv_o').value, false); await vaultSetPw(raw, p1); raw.fill(0); closeDlg(); toast('✓ Vault password changed'); }
+if (!S.dek && ['up', 'view', 'dl', 'del', 'delok'].includes(a)) return render();
+if (a === 'up') { const f = $('#docFile'); f.dataset.kind = b.dataset.kind; f.click(); }
+if (a === 'view' || a === 'dl') { vaultTouch(); b.disabled = true; const o = await docOpen(d); b.disabled = false;
+if (a === 'dl') return saveBlob(o.blob, o.name);
+const u = URL.createObjectURL(o.blob), img = o.mime.startsWith('image/'), pdf = o.mime === 'application/pdf';
+dlg(esc(o.name), img ? `<img class="docview" src="${u}" alt="">` : pdf ? `<iframe class="docview pdf" src="${u}"></iframe>` : '<p>This file type cannot be previewed. Use Download.</p>', `<button class="btn" data-doc="dl" data-id="${d.id}">⬇ Download</button>`);
+$('#dlg').classList.add('wide'); $('#dlg').addEventListener('close', () => { $('#dlg').classList.remove('wide'); URL.revokeObjectURL(u); }, { once: true }); }
+if (a === 'del') dlg('Delete document?', `<p>Delete <b>${esc(d._m.name)}</b> (${esc(DOC_KINDS.find(k => k[0] === d.kind)?.[1] || d.kind)}) for ${esc(empById(d.employee_id)?.name || '')}? This cannot be undone.</p>`, `<button class="btn pri" data-doc="delok" data-id="${d.id}">Delete</button>`);
+if (a === 'delok') { await sb.storage.from(DOC_BUCKET).remove([d.path]); await q(sb.from('emp_docs').delete().eq('id', d.id)); closeDlg(); toast('Deleted'); render(); }
+} catch (er) { toast(errMsg(er), true); b.disabled = false; if (a === 'create') b.textContent = 'Create the vault'; }
 });
 boot();
 </script></body></html>
