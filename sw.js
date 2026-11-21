@@ -1,5 +1,5 @@
-const C = 'orbis-v3';
-self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-192.png'])).catch(() => { })); });
+const C = 'orbis-v4';
+self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-aeden-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { for (const k of await caches.keys()) if (k !== C) await caches.delete(k); await self.clients.claim(); })()); });
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return; const u = new URL(r.url);
