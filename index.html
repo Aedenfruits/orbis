@@ -393,7 +393,7 @@ await new Promise(res => { const b = $('.gobtn'); function done() { clearInterva
 await launchFx();
 }
 function navList() {
-const n = [['punch', 'Punch', '⏱️'], ['news', 'News', '📢'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['tasks', 'Tasks', '✅'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['people', 'Directory', '📇'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂'], ['pay', 'My payslips', '💰']];
+const n = [['punch', 'Punch', '⏱️'], ['news', 'News', '📢'], ['my', 'My attendance', '🗓️'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['tasks', 'Tasks', '✅'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['people', 'Directory', '📇'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂'], ['pay', 'My payslips', '💰']];
 if (S.team.length || isAdmin()) n.push(['team', isAdmin() ? 'All staff' : 'My team', '👥']);
 if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['payroll', 'Payroll', '🧾'], ['employees', 'Employees', '🧑‍💼'], ['assets', 'Assets', '💻'], ['exits', 'Exits', '🚪'], ['pulse', 'Team pulse', '💗'], ['log', 'Activity log', '🕵️'], ['setup', 'Computers & settings', '⚙️']);
 return n;
@@ -1688,7 +1688,7 @@ function taskPeople() { const ids = isAdmin() ? S.emps.filter(e => e.active).map
 function taskCard(t) {
 const mine = t.assigned_to === S.me.id, gave = t.assigned_by === S.me.id, today = todayStr(); const od = t.due && t.status !== 'done' && t.due < today;
 const [lab, c, ic] = TST[t.status] || TST.open; const by = empById(t.assigned_by), to = empById(t.assigned_to);
-return `<div class="task ${t.priority === 'high' ? 'hi' : ''} ${t.status}"><div class="grow"><div class="row"><b>${t.priority === 'high' ? '⚡ ' : ''}${esc(t.title)}</b>${t.due ? `<span class="chip ${od ? 'crit' : t.due === today ? 'warn' : ''}">📅 ${t.due === today ? 'Today' : fmtD(t.due)}${od ? ' · overdue' : ''}</span>` : ''}</div>
+return `<div class="task ${t.priority === 'high' ? 'hi' : ''} ${t.status}"><div class="grow"><div class="row"><b>${t.priority === 'high' ? '⚡ ' : ''}${esc(t.title)}</b>${t.due ? `<span class="chip ${od ? 'crit' : t.due === today ? 'warn' : ''}">🗓️ ${t.due === today ? 'Today' : fmtD(t.due)}${od ? ' · overdue' : ''}</span>` : ''}</div>
 <small class="muted">${mine && !gave ? `From ${esc(by?.name || '—')}` : gave && !mine ? `For ${esc(to?.name || '—')}` : 'My own task'} · ${fmtD(ymd(t.created_at))}${t.done_at ? ' · done ' + fmtD(ymd(t.done_at)) : ''}</small>
 ${t.notes ? `<div class="small">${esc(t.notes)}</div>` : ''}${t.reply ? `<div class="small tr">💬 ${esc(t.reply)}</div>` : ''}</div>
 <div class="hstack">${mine ? `<select data-tst="${t.id}">${Object.entries(TST).map(([k, v]) => `<option value="${k}" ${t.status === k ? 'selected' : ''}>${v[2]} ${v[0]}</option>`).join('')}</select><button class="btn sm" data-tk="reply" data-id="${t.id}" title="Reply">💬</button>` : `<span class="chip ${c}">${ic} ${lab}</span>`}${gave || isAdmin() ? `<button class="btn sm" data-tk="del" data-id="${t.id}" title="Delete">✕</button>` : ''}</div></div>`;
@@ -2073,7 +2073,7 @@ document.addEventListener('touchend', e => { const p = e.target.closest('.mspane
 const _punchM = VIEWS.punch;
 VIEWS.punch = async () => {
 const h = await _punchM(); const b = S.badge || {};
-const q = [['leave', '🏖️', 'Apply leave', ''], ['my', '📅', 'My attendance', ''], ['tasks', '✅', 'My tasks', b.tasks], ['pay', '💰', 'Payslips', b.pay], ['plan', '📝', 'Work plan', b.plan], ['news', '📢', 'News', b.news]].filter(x => navList().some(n => n[0] === x[0]));
+const q = [['leave', '🏖️', 'Apply leave', ''], ['my', '🗓️', 'My attendance', ''], ['tasks', '✅', 'My tasks', b.tasks], ['pay', '💰', 'Payslips', b.pay], ['plan', '📝', 'Work plan', b.plan], ['news', '📢', 'News', b.news]].filter(x => navList().some(n => n[0] === x[0]));
 return h + `<div class="mquick">${q.map(([k, i, l, n]) => `<a href="#${k}"><i>${i}</i><span>${l}</span>${n ? `<em class="nb">${n}</em>` : ''}</a>`).join('')}</div>`;
 };
 const DEP_ICON = n => { n = String(n).toLowerCase(); return /proc|purchas/.test(n) ? '🛒' : /doc/.test(n) ? '📑' : /fleet|transport|logist|driver/.test(n) ? '🚚' : /ware|store|godown/.test(n) ? '🏭' : /acc|financ/.test(n) ? '💰' : /sale|market/.test(n) ? '🍎' : /hr|human/.test(n) ? '🧑‍💼' : /admin|manag|md|ceo/.test(n) ? '🏢' : /it\b|tech/.test(n) ? '💻' : '🏷️'; };
