@@ -390,7 +390,7 @@ const VIEWS = {};
 async function render() {
 document.body.className = 'app';
 const v = VIEWS[S.view] || VIEWS.punch;
-try { $('#app').innerHTML = shell('<div class="loading"><div class="ldorb"><span class="ldr"><i></i></span><b>${LOGO}</b></div><div class="skel"><i></i><i></i><i></i></div></div>'); $('#main').innerHTML = await v();
+try { $('#app').innerHTML = shell('<div class="loading"><div class="ldorb"><span class="ldr"><i></i></span><b>' + LOGO + '</b></div><div class="skel"><i></i><i></i><i></i></div></div>'); $('#main').innerHTML = await v();
 if (S.view === 'punch' && S.me && !S.me.photo_at) $('#main').insertAdjacentHTML('afterbegin', `<div class="card phnudge"><span class="ava">📷</span><div class="grow"><b>Add your photo</b><div class="small muted">It goes on your Aeden ID card. Takes 10 seconds.</div></div><button class="btn pri sm" data-photo="${S.me.id}">Add photo</button></div>`);
 if (S.view === 'punch' && (S.badge || {}).news) $('#main').insertAdjacentHTML('afterbegin', `<a class="card phnudge" href="#news" style="text-decoration:none;color:inherit"><span class="ava">📢</span><div class="grow"><b>${S.badge.news} new announcement${S.badge.news > 1 ? 's' : ''}</b><div class="small muted">Tap to read</div></div><span class="btn sm">Open</span></a>`);
 after(); fillAvatars(); paintBadges(); }
