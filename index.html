@@ -607,7 +607,7 @@ return `<div class="stack narrow"><div><span class="eyebrow">Leave</span><h2>App
 <div class="card"><h3>Leave balance ${yr}</h3><div class="lbg">${cards}</div>${reqs ? `<h4>My requests</h4><div class="stack" style="gap:6px">${reqs}</div>` : ''}</div>
 ${holCard()}
 <div class="card stack"><div class="grid2"><label>Leave type<select id="a_type">${ltypes().map(t => `<option value="${t.k}">${esc(t.name)}</option>`).join('')}</select></label><label>From<input type="date" id="a_from" value="${todayStr()}"></label><label>To<input type="date" id="a_to" value="${todayStr()}"></label></div>
-<div id="a_after"></div><div id="a_certbox" class="certbox" hidden><b>🩺 Doctor's certificate needed</b><p class="small muted">Sick leave of more than ${Number(C().sickCertAfter) || 1} day needs a doctor's certificate. Take a clear photo of the whole certificate — ORBIS checks it on this phone/computer.</p><label class="btn sm pri" style="display:inline-flex">📷 Take photo / choose file<input type="file" id="a_cert" accept="image/*,application/pdf" hidden></label><div id="a_certst"></div></div><label>Reason<textarea id="a_reason" rows="2"></textarea></label><button class="btn pri wide" id="a_send">Send request</button></div></div>`;
+<div id="a_after"></div><div id="a_certbox" class="certbox" hidden><b>🩺 Doctor's certificate or prescription needed</b><p class="small muted">Sick leave of more than ${Number(C().sickCertAfter) || 1} day needs a doctor's certificate <b>or</b> the doctor's prescription. Take a clear photo of the whole page — ORBIS checks it on this phone/computer.</p><label class="btn sm pri" style="display:inline-flex">📷 Take photo / choose file<input type="file" id="a_cert" accept="image/*,application/pdf" hidden></label><div id="a_certst"></div></div><label>Reason<textarea id="a_reason" rows="2"></textarea></label><button class="btn pri wide" id="a_send">Send request</button></div></div>`;
 };
 function leaveAfter() {
 const upd = () => { const t = $('#a_type').value, f = $('#a_from').value, to = $('#a_to').value; document.querySelectorAll('.lb').forEach(c => c.classList.toggle('on', c.dataset.lt === t));
@@ -616,7 +616,7 @@ $('#a_after').innerHTML = `<div class="msg ${after < 0 ? 'bad' : ''}">${days} wo
 S.cert = null; ['a_type', 'a_from', 'a_to'].forEach(id => $('#' + id).addEventListener('change', upd)); upd(); certBlock();
 document.querySelectorAll('.lb').forEach(c => c.onclick = () => { $('#a_type').value = c.dataset.lt; upd(); });
 $('#a_send').onclick = async () => { const f = $('#a_from').value, to = $('#a_to').value; if (!f || !to || to < f) return toast('Check the dates', true); const days = countDays(f, to); if (!days) return toast('Those dates are all Sundays', true);
-const typ = $('#a_type').value, need = certNeeded(typ, days); if (need && !S.cert) return toast("Add the doctor's certificate first", true); if (S.cert?.busy) return toast('Still reading the certificate — one moment…', true);
+const typ = $('#a_type').value, need = certNeeded(typ, days); if (need && !S.cert) return toast("Add the doctor's certificate or prescription first", true); if (S.cert?.busy) return toast('Still reading the certificate — one moment…', true);
 const btn = $('#a_send'); btn.disabled = true;
 try { const id = crypto.randomUUID(), row = { id, employee_id: S.me.id, type: typ, from_date: f, to_date: to, days, reason: $('#a_reason').value.trim() };
 if (S.cert && isSick(typ)) { row.cert_path = await certUpload(id); row.cert_check = S.cert.check; }
@@ -706,7 +706,7 @@ if (tab === 'leave') {
 const lv = (await q(sb.from('leave_requests').select('*').order('created_at', { ascending: false }).limit(200))).filter(l => ids.includes(l.employee_id));
 const pend = lv.filter(l => l.status === 'pending'), done = lv.filter(l => l.status !== 'pending').slice(0, 15);
 S.certRows = Object.fromEntries(lv.filter(l => l.cert_path).map(l => [l.id, l]));
-const card = (l, act) => `<div class="li"><div><b>${esc(empById(l.employee_id)?.name)} · ${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.reason ? ' · ' + esc(l.reason) : ''}</small>${l.cert_path ? `<div class="certline">${certChips(l.cert_check)} <button class="btn sm" data-cert="${l.id}">🩺 View certificate</button></div>` : certNeeded(l.type, Number(l.days)) ? '<div class="certline"><span class="chip bad">No doctor\'s certificate</span></div>' : ''}</div>${act ? `<div class="hstack"><button class="btn sm good" data-dl="approved" data-id="${l.id}">Approve</button><button class="btn sm bad" data-dl="rejected" data-id="${l.id}">Reject</button></div>` : stChip(l.status)}</div>`;
+const card = (l, act) => `<div class="li"><div><b>${esc(empById(l.employee_id)?.name)} · ${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.reason ? ' · ' + esc(l.reason) : ''}</small>${l.cert_path ? `<div class="certline">${certChips(l.cert_check)} <button class="btn sm" data-cert="${l.id}">🩺 View ${l.cert_check?.kind === 'rx' ? 'prescription' : 'certificate'}</button></div>` : certNeeded(l.type, Number(l.days)) ? '<div class="certline"><span class="chip bad">No certificate / prescription</span></div>' : ''}</div>${act ? `<div class="hstack"><button class="btn sm good" data-dl="approved" data-id="${l.id}">Approve</button><button class="btn sm bad" data-dl="rejected" data-id="${l.id}">Reject</button></div>` : stChip(l.status)}</div>`;
 body = `<div class="card"><h3>Waiting for your approval</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(l => card(l, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(l => card(l, 0)).join('')}</div></div>` : ''}`;
 }
 if (tab === 'fixes') body = await teamFixes(ids);
@@ -2849,7 +2849,8 @@ for (const m of t.matchAll(/\b(\d{1,2})(?:st|nd|rd|th)?\s*[-\s.,]?\s*(jan|feb|ma
 return out; }
 function certAnalyse(text, conf, f, to, days, name) {
 const t = text.toLowerCase().replace(/[|]/g, 'l'), words = t.replace(/[^a-z0-9 ]/g, ' ');
-const med = ['doctor', 'dr.', 'dr ', 'physician', 'mbbs', ' md', 'clinic', 'hospital', 'medical', 'certificate', 'rest', 'advised', 'diagnos', 'treatment', 'patient', 'fever', 'unfit', 'fit to', 'consult'].filter(w => t.includes(w));
+const med = ['doctor', 'dr.', 'dr ', 'physician', 'mbbs', ' md', 'clinic', 'hospital', 'medical', 'certificate', 'rest', 'advised', 'diagnos', 'treatment', 'patient', 'fever', 'unfit', 'fit to', 'consult', 'rx', 'tab ', 'tab.', 'cap ', 'cap.', 'syp', 'syrup', ' mg', 'after food', 'before food', 'prescri', 'review after'].filter(w => t.includes(w));
+const rx = ['rx', 'tab ', 'tab.', 'cap ', 'cap.', 'syp', 'syrup', ' mg', 'after food', 'before food', 'prescri', ' od', ' bd', ' tds', '1-0-1', '1-1-1', '0-0-1'].filter(w => t.includes(w)).length, kind = rx >= 2 && !t.includes('certif') ? 'rx' : 'cert';
 const reg = /reg(?:n|d|istration)?\.?\s*(?:no|number|#)?\.?\s*[:\-]?\s*[a-z\/\- ]{0,8}\d{3,}/i.test(text) || /\b(tcmc|kmc|mci|nmc|tcm|tnmc|kmpc|smc)\b/i.test(text);
 const doc = /\bdr\.?\s+[a-z]{3,}/i.test(text) || t.includes('doctor') || t.includes('mbbs');
 const parts = String(name || '').toLowerCase().split(/\s+/).filter(p => p.length >= 3), nameHit = parts.some(p => words.includes(p));
@@ -2858,12 +2859,12 @@ const nd = (t.match(/\b(\d{1,2})\s*(?:\(\w+\)\s*)?days?\b/) || [])[1], daysHit =
 const readable = text.replace(/\s/g, '').length >= 40 && conf >= 35;
 const checks = { readable, medical: med.length >= 2, doctor: doc, reg, name: nameHit, dates: dateHit };
 const ok = readable && checks.medical && checks.doctor && nameHit && dateHit;
-return { ok, status: ok ? 'ok' : readable ? 'review' : 'unreadable', checks, daysOnCert: nd ? Number(nd) : null, daysHit, conf: Math.round(conf), at: new Date().toISOString() };
+return { ok, kind, status: ok ? 'ok' : readable ? 'review' : 'unreadable', checks, daysOnCert: nd ? Number(nd) : null, daysHit, conf: Math.round(conf), at: new Date().toISOString() };
 }
-const CERT_LBL = { readable: 'Clear photo', medical: 'Medical certificate', doctor: "Doctor's name", reg: 'Doctor reg. no.', name: 'Name matches', dates: 'Dates match' };
+const CERT_LBL = { readable: 'Clear photo', medical: 'Medical document', doctor: "Doctor's name", reg: 'Doctor reg. no.', name: 'Name matches', dates: 'Dates match' };
 function certChips(c) { if (!c) return '<span class="chip">Not checked</span>';
 if (c.status === 'pdf') return '<span class="chip warn">📄 PDF — check by eye</span>';
-return `<span class="chip ${c.ok ? 'good' : 'warn'}">${c.ok ? '✅ Looks valid' : c.status === 'unreadable' ? '⚠️ Photo not clear' : '⚠️ Check this'}</span> <span class="certck">${Object.entries(CERT_LBL).map(([k, l]) => `<i class="${c.checks?.[k] ? 'y' : 'n'}">${c.checks?.[k] ? '✓' : '✗'} ${l}</i>`).join('')}${c.daysOnCert ? `<i class="${c.daysHit ? 'y' : 'n'}">${c.daysHit ? '✓' : '✗'} ${c.daysOnCert} days on certificate</i>` : ''}</span>`; }
+return `${c.kind ? `<span class="chip">${c.kind === 'rx' ? '💊 Prescription' : '📄 Certificate'}</span> ` : ''}<span class="chip ${c.ok ? 'good' : 'warn'}">${c.ok ? '✅ Looks valid' : c.status === 'unreadable' ? '⚠️ Photo not clear' : '⚠️ Check this'}</span> <span class="certck">${Object.entries(CERT_LBL).map(([k, l]) => `<i class="${c.checks?.[k] ? 'y' : 'n'}">${c.checks?.[k] ? '✓' : '✗'} ${l}</i>`).join('')}${c.daysOnCert ? `<i class="${c.daysHit ? 'y' : 'n'}">${c.daysHit ? '✓' : '✗'} ${c.daysOnCert} days on certificate</i>` : ''}</span>`; }
 S.cert = null;
 async function certPick(file) {
 const box = $('#a_certst'); if (!file) return; if (file.size > 8e6) return toast('File too big — max 8 MB', true);
@@ -2887,7 +2888,7 @@ async function certUpload(leaveId) { const c = S.cert, body = c.blob || c.file, 
 const { error } = await sb.storage.from(MED_BUCKET).upload(path, body, { contentType: ext === 'pdf' ? 'application/pdf' : 'image/jpeg', upsert: false }); if (error) throw error; return path; }
 async function certView(l) {
 try { const { data, error } = await sb.storage.from(MED_BUCKET).download(l.cert_path); if (error) throw error; const u = URL.createObjectURL(data);
-dlg(`Doctor's certificate · ${esc(empById(l.employee_id)?.name || '')}`, `<p class="small muted">${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''} · ${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}</p><div style="margin:8px 0 12px">${certChips(l.cert_check)}</div>
+dlg(`${l.cert_check?.kind === 'rx' ? "Doctor's prescription" : "Doctor's certificate"} · ${esc(empById(l.employee_id)?.name || '')}`, `<p class="small muted">${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''} · ${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}</p><div style="margin:8px 0 12px">${certChips(l.cert_check)}</div>
 ${/pdf$/.test(l.cert_path) ? `<iframe src="${u}" style="width:100%;height:60vh;border:0;border-radius:12px"></iframe>` : `<img src="${u}" style="width:100%;border-radius:12px;border:1px solid var(--line)">`}
 <p class="small muted">The automatic check reads the text on the certificate. It cannot prove a certificate is genuine — if in doubt, call the clinic.</p>`, `<a class="btn" href="${u}" download="certificate.${/pdf$/.test(l.cert_path) ? 'pdf' : 'jpg'}">⬇ Download</a>`);
 } catch (er) { toast(errMsg(er), true); } }
@@ -2941,7 +2942,7 @@ else openDoc(letterHTML('Appointment letter', `${to}<p>Dear ${esc(name.split(' '
 <ol><li><b>Salary:</b> your monthly gross salary is ${inr(sal)}, as detailed below. Salary is paid monthly to your bank account.${ltrPay(sal)}</li>
 <li><b>Probation:</b> you will be on probation for ${Number(g('lt_p')) || 6} months. On satisfactory completion you will be confirmed in writing.</li>
 <li><b>Working hours:</b> ${sh.start} to ${sh.end} (${esc(sh.name)} shift), with ${esc(wo)} as weekly off. You will record attendance in ORBIS.${g('lt_r') ? ` You will report to ${esc(g('lt_r'))}.` : ''}</li>
-<li><b>Leave:</b> ${esc(leave)} per year, as per company leave policy. Sick leave of more than one day needs a doctor's certificate.</li>
+<li><b>Leave:</b> ${esc(leave)} per year, as per company leave policy. Sick leave of more than one day needs a doctor's certificate or prescription.</li>
 <li><b>Notice period:</b> either side may end this employment with ${Number(g('lt_np')) || noticeDays()} days' written notice or salary in lieu of notice. During probation the notice period is 15 days.</li>
 <li><b>Confidentiality:</b> you will keep all company information, prices, supplier and customer details confidential during and after your employment.</li>
 <li><b>Conduct:</b> you will follow the company's HR policies, as published in ORBIS and updated from time to time.</li>
