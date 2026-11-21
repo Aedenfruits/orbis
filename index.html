@@ -1476,7 +1476,7 @@ await loadNews(); const star = await starOfMonth(); const cel = celebrations(); 
 const list = [...S.ann].sort((a, b) => (b.pinned - a.pinned) || b.created_at.localeCompare(a.created_at));
 const audience = a => S.emps.filter(e => e.active && e.auth_uid && (!a.office || e.office === a.office));
 return `<div class="stack narrow"><div><span class="eyebrow">Aeden today</span><h2>📢 News</h2></div>
-${'Notification' in window && Notification.permission === 'default' ? `<div class="card phnudge"><span class="ava">🔔</span><div class="grow"><b>Turn on reminders</b><div class="small muted">Get a pop-up if you forget to check out, your break runs over, or someone needs your approval.</div></div><button class="btn pri sm" id="notifOn">Turn on</button></div>` : ''}
+${pushCard()}
 ${today.length ? `<div class="card celeb">${today.map(c => `<div class="row" style="justify-content:flex-start;gap:12px">${avatarHTML(c.e)}<div><b>${esc(c.txt)} today!</b><div class="small muted">${esc(c.e.desig || '')} · ${esc(c.e.dept || '')}</div></div></div>`).join('')}<div class="confetti">${'🎊🎉✨🎈🎂'.repeat(4)}</div></div>` : ''}
 ${star ? `<div class="card starc"><div class="row" style="justify-content:flex-start;gap:14px">${star.emp ? avatarHTML(star.emp) : ''}<div><span class="eyebrow">⭐ Star of ${esc(star.month)}</span><h3 style="margin:2px 0">${esc(star.name)}</h3><div class="small muted">${star.pct}% attendance score · ${star.ontime}/${star.days} days on time</div></div></div></div>` : ''}
 ${isAdmin() ? `<div class="card"><h3>Post an announcement</h3><label>Title<input id="an_t" placeholder="e.g. Office closed on Friday"></label><label>Message<textarea id="an_b" rows="3"></textarea></label>
@@ -1492,7 +1492,7 @@ ${holCard()}</div>`;
 document.addEventListener('click', async e => {
 const b = e.target.closest('#an_post,[data-anseen],[data-anpin],[data-andel],[data-anwho],#notifOn'); if (!b) return; e.preventDefault();
 try {
-if (b.id === 'notifOn') { const p = await Notification.requestPermission(); toast(p === 'granted' ? '🔔 Reminders on' : 'Reminders stay off'); render(); }
+if (b.id === 'notifOn') { await pushTurnOn(b); render(); }
 if (b.id === 'an_post') { const title = $('#an_t').value.trim(); if (!title) return toast('Write a title', true);
 await q(sb.from('announcements').insert({ title, body: $('#an_b').value.trim(), office: $('#an_o').value, pinned: $('#an_p').checked, created_by: S.me.id })); toast('📢 Posted'); render(); }
 if (b.dataset.anseen) { await q(sb.from('announcement_reads').insert({ ann_id: b.dataset.anseen, employee_id: S.me.id })); await refreshBadges(); render(); }
@@ -1532,7 +1532,7 @@ S.badge = b; paintBadges(); return b;
 function paintBadges() { document.querySelectorAll('nav a').forEach(a => { const k = a.getAttribute('href').slice(1), n = (S.badge || {})[k]; let em = a.querySelector('em.nb'); if (n) { if (!em) { em = document.createElement('em'); em.className = 'nb'; a.appendChild(em); } em.textContent = n; } else if (em) em.remove(); }); }
 function notify(key, title, body) {
 S.notified = S.notified || {}; if (S.notified[key]) return; S.notified[key] = 1; toast(`🔔 ${title}${body ? ' — ' + body : ''}`);
-try { if ('Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') new Notification(title, { body, icon: '/icon-orbis-192.png', tag: key }); } catch { }
+try { if (!lsGet('pushOn', false) && 'Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') new Notification(title, { body, icon: '/icon-orbis-192.png', tag: key }); } catch { }
 }
 async function remindTick() {
 if (!S.me) return; const t = todayStr(), now = hm(new Date().toISOString()), c = C();
@@ -2038,7 +2038,7 @@ p.innerHTML = `<div class="msgrab"></div>${MGROUPS.map(([g, ks]) => { const it =
 const e = S.me;
 p.innerHTML = `<div class="msgrab"></div><div class="mme">${avatarHTML(e, 'lg')}<div><b>${esc(e.name)}</b><small>${esc(e.code)}${e.desig ? ' · ' + esc(e.desig) : ''}</small><small>${esc([e.dept, e.office].filter(Boolean).join(' · '))}</small></div></div>
 <div class="mlist"><button data-photo="${e.id}" data-msclose>📷<span>My photo</span></button><button onclick="pwDlg()" data-msclose>🔑<span>Change password</span></button>
-${S.canInstall ? '<button class="inst" data-msclose>⬇<span>Install ORBIS on this phone</span></button>' : ''}<a href="#news" data-msclose>🔔<span>Reminders & news</span></a>
+${S.canInstall ? '<button class="inst" data-msclose>⬇<span>Install ORBIS on this phone</span></button>' : ''}<button id="notifOn" data-msclose>🔔<span>${lsGet('pushOn', false) && window.Notification?.permission === 'granted' ? 'Notifications on · send a test' : 'Turn on notifications'}</span></button>
 <button class="danger" onclick="signOut()" data-msclose>↪<span>Sign out</span></button></div><p class="small muted center">ORBIS · Aeden Fruits International</p>`;
 }
 fillAvatars(); const s = $('#msheet'); s.hidden = false; requestAnimationFrame(() => s.classList.add('open'));
@@ -2105,5 +2105,38 @@ await new Promise(res => { const b = $('.gobtn'); function done() { clearInterva
 await launchFx();
 };
 function wCount(e, k) { const n = Number(e.dataset.n) || 0, t0 = performance.now() + 700 + k * 150; (function f(t) { const q2 = Math.max(0, Math.min(1, (t - t0) / 900)); e.textContent = Math.round(n * (1 - Math.pow(1 - q2, 3))); if (q2 < 1) requestAnimationFrame(f); })(performance.now()); }
+const PUSH_FN = SB_URL + '/functions/v1/orbis-push';
+const pushOK = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+async function pushSubscribe(ask) {
+if (!S.me || KMODE()) return 'kiosk'; if (!pushOK()) return 'unsupported';
+let perm = Notification.permission; if (ask && perm === 'default') perm = await Notification.requestPermission();
+if (perm !== 'granted') { lsSet('pushOn', false); return perm; }
+const reg = await navigator.serviceWorker.ready; const key = await rpc('push_public_key'); if (!key) return 'nokey';
+let sub = await reg.pushManager.getSubscription();
+if (sub && lsGet('pushKey', '') !== key) { await sub.unsubscribe().catch(() => { }); sub = null; }
+if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(key) });
+lsSet('pushKey', key);
+const save = s2 => { const j = s2.toJSON(); return q(sb.from('push_subs').upsert({ employee_id: S.me.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, device: (onMobile() ? '📱 ' : '🖥️ ') + (navigator.userAgentData?.platform || navigator.platform || '') }, { onConflict: 'endpoint' })); };
+try { await save(sub); } catch { await sub.unsubscribe().catch(() => { }); sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(key) }); await save(sub); }
+lsSet('pushOn', true); return 'granted';
+}
+async function pushTest() { const r = await fetch(PUSH_FN, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (S.session?.access_token || '') }, body: '{"test":true}' }); return r.ok ? (await r.json()).sent : 0; }
+async function pushTurnOn(b) {
+if (!pushOK()) return toast(isIOS() ? '📱 On iPhone: tap Share → Add to Home Screen, open ORBIS from the home screen, then turn on notifications.' : 'This browser can\'t show notifications. Use Chrome or Edge.', true);
+if (Notification.permission === 'denied') return toast('Notifications are blocked for aedenorbis.com. Allow them in your browser or phone settings, then try again.', true);
+if (b) b.disabled = true;
+try { const p = await pushSubscribe(true); if (p !== 'granted') return toast('Notifications stay off', true); const n = await pushTest(); toast(n ? '🔔 Notifications on — a test notification is on its way' : '🔔 Notifications on'); }
+catch (er) { toast('Could not turn on notifications: ' + errMsg(er), true); } finally { if (b) b.disabled = false; }
+}
+function pushCard() {
+if (KMODE() || (lsGet('pushOn', false) && pushOK() && Notification.permission === 'granted')) return '';
+const blocked = pushOK() && Notification.permission === 'denied', ios = !pushOK() && isIOS();
+return `<div class="card phnudge pushc"><span class="ava">🔔</span><div class="grow"><b>Get reminders even when ORBIS is closed</b><div class="small muted">${blocked ? 'Notifications are blocked. Allow them for aedenorbis.com in your browser or phone settings.' : ios ? 'On iPhone: Share → Add to Home Screen, then open ORBIS from the home screen and tap Turn on.' : 'Missed check-out, long breaks, approvals, tasks and payslips.'}</div></div>${blocked || ios ? '' : '<button class="btn pri sm" id="notifOn">Turn on</button>'}</div>`;
+}
+const _punchP = VIEWS.punch; VIEWS.punch = async () => { const h = await _punchP(); const c = pushCard(); return c ? `<div style="max-width:720px;margin:0 auto 12px">${c}</div>${h}` : h; };
+const _startRem = startReminders; startReminders = function () { _startRem(); setTimeout(() => pushSubscribe(false).catch(() => { }), 3000); };
+const _signOutP = signOut; signOut = async function () { try { if (pushOK()) { const reg = await navigator.serviceWorker.getRegistration(); const sub = await reg?.pushManager.getSubscription(); if (sub) await sb.from('push_subs').delete().eq('endpoint', sub.endpoint); } } catch { } lsSet('pushOn', false); return _signOutP(); };
 boot();
 </script></body></html>
