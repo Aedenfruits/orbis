@@ -719,7 +719,7 @@ if (a === 'new' || a === 'edit') {
 const x = id ? empById(id) : { active: true, access: '' }; const opt = (arr, v) => arr.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('');
 dlg(id ? 'Edit employee' : 'Add employee', `<div class="grid2"><label>Employee code<input id="e_code" value="${esc(x.code || '')}" ${id ? 'disabled' : ''} placeholder="ADN0072"></label><label>Full name<input id="e_name" value="${esc(x.name || '')}"></label>
 <label>Designation<input id="e_desig" value="${esc(x.desig || '')}"></label><label>Department<select id="e_dept"><option></option>${opt(C().depts || [], x.dept)}</select></label>
-<label>Office<select id="e_office"><option></option>${opt(C().offices || [], x.office)}</select></label><label>Joining date<input type="date" id="e_join" value="${x.join_date || ''}"></label>
+<label>Office<select id="e_office"><option></option>${opt(C().offices || [], x.office)}</select></label><label>Joining date<input type="date" id="e_join" value="${x.join_date || ''}"></label><label>Biometric machine ID <span class="small muted">(only if different from code)</span><input id="e_bio" value="${esc(x.bio_id || '')}" placeholder="e.g. 71"></label>
 <label>Reports to<select id="e_mgr"><option value="">— nobody —</option>${S.emps.filter(o => o.id !== id && o.active).map(o => `<option value="${o.id}" ${x.reports_to === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
 <label>Access level<select id="e_acc"><option value="" ${!x.access ? 'selected' : ''}>Employee — own data (+ team if manager)</option><option value="hr" ${x.access === 'hr' ? 'selected' : ''}>HR — all employees</option><option value="md" ${x.access === 'md' ? 'selected' : ''}>MD / Director — all employees</option></select></label></div>
 ${id ? `<label class="chk"><input type="checkbox" id="e_active" ${x.active ? 'checked' : ''}> Active (untick when the person leaves)</label>` : ''}
@@ -728,7 +728,7 @@ ${id ? `<label class="chk"><input type="checkbox" id="e_active" ${x.active ? 'ch
 }
 if (a === 'save') {
 const v = k => $('#' + k)?.value?.trim() ?? ''; const pw = $('#e_pw').value;
-const row = { name: v('e_name'), desig: v('e_desig'), dept: v('e_dept'), office: v('e_office'), join_date: v('e_join') || null, reports_to: v('e_mgr') || null, access: v('e_acc') };
+const row = { name: v('e_name'), desig: v('e_desig'), dept: v('e_dept'), office: v('e_office'), join_date: v('e_join') || null, reports_to: v('e_mgr') || null, access: v('e_acc'), bio_id: v('e_bio') || null };
 if (!row.name) return toast('Enter the name', true);
 if (id && $('#e_active')) row.active = $('#e_active').checked;
 if (id && id === S.me.id && row.access !== S.me.access && !confirm('You are changing your own access level. Continue?')) return;
@@ -2018,7 +2018,7 @@ more: '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5"
 };
 const mico = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${MI[k]}</svg>`;
 const TABS = [['punch', 'Home'], ['leave', 'Leave'], ['tasks', 'Tasks'], ['news', 'News']];
-const MGROUPS = [['Me', ['my', 'plan', 'pay', 'docs', 'policies', 'board', 'people']], ['Team', ['team']], ['HR & admin', ['register', 'payroll', 'statutory', 'employees', 'assets', 'exits', 'pulse', 'log', 'setup']]];
+const MGROUPS = [['Me', ['my', 'plan', 'pay', 'docs', 'policies', 'board', 'people']], ['Team', ['team']], ['HR & admin', ['register', 'bio', 'payroll', 'statutory', 'employees', 'assets', 'exits', 'pulse', 'log', 'setup']]];
 const MCOL = { my: '#3b6cf6', plan: '#7b2ff7', pay: '#17834f', docs: '#c77700', policies: '#1D2B53', board: '#e0a100', people: '#0aa3a3', team: '#FF004D', register: '#5b3f8f', payroll: '#17834f', employees: '#3b6cf6', assets: '#475569', exits: '#cf2450', pulse: '#e0287a', log: '#334155', setup: '#64748b' };
 function mTitle() { const n = navList().find(x => x[0] === S.view); return S.view === 'punch' ? `${greeting()}, ${esc(S.me.name.split(' ')[0])}` : esc(n ? n[1] : 'ORBIS'); }
 const _shellM = shell;
@@ -2255,5 +2255,101 @@ return h + `<div class="stack narrow" style="margin-top:14px"><div class="card">
 };
 document.addEventListener('click', async e => { if (!e.target.closest('#tdSave')) return; const fy = fyOf(todayStr().slice(0, 7)), data = {}; ['c80', 'd80', 'rent', 'hl', 'other'].forEach(k => { const v = Number($('#td_' + k).value); if (v) data[k] = v; }); if ($('#td_metro').checked) data.metro = true;
 try { await q(sb.from('tax_decl').upsert({ employee_id: S.me.id, fy, regime: $('#td_rg').value, data, updated_at: new Date().toISOString() })); toast('🧾 Tax declaration saved'); render(); } catch (er) { toast(errMsg(er), true); } });
+const bioNorm = v => String(v ?? '').trim().toUpperCase().replace(/\s+/g, '');
+function bioEmp(code) {
+const c = bioNorm(code); if (!c) return null; const all = S.emps || [];
+let e = all.find(x => bioNorm(x.code) === c || bioNorm(x.bio_id) === c); if (e) return e;
+const n = c.replace(/\D/g, '').replace(/^0+/, ''); if (!n) return null;
+const m = all.filter(x => bioNorm(x.code).replace(/\D/g, '').replace(/^0+/, '') === n); return m.length === 1 ? m[0] : null;
+}
+function bioDate(v, mdy) {
+if (v == null || v === '') return null;
+if (typeof v === 'number') { const ms = Math.round((v - 25569) * 864e5), d = new Date(ms); return { day: d.toISOString().slice(0, 10), t: v % 1 ? d.toISOString().slice(11, 16) : null }; }
+const s = String(v).trim(); let m, day = null, rest = s;
+if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) { day = `${m[1]}-${pad(m[2])}-${pad(m[3])}`; rest = s.slice(m[0].length); }
+else if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/))) { let [a, b, y] = [Number(m[1]), Number(m[2]), Number(m[3])]; if (y < 100) y += 2000; if (mdy) [a, b] = [b, a]; if (b > 12 && a <= 12) [a, b] = [b, a]; day = `${y}-${pad(b)}-${pad(a)}`; rest = s.slice(m[0].length); }
+else if ((m = s.match(/^(\d{1,2})[- ]([A-Za-z]{3})[A-Za-z]*[- ,]+(\d{2,4})/))) { const mo = 'janfebmaraprmayjunjulaugsepoctnovdec'.indexOf(m[2].toLowerCase()) / 3 + 1; let y = Number(m[3]); if (y < 100) y += 2000; if (mo > 0) day = `${y}-${pad(mo)}-${pad(m[1])}`; rest = s.slice(m[0].length); }
+return { day, t: bioTime(rest) };
+}
+function bioTime(v) {
+if (v == null || v === '') return null;
+if (typeof v === 'number') { const f = v % 1, mins = Math.round(f * 1440); return `${pad(Math.floor(mins / 60) % 24)}:${pad(mins % 60)}`; }
+const m = String(v).match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([AaPp][Mm])?/); if (!m) return null;
+let h = Number(m[1]); const ap = (m[3] || '').toLowerCase(); if (ap === 'pm' && h < 12) h += 12; if (ap === 'am' && h === 12) h = 0; return `${pad(h)}:${m[2]}`;
+}
+function bioCols(keys) {
+const f = re => keys.find(k => re.test(k.toLowerCase().replace(/[^a-z]/g, '')));
+return { code: f(/^(emp|employee|e|staff|user)?(code|id|no|number)$|enroll|userid|^id$|staffid|cardno|acno|badge|pin/), name: f(/name/),
+dt: f(/datetime|punchtime|logtime|logdate|checktime|timestamp|punchdate/), date: f(/^(attendance)?date$|^day$|logdate/), tin: f(/^(in|intime|firstin|checkin|timein|punchin)$/), tout: f(/^(out|outtime|lastout|checkout|timeout|punchout)$/), time: f(/^time$|^punch$/) };
+}
+async function bioParse(file, mdy) {
+const X = await loadXLSX(), wb = X.read(await file.arrayBuffer(), { type: 'array', cellDates: false, raw: file.name.toLowerCase().endsWith('.csv') || file.name.toLowerCase().endsWith('.txt') });
+let rows = []; for (const n of wb.SheetNames) { rows = X.utils.sheet_to_json(wb.Sheets[n], { defval: '', raw: true }); if (rows.length) break; }
+if (!rows.length) throw new Error('The file is empty.');
+if (!bioCols(Object.keys(rows[0])).code) { const aoa = X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: true }), hi = aoa.findIndex(r => { const c = bioCols(r.map(String)); return c.code && (c.dt || c.date); });
+if (hi > 0) rows = aoa.slice(hi + 1).map(r => Object.fromEntries(aoa[hi].map((h, i) => [String(h), r[i]]))); }
+const c = bioCols(Object.keys(rows[0]));
+if (!c.code || !(c.dt || c.date)) throw new Error('Could not find the employee code and date columns. Download the sample format below and match its headings.');
+const by = {}, unk = {}; let bad = 0;
+for (const r of rows) {
+const code = r[c.code]; if (code === '' || code == null) continue;
+const e = bioEmp(code); if (!e) { const k = String(code).trim(); unk[k] = (unk[k] || 0) + 1; continue; }
+const d = bioDate(c.dt ? r[c.dt] : r[c.date], mdy); if (!d?.day) { bad++; continue; }
+const times = [];
+if (c.tin || c.tout) { const a = bioTime(r[c.tin]), b = bioTime(r[c.tout]); if (a) times.push(a); if (b) times.push(b); }
+else { const t = c.time ? bioTime(r[c.time]) : d.t; if (t) times.push(t); }
+if (!times.length) continue; const k = e.id + '|' + d.day; (by[k] = by[k] || { e, day: d.day, t: [] }).t.push(...times);
+}
+const list = Object.values(by).map(x => { x.t.sort(); return { ...x, in: x.t[0], out: x.t.length > 1 && x.t[x.t.length - 1] !== x.t[0] ? x.t[x.t.length - 1] : null, n: x.t.length }; }).sort((a, b) => a.day.localeCompare(b.day) || (a.e.code || '').localeCompare(b.e.code || ''));
+return { list, unk, bad, cols: c };
+}
+const bioISO = (day, t) => new Date(`${day}T${t}:00+05:30`).toISOString();
+const bioHM = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' }) : '';
+VIEWS.bio = async () => {
+const B = S.bio;
+let prev = '';
+if (B) {
+const days = [...new Set(B.list.map(x => x.day))], ids = [...new Set(B.list.map(x => x.e.id))];
+const old = days.length ? await q(sb.from('attendance').select('*').in('employee_id', ids).gte('day', days[0]).lte('day', days[days.length - 1])) : [];
+B.rows = B.list.map(x => { const o = old.find(a => a.employee_id === x.e.id && a.day === x.day), mi = bioISO(x.day, x.in), mo = x.out ? bioISO(x.day, x.out) : null;
+const inAt = o?.in_at && o.in_at < mi ? o.in_at : mi, outC = [o?.out_at, mo].filter(Boolean).sort(), outAt = outC.length ? outC[outC.length - 1] : null;
+const st = !o ? 'new' : (inAt !== o.in_at || outAt !== (o.out_at || null)) ? 'upd' : 'same'; return { ...x, o, inAt, outAt, st }; });
+const cnt = k => B.rows.filter(r => r.st === k).length, unk = Object.entries(B.unk);
+prev = `<div class="kpis"><div><b>${B.rows.length}</b><small>Staff-days in file</small></div><div><b>${cnt('new')}</b><small>New days</small></div><div><b>${cnt('upd')}</b><small>Will be updated</small></div><div><b>${cnt('same')}</b><small>Already same</small></div></div>
+${unk.length ? `<div class="msg bad">Codes in the file that don't match any employee (skipped): ${unk.slice(0, 30).map(([k, n]) => `<b>${esc(k)}</b> (${n})`).join(', ')}${unk.length > 30 ? '…' : ''}. If the machine uses different numbers, set each person's <b>machine ID</b> in Employees.</div>` : ''}
+${B.bad ? `<div class="msg">${B.bad} row(s) had a date ORBIS could not read and were skipped.</div>` : ''}
+<div class="card flush"><div class="scrollx"><table><thead><tr><th>Date</th><th>Employee</th><th>Punches</th><th>Machine in / out</th><th>ORBIS now</th><th>After import</th><th></th></tr></thead><tbody>
+${B.rows.slice(0, 400).map(r => `<tr><td>${esc(r.day)}</td><td><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.code)}</div></td><td>${r.n}</td><td>${r.in}${r.out ? ' – ' + r.out : ' <span class="small pink">no out</span>'}</td><td>${r.o ? `${bioHM(r.o.in_at) || '—'} – ${bioHM(r.o.out_at) || '—'}` : '<span class="muted">—</span>'}</td><td><b>${bioHM(r.inAt)} – ${bioHM(r.outAt) || '—'}</b></td><td>${r.st === 'new' ? '<span class="chip good">New</span>' : r.st === 'upd' ? '<span class="chip warn">Update</span>' : '<span class="chip">Same</span>'}</td></tr>`).join('')}
+</tbody></table></div>${B.rows.length > 400 ? `<p class="small muted" style="padding:10px 14px">Showing first 400 of ${B.rows.length} rows. All rows will be imported.</p>` : ''}</div>
+<div class="hstack wrap"><button class="btn pri" id="bioGo" ${cnt('new') + cnt('upd') ? '' : 'disabled'}>✔ Import ${cnt('new') + cnt('upd')} staff-days into attendance</button><button class="btn" id="bioClear">Cancel</button></div>`;
+}
+return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · attendance</span><h2>Biometric import</h2></div></div>
+<div class="card"><h3>📥 Upload the punch report from the machine</h3>
+<p class="small muted">Export the attendance log from your fingerprint / face machine software (eSSL, ZKTeco, Realtime, Mantra…) as Excel or CSV, then upload it here. ORBIS takes each person's <b>first punch as check-in</b> and <b>last punch as check-out</b> for the day. Nothing is saved until you check the preview and press Import.</p>
+<div class="grid2"><label>Punch file (.xlsx, .xls, .csv)<input type="file" id="bioFile" accept=".xlsx,.xls,.csv,.txt"></label>
+<label>Date style in the file<select id="bioMdy"><option value="">Day first — 21/11/2026 (India)</option><option value="1" ${S.bioMdy ? 'selected' : ''}>Month first — 11/21/2026</option></select></label></div>
+<div class="hstack wrap"><button class="btn" id="bioTpl">⬇ Sample format</button></div>
+<p class="small muted">Existing check-ins are never lost: if someone also punched in ORBIS, the earlier check-in and later check-out are kept. Breaks are not changed.</p></div>
+${prev}</div>`;
+};
+document.addEventListener('change', async e => {
+if (e.target.id === 'bioMdy') S.bioMdy = !!e.target.value;
+if (e.target.id !== 'bioFile' || !e.target.files[0]) return;
+try { toast('Reading file…'); S.bio = await bioParse(e.target.files[0], !!$('#bioMdy').value); S.bio.file = e.target.files[0].name; render(); } catch (er) { toast(errMsg(er), true); }
+});
+document.addEventListener('click', async e => {
+if (e.target.closest('#bioClear')) { S.bio = null; return render(); }
+if (e.target.closest('#bioTpl')) { const t = todayStr(); return xlsxOut([{ 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 09:02` }, { 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 13:30` }, { 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 18:05` }], 'Punches', 'ORBIS-biometric-sample.xlsx'); }
+const go = e.target.closest('#bioGo'); if (!go || !S.bio?.rows) return;
+const rows = S.bio.rows.filter(r => r.st !== 'same'); go.disabled = true;
+try {
+for (let i = 0; i < rows.length; i += 200) {
+const part = rows.slice(i, i + 200).map(r => ({ employee_id: r.e.id, day: r.day, in_at: r.inAt, out_at: r.outAt, note: r.o?.note ? r.o.note : 'Biometric import', edited_by: S.me.id, offline: r.o?.offline || false }));
+await q(sb.from('attendance').upsert(part, { onConflict: 'employee_id,day' })); go.textContent = `Importing… ${Math.min(i + 200, rows.length)}/${rows.length}`;
+}
+toast(`✔ ${rows.length} staff-days imported from ${S.bio.file}`); S.bio = null; render();
+} catch (er) { go.disabled = false; toast(errMsg(er), true); }
+});
+const _navBio = navList; navList = function () { const n = _navBio(); const i = n.findIndex(x => x[0] === 'register'); if (i >= 0 && !n.some(x => x[0] === 'bio')) n.splice(i + 1, 0, ['bio', 'Biometric import', '🖐️']); return n; };
 boot();
 </script></body></html>
