@@ -1,9 +1,10 @@
-const C = 'orbis-v2';
-self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'])).catch(() => { })); });
+const C = 'orbis-v3';
+self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { for (const k of await caches.keys()) if (k !== C) await caches.delete(k); await self.clients.claim(); })()); });
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return; const u = new URL(r.url);
   if (u.origin === location.origin) {
+    if (u.pathname.endsWith('.webmanifest') || /\/(icon|apple-touch)/.test(u.pathname)) { e.respondWith(fetch(r, { cache: 'no-cache' }).catch(() => caches.match(r))); return; }
     if (r.mode === 'navigate' || u.pathname === '/' || u.pathname.endsWith('.html')) {
       e.respondWith(fetch(r.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => { if (res.ok) { const cp = res.clone(); caches.open(C).then(c => c.put('/', cp)); } return res; }).catch(() => caches.match('/')));
       return;
