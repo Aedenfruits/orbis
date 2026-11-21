@@ -80,6 +80,12 @@ nav a{position:relative}em.nb{font-style:normal;position:absolute;top:4px;right:
 .pdist>div{display:grid;grid-template-columns:110px 1fr 30px;gap:10px;align-items:center;margin:6px 0}.pdist .bar{height:12px}.pnote{background:#f4f6fb;border-radius:10px;padding:8px 12px;margin:6px 0;font-style:italic}
 .ptrend{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;text-align:center}.pcol{height:110px;background:#f4f6fb;border-radius:10px;display:flex;align-items:flex-end;overflow:hidden}.pcol i{display:block;width:100%;background:linear-gradient(0deg,var(--navy),var(--pink));border-radius:10px 10px 0 0}.ptrend span{display:block;font-size:20px;margin-top:4px}.ptrend small{color:var(--muted);font-size:11px}
 tr.lg-delete td{color:var(--crit)}.exc .hstack{gap:10px}
+body.kiosk{background:radial-gradient(circle at 20% 0%,#2a3a6e,#1D2B53 55%,#151f3d);min-height:100vh}.kbox{max-width:1100px;margin:0 auto;padding:24px 20px 40px;color:#fff}
+.khead{display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap}.khead .alg{color:#fff;height:34px;margin:0}.kclock{text-align:center}.kclock b{display:block;font-size:46px;line-height:1;font-variant-numeric:tabular-nums}.kclock span{opacity:.75;font-size:13px}.kdev{background:rgba(255,255,255,.1);border-radius:99px;padding:6px 14px;font-size:13px}
+.kbox h1{color:#fff;text-align:center;margin:26px 0 14px;font-size:26px}.kbox #kq{max-width:460px;display:block;margin:0 auto 18px;font-size:17px;padding:14px 18px;border-radius:14px;border:0}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}.kp{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 10px;border-radius:16px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#fff;font:inherit;cursor:pointer;transition:transform .15s,background .15s}.kp:hover{transform:translateY(-3px);background:rgba(255,0,77,.25);border-color:var(--pink)}.kp .ava{width:58px;height:58px;font-size:19px;background:linear-gradient(135deg,var(--pink),#7b2ff7)}.kp b{font-size:14px;text-align:center}.kp small{opacity:.7;font-size:11.5px}.kp[hidden]{display:none}
+.kbox .muted{color:rgba(255,255,255,.7)!important;margin-top:26px}.kbox a{color:#fff}.kbox .msg.bad{max-width:460px;margin:0 auto 12px}
+body.kmode nav.side,body.kmode nav.bottom,body.kmode .phnudge{display:none!important}body.kmode #main,.kmain{margin-left:0!important;max-width:none}body.kmode .app,body.kmode{grid-template-columns:1fr!important}.kme{display:inline-flex;align-items:center;font-weight:700}#kIdle{color:var(--crit)!important;font-weight:700}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body><div id="app"><div class="loading">Loading ORBIS…</div></div><dialog id="dlg"></dialog><div id="toast"></div>
@@ -117,8 +123,9 @@ const S = { session: null, me: null, emps: [], settings: {}, team: [], view: 'pu
 const isAdmin = () => ['hr', 'md'].includes(S.me?.access);
 const empById = id => S.emps.find(e => e.id === id);
 const C = () => S.settings || {};
-const queue = () => lsGet('queue', []);
-function enqueue(item) { const qq = queue(); qq.push(item); lsSet('queue', qq); }
+const queueAll = () => lsGet('queue', []);
+const queue = () => queueAll().filter(it => !S.me || !it.emp || it.emp === S.me.id);
+function enqueue(item) { const qq = queueAll(); qq.push({ ...item, emp: S.me?.id }); lsSet('queue', qq); }
 async function flushQueue() {
 const qq = queue(); if (!qq.length || !navigator.onLine || !S.me) return;
 const rest = [];
@@ -129,7 +136,7 @@ else if (it.k === 'bstart') await rpc('break_start', { p_token: it.tok, p_kind: 
 else if (it.k === 'bend') await rpc('break_end', { p_token: it.tok, p_at: it.at });
 } catch (e) { if (isNetErr(e)) rest.push(it); else toast('Offline entry rejected: ' + errMsg(e), true); }
 }
-lsSet('queue', rest);
+lsSet('queue', [...queueAll().filter(it => it.emp && it.emp !== S.me.id), ...rest]);
 if (rest.length < qq.length) { toast('✓ Offline punches synced'); await loadToday(); render(); }
 }
 const isNetErr = e => /fetch|network|Failed to|NetworkError|Load failed/i.test(errMsg(e)) || !navigator.onLine;
@@ -627,7 +634,7 @@ const ips = C().officeIps || []; const here = S.device;
 return `<div class="stack narrow"><div><span class="eyebrow">HR setup</span><h2>Computers & settings</h2></div>
 <div class="card"><h3>This computer</h3>${here ? `<p><span class="chip good">✓ Registered</span> ${esc(here.name)} · ${esc(here.office)} · ${here.kind === 'kiosk' ? 'Common PC (shared)' : 'Own computer'}</p><button class="btn sm" id="devForget">Remove from this computer</button>`
 : `<p class="small muted">Register each office laptop/desktop once. Only registered computers can punch.</p><div class="grid3"><label>Computer name<input id="d_name" placeholder="e.g. Accounts PC 1"></label><label>Office<select id="d_office">${(C().offices || []).map(o => `<option>${esc(o)}</option>`).join('')}</select></label><label>Type<select id="d_kind"><option value="own">Own computer (one person)</option><option value="kiosk">Common PC (shared)</option></select></label></div><button class="btn pri" id="devReg">Register this computer</button>`}</div>
-<div class="card"><h3>Registered computers (${devs.length})</h3>${devs.map(d => `<div class="li"><div><b>${esc(d.name)}</b><small>${esc(d.office)} · ${d.kind === 'kiosk' ? 'Common PC' : 'Own computer'} · added ${fmtD(ymd(d.created_at))}</small></div><button class="btn sm" data-devoff="${d.id}" data-on="${d.active ? 0 : 1}">${d.active ? 'Disable' : 'Enable'}</button></div>`).join('') || '<p class="muted small">None yet</p>'}</div>
+<div class="card"><h3>Registered computers (${devs.length})</h3>${devs.map(d => `<div class="li"><div><b>${esc(d.name)}</b><small>${esc(d.office)} · ${d.kind === 'kiosk' ? 'Common PC' : 'Own computer'} · added ${fmtD(ymd(d.created_at))}</small></div>${d.kind === 'own' ? `<select data-devown="${d.id}" style="width:auto" title="Who may punch on this computer"><option value="">Anyone can punch</option>${S.emps.filter(e => e.active).map(e => `<option value="${e.id}" ${e.id === d.owner ? 'selected' : ''}>🔒 Only ${esc(e.name)}</option>`).join('')}</select>` : ''}<button class="btn sm" data-devoff="${d.id}" data-on="${d.active ? 0 : 1}">${d.active ? 'Disable' : 'Enable'}</button></div>`).join('') || '<p class="muted small">None yet</p>'}</div>
 <div class="card"><h3>Office internet</h3><p class="small muted">When addresses are added, punching works only from these internet connections. Leave empty to allow any network (registered computers only).</p>
 <p>This connection: <b>${esc(ip || 'unknown')}</b> ${ip && !ips.includes(ip) ? '<button class="btn sm pri" id="ipAdd">+ Add as office network</button>' : ips.includes(ip) ? '<span class="chip good">office network</span>' : ''}</p>
 ${ips.map(x => `<div class="li"><span>${esc(x)}</span><button class="btn sm" data-iprm="${esc(x)}">Remove</button></div>`).join('')}</div>
@@ -1813,5 +1820,67 @@ document.addEventListener('change', e => { const t = e.target; if (t.id === 'lg_
 document.addEventListener('click', async e => { const b = e.target.closest('[data-lgd],[data-lg]'); if (!b) return;
 if (b.dataset.lgd) { S.logDay = addDays(S.logDay || todayStr(), Number(b.dataset.lgd)); return render(); }
 try { await xlsxOut(S.logRows.map(l => { const x = logLine(l); return { Time: new Date(l.at).toLocaleString('en-IN', { timeZone: TZ }), Who: x.who, What: x.what, Details: x.d }; }), 'Activity', `ORBIS-activity-${S.logDay || todayStr()}.xlsx`); } catch (er) { toast(errMsg(er), true); } });
+const KDEV = () => !!lsGet('device', null) && lsGet('devKind', '') === 'kiosk';
+const KMODE = () => !!(S.me && S.device?.kind === 'kiosk' && !isAdmin());
+if (!!lsGet('device', null) && lsGet('devKind', '') === 'kiosk') S.splashed = true;
+async function devPublic() { const tok = lsGet('device', null); if (!tok) return null;
+try { const d = await rpc('device_public', { p_token: tok }); if (d) { lsSet('devKind', d.kind); lsSet('devPub', d); } else { lsSet('devKind', ''); } return d; } catch { return lsGet('devPub', null); } }
+const _loadCore0 = loadCore;
+loadCore = async function () { await _loadCore0(); if (S.device) lsSet('devKind', S.device.kind); };
+const _renderLogin0 = renderLogin;
+renderLogin = function (msg) {
+if (KDEV() && !S.hrLogin) return renderKiosk(msg);
+_renderLogin0(msg);
+if (S.hrLogin) $('.authbox').insertAdjacentHTML('beforeend', '<p class="center small"><a href="#" id="kBack">← Back to the common PC screen</a></p>');
+const own = lsGet('devPub', null); if (own?.kind === 'own' && own.owner_code && !S.hrLogin) { const c = $('#l_code'); if (c && !c.value) { c.value = own.owner_code; $('#l_pw').focus(); } }
+devPublic().then(d => { if (d?.kind === 'kiosk' && !S.hrLogin && !S.me) renderKiosk(); });
+};
+document.addEventListener('click', e => { if (e.target.id === 'kBack') { e.preventDefault(); S.hrLogin = false; renderLogin(); } });
+function renderKiosk(msg) {
+document.body.className = 'auth kiosk'; S.kPick = null;
+const d = lsGet('devPub', null) || {}; const ppl = d.people || [];
+$('#app').innerHTML = `<div class="kbox"><div class="khead"><div class="alg w">${LOGO}</div><div class="kclock"><b id="kclk">${hm(new Date())}</b><span>${DOW[new Date().getDay()]}, ${fmtD(todayStr())}</span></div><div class="kdev">🖥️ ${esc(d.name || 'Common PC')}${d.office ? ' · ' + esc(d.office) : ''}</div></div>
+<h1>Tap your name to punch</h1>${msg ? `<div class="msg bad">${esc(msg)}</div>` : ''}
+<input id="kq" placeholder="🔍 Type your name or employee code" autocomplete="off">
+<div class="kgrid" id="kgrid">${ppl.map(p => `<button class="kp" data-kp="${esc(p.code)}" data-s="${esc((p.name + ' ' + p.code + ' ' + (p.dept || '')).toLowerCase())}"><span class="ava">${esc(initials(p.name))}</span><b>${esc(p.name)}</b><small>${esc(p.dept || p.office || '')}</small></button>`).join('') || '<p class="muted">Loading staff list… (needs internet the first time)</p>'}</div>
+<p class="small muted center">This is a shared computer. You can only check in, check out and take breaks here — you are signed out automatically.<br><a href="#" id="kHr">HR / admin sign in</a></p></div>`;
+$('#kq').oninput = () => { const s = $('#kq').value.trim().toLowerCase(); document.querySelectorAll('.kp').forEach(b => b.hidden = s && !b.dataset.s.includes(s)); };
+clearInterval(S.kclkI); S.kclkI = setInterval(() => { const c = $('#kclk'); if (c) c.textContent = hm(new Date()); else clearInterval(S.kclkI); }, 5000);
+if (!ppl.length) devPublic().then(x => { if (x?.people?.length && !S.me) renderKiosk(msg); });
+}
+function kioskAsk(code) {
+const p = (lsGet('devPub', null)?.people || []).find(x => x.code === code); if (!p) return;
+dlg(`Hi, ${esc(p.name.split(' ')[0])} 👋`, `<div class="hstack" style="gap:12px;margin-bottom:10px"><span class="ava">${esc(initials(p.name))}</span><div><b>${esc(p.name)}</b><div class="small muted">${esc(p.code)} · ${esc(p.dept || '')}</div></div></div>
+<form id="kF"><label>Your ORBIS password<input id="k_pw" type="password" autocomplete="off" required></label><div id="k_msg" class="msg"></div><button class="btn pri wide" type="submit">Continue</button></form>`, '');
+$('#k_pw').focus();
+$('#kF').onsubmit = async e => { e.preventDefault(); const b = e.submitter; b.disabled = true; $('#k_msg').textContent = 'Checking…';
+const { error } = await sb.auth.signInWithPassword({ email: codeToEmail(code), password: PW($('#k_pw').value) });
+if (error) { b.disabled = false; $('#k_msg').textContent = 'Wrong password. Try again, or ask HR to reset it.'; $('#k_pw').value = ''; $('#k_pw').focus(); return; }
+closeDlg(); S.splashed = true; boot(); };
+}
+document.addEventListener('click', e => {
+const k = e.target.closest('[data-kp]'); if (k) return kioskAsk(k.dataset.kp);
+if (e.target.id === 'kHr') { e.preventDefault(); S.hrLogin = true; renderLogin(); }
+if (e.target.closest('#kDone')) { signOut(); }
+});
+const _navList0 = navList; navList = function () { return KMODE() ? [['punch', 'Punch', '⏱️']] : _navList0(); };
+const _shell0 = shell;
+shell = function (body) {
+if (!KMODE()) return _shell0(body);
+return `<header class="top"><div class="alg">${LOGO}</div><div class="brand"><b>ORBIS</b><small>Common PC · ${esc(S.device.name || '')}</small></div>
+<div class="who"><span class="kme">${avatarHTML(S.me, 'xs')}${esc(S.me.name)}</span><span class="small muted" id="kIdle"></span><button class="btn pri" id="kDone">✓ Done — sign out</button></div></header><main id="main" class="kmain">${body}</main>`;
+};
+const _render0 = render;
+render = async function () { await _render0(); const k = KMODE(); document.body.classList.toggle('kmode', k); if (k) kioskIdle(); };
+function kioskIdle() {
+S.kLeft = 60; clearInterval(S.kIdleI);
+S.kIdleI = setInterval(() => { if (!KMODE()) return clearInterval(S.kIdleI); S.kLeft--; const el = $('#kIdle'); if (el) el.textContent = S.kLeft <= 20 ? `Signing out in ${S.kLeft}s` : '';
+if (S.kLeft <= 0) { clearInterval(S.kIdleI); toast('Signed out for the next person'); signOut(); } }, 1000);
+}
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if (KMODE()) S.kLeft = 60; }, true));
+const _signOut0 = signOut; signOut = async function () { clearInterval(S.kIdleI); closeDlg?.(); document.body.classList.remove('kmode'); S.hrLogin = false; return _signOut0(); };
+maybeKioskLogout = function () { if (KMODE()) { S.kLeft = Math.min(S.kLeft || 60, 8); } };
+document.addEventListener('change', async e => { const s = e.target.closest('[data-devown]'); if (!s) return;
+try { await q(sb.from('devices').update({ owner: s.value || null }).eq('id', s.dataset.devown)); toast(s.value ? `🔒 Only ${empById(s.value)?.name} can punch on this computer` : 'Anyone can punch on this computer'); } catch (er) { toast(errMsg(er), true); } });
 boot();
 </script></body></html>
