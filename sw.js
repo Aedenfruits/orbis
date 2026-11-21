@@ -1,4 +1,4 @@
-const C = 'orbis-v6';
+const C = 'orbis-v7';
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { for (const k of await caches.keys()) if (k !== C) await caches.delete(k); await self.clients.claim(); })()); });
 self.addEventListener('fetch', e => {
