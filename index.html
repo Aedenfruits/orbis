@@ -69,6 +69,7 @@ dialog{border:0;border-radius:18px;padding:0;width:min(560px,94vw);box-shadow:0 
 .impstep{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px dashed var(--line);border-radius:12px}.imptbl{font-size:13px}.imptbl td,.imptbl th{white-space:nowrap}.imptbl tr.bad td{background:#fff1f3}#impPrev{display:flex;flex-direction:column;gap:10px}
 .ava{display:inline-grid;place-items:center;flex:none;width:38px;height:38px;border-radius:50%;overflow:hidden;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(135deg,#1e2f58,#5b3f8f)}.ava img{width:100%;height:100%;object-fit:cover}.ava.sm{width:34px;height:34px;font-size:12px}.ava.xs{width:26px;height:26px;font-size:10px;margin-right:6px;vertical-align:middle}.mebtn{display:inline-flex;align-items:center;border:0;background:none;font:inherit;font-weight:600;color:inherit;cursor:pointer;padding:2px 6px;border-radius:99px}.mebtn:hover{background:rgba(30,47,88,.07)}.phwrap{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}.phbox{width:200px;height:250px;border-radius:14px;overflow:hidden;background:#e7eaf2;display:grid;place-items:center;font-size:44px;font-weight:800;color:#1e2f58;box-shadow:0 0 0 3px #fff,0 0 0 5px #e01664}.phbox img,.phbox video{width:100%;height:100%;object-fit:cover}.phbox video{transform:scaleX(-1)}.phnudge{display:flex;align-items:center;gap:12px;border:2px dashed rgba(224,22,100,.4);background:#fff7fb}.phnudge .ava{background:#ffe3ef;font-size:18px}.iclist{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow:auto;padding:4px;border:1px solid var(--line);border-radius:12px;margin-top:6px}.iclist .chk{display:flex;align-items:center;gap:10px}
 .reg td.h{background:#fff4cc;color:#8a6200;font-weight:700}
+nav a{position:relative}em.nb{font-style:normal;position:absolute;top:4px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e01664;color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;animation:nbPop .4s cubic-bezier(.2,.9,.3,1.6)}nav.bottom em.nb{top:0;right:2px}@keyframes nbPop{0%{transform:scale(0)}100%{transform:scale(1)}}.celeb{position:relative;overflow:hidden;background:linear-gradient(135deg,#fff4fa,#fff9e6);border:2px solid #ffd2e6}.celeb .row{margin:4px 0}.confetti{position:absolute;inset:-10px;pointer-events:none;font-size:18px;letter-spacing:22px;line-height:44px;word-break:break-all;opacity:.18;animation:cf 9s linear infinite}@keyframes cf{from{transform:translateY(-40px)}to{transform:translateY(40px)}}.starc{background:linear-gradient(135deg,#1e2f58,#5b3f8f);color:#fff}.starc .muted{color:rgba(255,255,255,.75)!important}.starc .eyebrow{color:#ffd54a}.starc h3{color:#fff}.ann.pin{border-left:4px solid #e01664}.ann.unread{box-shadow:0 0 0 2px rgba(224,22,100,.35)}.ann .at{font-size:16px}.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}.pcard{display:flex;gap:12px;align-items:flex-start;margin:0}.pcard .ava{width:52px;height:52px;font-size:16px}.org,.org ul{list-style:none;margin:0;padding-left:26px;position:relative}.org{padding-left:0}.org li{position:relative;padding:6px 0 6px 0}.org ul li::before{content:'';position:absolute;left:-16px;top:0;bottom:50%;border-left:2px solid #d5dbe8;border-bottom:2px solid #d5dbe8;width:14px;border-bottom-left-radius:8px}.org ul li:not(:last-child)::after{content:'';position:absolute;left:-16px;top:50%;bottom:0;border-left:2px solid #d5dbe8}.onode{display:inline-flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 14px 8px 8px;box-shadow:0 2px 8px rgba(30,47,88,.06)}.onode small{display:block;color:var(--muted);font-size:12px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body><div id="app"><div class="loading">Loading ORBIS…</div></div><dialog id="dlg"></dialog><div id="toast"></div>
@@ -166,7 +167,7 @@ if (S.me.must_change_pw) await forcePw();
 const today = loadToday().catch(() => { });
 if (!S.splashed) { S.splashed = true; await splash(); }
 await today;
-route(); flushQueue(); autoBackup();
+route(); flushQueue(); autoBackup(); startReminders(); refreshBadges();
 }
 function renderLogin(msg) {
 document.body.className = 'auth';
@@ -207,7 +208,7 @@ toast('Welcome! You are the first HR user.'); location.hash = 'employees'; boot(
 }
 function renderSetup() { renderSignupFirst(); }
 function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><button class="btn" onclick="signOut()">Sign out</button></div></div>`; }
-async function signOut() { S.dek = null; clearTimeout(S.vaultT); await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
+async function signOut() { clearInterval(S.remI); S.badge = {}; S.dek = null; clearTimeout(S.vaultT); await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
 function orbisTitle() {
 const L = 'ORBIS'.split('').map((c, i) => `<span class="ch${i === 0 ? ' o' : ''}" style="--i:${i}">${c}</span>`).join('');
 return `<h1 class="orbis-t" aria-label="ORBIS">${L}</h1><p class="tag"><span class="tw" style="--i:0">Everything.</span> <span class="tw cn" style="--i:1">Connected.</span></p>`;
@@ -231,7 +232,7 @@ if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 document.body.className = 'auth';
 $('#app').innerHTML = `<div class="authbox splash"><div class="alg w big">${LOGO}</div>${orbisTitle()}
 <div class="sdt"><b id="sdTime"></b><small id="sdDate"></small></div>
-<div class="hello">${greeting()}, ${esc(S.me.name.split(' ')[0])} 👋</div>
+<div class="hello">${S.me.bday && S.me.bday === todayStr().slice(5) ? `🎂 Happy birthday, ${esc(S.me.name.split(' ')[0])}!` : `${greeting()}, ${esc(S.me.name.split(' ')[0])} 👋`}</div>
 <blockquote class="quote">${ist(Date.now()).getHours() >= 17 ? 'Great work today. Finish strong.' : 'Make the day count.'}</blockquote>
 <button class="gobtn" type="button">Enter ORBIS <span>→</span></button><p class="small muted skip">or press Enter</p></div>`;
 const tk = () => { const n = new Date(); const t = $('#sdTime'), d = $('#sdDate'); if (!t) return; t.innerHTML = n.toLocaleTimeString('en-IN', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true }).replace(/\s?(am|pm)/i, (m, x) => ` <i>${x.toUpperCase()}</i>`); d.textContent = n.toLocaleDateString('en-IN', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); };
@@ -240,7 +241,7 @@ await new Promise(res => { const b = $('.gobtn'); function done() { clearInterva
 await launchFx();
 }
 function navList() {
-const n = [['punch', 'Punch', '⏱️'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂']];
+const n = [['punch', 'Punch', '⏱️'], ['news', 'News', '📢'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['people', 'Directory', '📇'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂']];
 if (S.team.length || isAdmin()) n.push(['team', isAdmin() ? 'All staff' : 'My team', '👥']);
 if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['employees', 'Employees', '🧑‍💼'], ['setup', 'Computers & settings', '⚙️']);
 return n;
@@ -260,7 +261,8 @@ document.body.className = 'app';
 const v = VIEWS[S.view] || VIEWS.punch;
 try { $('#app').innerHTML = shell('<div class="loading">Loading…</div>'); $('#main').innerHTML = await v();
 if (S.view === 'punch' && S.me && !S.me.photo_at) $('#main').insertAdjacentHTML('afterbegin', `<div class="card phnudge"><span class="ava">📷</span><div class="grow"><b>Add your photo</b><div class="small muted">It goes on your Aeden ID card. Takes 10 seconds.</div></div><button class="btn pri sm" data-photo="${S.me.id}">Add photo</button></div>`);
-after(); fillAvatars(); }
+if (S.view === 'punch' && (S.badge || {}).news) $('#main').insertAdjacentHTML('afterbegin', `<a class="card phnudge" href="#news" style="text-decoration:none;color:inherit"><span class="ava">📢</span><div class="grow"><b>${S.badge.news} new announcement${S.badge.news > 1 ? 's' : ''}</b><div class="small muted">Tap to read</div></div><span class="btn sm">Open</span></a>`);
+after(); fillAvatars(); paintBadges(); }
 catch (e) { $('#main').innerHTML = `<div class="card"><h3>Something went wrong</h3><p>${esc(errMsg(e))}</p></div>`; }
 }
 let afterFns = [];
@@ -1015,7 +1017,7 @@ for (const r of rows) {   // pass 2: encrypted private details
 if (!r.id || !Object.keys(r.priv).length) continue;
 if (!encOk) { log.push(`${r.code}: private details skipped (vault not set up)`); continue; }
 prog(`Encrypting details ${++done}…`);
-try { const cur = await privGet(r.id).catch(() => ({})); await privPut(r.id, { ...cur, ...r.priv }); } catch (er) { log.push(`${r.code}: private details not saved (${errMsg(er)})`); }
+try { const cur = await privGet(r.id).catch(() => ({})); await privPut(r.id, { ...cur, ...r.priv }); if (r.priv.dob) await q(sb.from('employees').update({ bday: r.priv.dob.slice(5) }).eq('id', r.id)).catch(() => { }); } catch (er) { log.push(`${r.code}: private details not saved (${errMsg(er)})`); }
 }
 done = 0; const tmp = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'orbis.tmp' } });
 for (const r of rows) {   // pass 3: logins
@@ -1044,7 +1046,7 @@ dlg(`🔒 ${esc(x.name)} — private details`, `<p class="small muted">Encrypted
 `<button class="btn pri" id="pv_save">Save encrypted</button>`);
 $('#dlg').classList.add('wide'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('wide'), { once: true });
 $('#pv_save').onclick = async () => { const o = {}; PRIV.forEach(([k]) => { let v = $('#pv_' + k).value.trim(); if (k === 'aadhaar') v = v.replace(/\D/g, '').slice(-4); if (v) o[k] = v; });
-try { await privPut(id, o); closeDlg(); toast('🔒 Private details saved (encrypted)'); } catch (er) { toast(errMsg(er), true); } };
+try { await privPut(id, o); if (o.dob) await q(sb.from('employees').update({ bday: o.dob.slice(5) }).eq('id', id)).catch(() => { }); closeDlg(); toast('🔒 Private details saved (encrypted)'); } catch (er) { toast(errMsg(er), true); } };
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-priv]'); if (b) privDlg(b.dataset.priv); });
 function pwRules(p1, p2) {
@@ -1305,5 +1307,104 @@ return `<div class="card"><h3>💾 Daily backup to this computer</h3><p class="s
 }
 document.addEventListener('click', async e => { const b = e.target.closest('#bkNow'); if (!b) return; b.disabled = true; b.textContent = 'Backing up…'; try { await makeBackup(false); render(); } catch (er) { toast(errMsg(er), true); b.disabled = false; b.textContent = '💾 Back up now'; } });
 document.addEventListener('change', e => { if (e.target.id === 'bkAuto') { lsSet('autoBackup', e.target.checked ? 'on' : 'off'); toast(e.target.checked ? 'Daily backup on' : 'Daily backup off'); } });
+const mmdd = ds => ds ? ds.slice(5, 10) : '';
+function celebrations(daysAhead = 14) {
+const out = [], t = todayStr();
+for (let i = 0; i <= daysAhead; i++) { const d = addDays(t, i), md = mmdd(d);
+S.emps.filter(e => e.active).forEach(e => {
+if (e.bday === md) out.push({ d, i, e, k: 'bday', txt: `🎂 ${e.name.split(' ')[0]}'s birthday` });
+if (e.join_date && mmdd(e.join_date) === md && e.join_date.slice(0, 4) < d.slice(0, 4)) { const y = Number(d.slice(0, 4)) - Number(e.join_date.slice(0, 4)); out.push({ d, i, e, k: 'ann', txt: `🎉 ${e.name.split(' ')[0]} completes ${y} year${y > 1 ? 's' : ''} at Aeden` }); }
+}); }
+return out;
+}
+async function starOfMonth() {
+if (S.star !== undefined) return S.star;
+const d = new Date(todayStr()); d.setDate(1); d.setMonth(d.getMonth() - 1); const pm = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+try { const r = await rpc('leaderboard', { p_month: pm + '-01' }); const w = (r.top || []).find(x => x.rank === 1 && x.days >= 5); S.star = w ? { ...w, month: d.toLocaleDateString('en-IN', { month: 'long' }), emp: S.emps.find(e => e.name === w.name && e.dept === w.dept) } : null; }
+catch { S.star = null; }
+return S.star;
+}
+async function loadNews() {
+try { const [ann, reads] = await Promise.all([q(sb.from('announcements').select('*').order('created_at', { ascending: false }).limit(60)), q(sb.from('announcement_reads').select('*'))]);
+S.ann = ann.filter(a => !a.office || a.office === S.me.office || isAdmin()); S.annReads = reads; }
+catch { S.ann = []; S.annReads = []; }
+return S.ann;
+}
+const annSeen = (a, id = S.me.id) => (S.annReads || []).some(r => r.ann_id === a.id && r.employee_id === id);
+VIEWS.news = async () => {
+await loadNews(); const star = await starOfMonth(); const cel = celebrations(); const today = cel.filter(c => c.i === 0), soon = cel.filter(c => c.i > 0);
+const list = [...S.ann].sort((a, b) => (b.pinned - a.pinned) || b.created_at.localeCompare(a.created_at));
+const audience = a => S.emps.filter(e => e.active && e.auth_uid && (!a.office || e.office === a.office));
+return `<div class="stack narrow"><div><span class="eyebrow">Aeden today</span><h2>📢 News</h2></div>
+${'Notification' in window && Notification.permission === 'default' ? `<div class="card phnudge"><span class="ava">🔔</span><div class="grow"><b>Turn on reminders</b><div class="small muted">Get a pop-up if you forget to check out, your break runs over, or someone needs your approval.</div></div><button class="btn pri sm" id="notifOn">Turn on</button></div>` : ''}
+${today.length ? `<div class="card celeb">${today.map(c => `<div class="row" style="justify-content:flex-start;gap:12px">${avatarHTML(c.e)}<div><b>${esc(c.txt)} today!</b><div class="small muted">${esc(c.e.desig || '')} · ${esc(c.e.dept || '')}</div></div></div>`).join('')}<div class="confetti">${'🎊🎉✨🎈🎂'.repeat(4)}</div></div>` : ''}
+${star ? `<div class="card starc"><div class="row" style="justify-content:flex-start;gap:14px">${star.emp ? avatarHTML(star.emp) : ''}<div><span class="eyebrow">⭐ Star of ${esc(star.month)}</span><h3 style="margin:2px 0">${esc(star.name)}</h3><div class="small muted">${star.pct}% attendance score · ${star.ontime}/${star.days} days on time</div></div></div></div>` : ''}
+${isAdmin() ? `<div class="card"><h3>Post an announcement</h3><label>Title<input id="an_t" placeholder="e.g. Office closed on Friday"></label><label>Message<textarea id="an_b" rows="3"></textarea></label>
+<div class="grid2"><label>Who sees it<select id="an_o"><option value="">Everyone</option>${(C().offices || []).map(o => `<option>${esc(o)}</option>`).join('')}</select></label><label class="chk" style="align-self:end"><input type="checkbox" id="an_p"> Pin to top</label></div><button class="btn pri" id="an_post">📢 Post</button></div>` : ''}
+${list.length ? list.map(a => { const seen = annSeen(a), aud = audience(a), sc = aud.filter(e => annSeen(a, e.id)).length;
+return `<div class="card ann ${a.pinned ? 'pin' : ''} ${seen ? '' : 'unread'}"><div class="row"><div><b class="at">${a.pinned ? '📌 ' : ''}${esc(a.title)}</b><div class="small muted">${esc(empById(a.created_by)?.name || 'HR')} · ${fmtD(ymd(a.created_at))}${a.office ? ' · ' + esc(a.office) + ' only' : ''}</div></div>${seen ? '<span class="chip good">✓ Seen</span>' : `<button class="btn sm pri" data-anseen="${a.id}">Mark as seen</button>`}</div>
+${a.body ? `<p style="white-space:pre-wrap;margin:8px 0 0">${esc(a.body)}</p>` : ''}
+${isAdmin() ? `<div class="row small" style="margin-top:8px"><a href="#" data-anwho="${a.id}">Seen by ${sc} of ${aud.length}</a><span class="hstack"><button class="btn sm" data-anpin="${a.id}" data-v="${a.pinned ? 0 : 1}">${a.pinned ? 'Unpin' : 'Pin'}</button><button class="btn sm" data-andel="${a.id}">Delete</button></span></div>` : ''}</div>`; }).join('')
+: '<div class="card muted center">No announcements yet.</div>'}
+${soon.length ? `<div class="card"><h3>Coming up</h3>${soon.map(c => `<div class="li"><div class="row" style="justify-content:flex-start;gap:10px">${avatarHTML(c.e, 'sm')}<div><b>${esc(c.txt)}</b><small>${DOW[dowOf(c.d)]} ${fmtD(c.d)}</small></div></div></div>`).join('')}</div>` : ''}
+${holCard()}</div>`;
+};
+document.addEventListener('click', async e => {
+const b = e.target.closest('#an_post,[data-anseen],[data-anpin],[data-andel],[data-anwho],#notifOn'); if (!b) return; e.preventDefault();
+try {
+if (b.id === 'notifOn') { const p = await Notification.requestPermission(); toast(p === 'granted' ? '🔔 Reminders on' : 'Reminders stay off'); render(); }
+if (b.id === 'an_post') { const title = $('#an_t').value.trim(); if (!title) return toast('Write a title', true);
+await q(sb.from('announcements').insert({ title, body: $('#an_b').value.trim(), office: $('#an_o').value, pinned: $('#an_p').checked, created_by: S.me.id })); toast('📢 Posted'); render(); }
+if (b.dataset.anseen) { await q(sb.from('announcement_reads').insert({ ann_id: b.dataset.anseen, employee_id: S.me.id })); await refreshBadges(); render(); }
+if (b.dataset.anpin) { await q(sb.from('announcements').update({ pinned: b.dataset.v === '1' }).eq('id', b.dataset.anpin)); render(); }
+if (b.dataset.andel) { if (!confirm('Delete this announcement?')) return; await q(sb.from('announcements').delete().eq('id', b.dataset.andel)); render(); }
+if (b.dataset.anwho) { const a = S.ann.find(x => x.id === b.dataset.anwho); const aud = S.emps.filter(x => x.active && x.auth_uid && (!a.office || x.office === a.office));
+dlg('Who has seen it', `<div class="grid2"><div><h4>✓ Seen</h4>${aud.filter(x => annSeen(a, x.id)).map(x => `<div>${esc(x.name)}</div>`).join('') || '<p class="muted small">Nobody yet</p>'}</div><div><h4>Not yet</h4>${aud.filter(x => !annSeen(a, x.id)).map(x => `<div>${esc(x.name)}</div>`).join('') || '<p class="muted small">Everyone has seen it 🎉</p>'}</div></div>`, ''); }
+} catch (er) { toast(errMsg(er), true); }
+});
+VIEWS.people = async () => {
+const star = await starOfMonth(); const mode = S.dirMode || 'list', qy = (S.dirQ || '').toLowerCase(), off = S.dirOff || '';
+const emps = S.emps.filter(e => e.active && (!off || e.office === off) && (!qy || [e.name, e.code, e.dept, e.desig, e.office].join(' ').toLowerCase().includes(qy)));
+const isStar = e => star && star.emp && star.emp.id === e.id;
+const card = e => `<div class="card pcard">${avatarHTML(e)}<div class="grow"><b>${esc(e.name)}${isStar(e) ? ' <span title="Star of the month">⭐</span>' : ''}</b><div class="small muted">${esc(e.desig || '')}</div>
+<div class="small">${e.dept ? `<span class="chip">${esc(e.dept)}</span> ` : ''}${e.office ? `📍 ${esc(e.office)}` : ''}</div>${e.reports_to ? `<div class="small muted">Reports to ${esc(empById(e.reports_to)?.name || '')}</div>` : ''}</div><span class="small muted">${esc(e.code)}</span></div>`;
+const act = new Set(S.emps.filter(e => e.active).map(e => e.id));
+const kids = id => S.emps.filter(e => e.active && e.reports_to === id);
+const node = (e, depth) => depth > 8 ? '' : `<li><div class="onode">${avatarHTML(e, 'sm')}<div><b>${esc(e.name)}${isStar(e) ? ' ⭐' : ''}</b><small>${esc(e.desig || e.dept || '')}</small></div></div>${kids(e.id).length ? `<ul>${kids(e.id).map(k => node(k, depth + 1)).join('')}</ul>` : ''}</li>`;
+const roots = S.emps.filter(e => e.active && (!e.reports_to || !act.has(e.reports_to)));
+return `<div class="stack"><div class="row"><div><span class="eyebrow">Our people</span><h2>👥 Directory <span class="pink">${S.emps.filter(e => e.active).length}</span></h2></div>
+<div class="seg"><button class="${mode === 'list' ? 'on' : ''}" data-dmode="list">People</button><button class="${mode === 'org' ? 'on' : ''}" data-dmode="org">Org chart</button></div></div>
+${mode === 'list' ? `<div class="grid2"><input id="dirQ" placeholder="🔍 Search name, department, designation" value="${esc(S.dirQ || '')}"><select id="dirOff"><option value="">All offices</option>${(C().offices || []).map(o => `<option ${o === off ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>
+<div class="pgrid">${emps.map(card).join('') || '<p class="muted">Nobody matches.</p>'}</div>`
+: `<div class="card scroll"><ul class="org">${roots.map(r => node(r, 0)).join('')}</ul></div><p class="small muted">Built from "Reports to" in Employees. Ask HR to set it if someone is in the wrong place.</p>`}</div>`;
+};
+document.addEventListener('click', e => { const b = e.target.closest('[data-dmode]'); if (b) { S.dirMode = b.dataset.dmode; render(); } });
+document.addEventListener('input', e => { if (e.target.id === 'dirQ') { S.dirQ = e.target.value; clearTimeout(S.dirT); S.dirT = setTimeout(async () => { const pos = e.target.selectionStart; await render(); const i = $('#dirQ'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }, 250); } });
+document.addEventListener('change', e => { if (e.target.id === 'dirOff') { S.dirOff = e.target.value; render(); } });
+async function refreshBadges() {
+const b = {};
+try { await loadNews(); b.news = S.ann.filter(a => !annSeen(a)).length; } catch { }
+try { const ids = isAdmin() ? S.emps.filter(e => e.id !== S.me.id).map(e => e.id) : S.team;
+if (ids.length) { const [lv, fx, xb] = await Promise.all([q(sb.from('leave_requests').select('employee_id').eq('status', 'pending')), q(sb.from('punch_fixes').select('employee_id').eq('status', 'pending')).catch(() => []), q(sb.from('extra_breaks').select('employee_id').eq('status', 'pending')).catch(() => [])]);
+b.team = [...lv, ...fx, ...xb].filter(x => ids.includes(x.employee_id)).length; } } catch { }
+S.badge = b; paintBadges(); return b;
+}
+function paintBadges() { document.querySelectorAll('nav a').forEach(a => { const k = a.getAttribute('href').slice(1), n = (S.badge || {})[k]; let em = a.querySelector('em.nb'); if (n) { if (!em) { em = document.createElement('em'); em.className = 'nb'; a.appendChild(em); } em.textContent = n; } else if (em) em.remove(); }); }
+function notify(key, title, body) {
+S.notified = S.notified || {}; if (S.notified[key]) return; S.notified[key] = 1; toast(`🔔 ${title}${body ? ' — ' + body : ''}`);
+try { if ('Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') new Notification(title, { body, icon: '/icon-192.png', tag: key }); } catch { }
+}
+async function remindTick() {
+if (!S.me) return; const t = todayStr(), now = hm(new Date().toISOString()), c = C();
+try {
+if (!S.today || S.todayDay !== t || Date.now() - (S.remT || 0) > 300000) { S.remT = Date.now(); const [a, br] = await Promise.all([q(sb.from('attendance').select('*').eq('employee_id', S.me.id).eq('day', t).maybeSingle()), q(sb.from('breaks').select('*').eq('employee_id', S.me.id).eq('day', t))]); S.remA = a; S.remB = br; }
+const a = S.remA, ob = (S.remB || []).find(b => !b.end_at), workday = dowOf(t) !== 0 && !holOn(t, S.me.office);
+if (workday && !a?.in_at && now > addMinHM(c.shiftStart || '09:00', (c.graceMin || 10) + 5) && now < (c.shiftEnd || '18:00')) notify('in' + t, "You haven't checked in yet", 'Swipe to check in on your office computer');
+if (a?.in_at && !a.out_at && now > addMinHM(c.shiftEnd || '18:00', 30)) notify('out' + t, "Don't forget to check out", 'You are still checked in');
+if (ob) { const lim = (brCfg().find(x => x.k === ob.kind) || {}).min || 15, m = mins(ob.start_at); if (m > lim) notify('brk' + ob.id, 'Your break is over the limit', `${m - lim} min over — end your break in ORBIS`); }
+if (Date.now() - (S.badgeT || 0) > 300000) { S.badgeT = Date.now(); const b = await refreshBadges(); if (b.team) notify('appr' + t + b.team, `${b.team} request${b.team > 1 ? 's' : ''} waiting for your approval`, 'Open My team'); if (b.news) notify('news' + t + b.news, `${b.news} new announcement${b.news > 1 ? 's' : ''}`, 'Open News'); }
+} catch { }
+}
+function startReminders() { clearInterval(S.remI); S.remI = setInterval(remindTick, 60000); setTimeout(remindTick, 5000); }
 boot();
 </script></body></html>
