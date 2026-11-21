@@ -630,7 +630,7 @@ const active = S.emps.filter(e => e.active).length;
 const unread = pols.filter(p => (mine[p.id] || 0) < p.version).length;
 const groups = POLCAT.map(c => [c, pols.filter(p => p.category === c)]).filter(g => g[1].length);
 return `<div class="stack narrow"><div class="row"><div><span class="eyebrow">Company rules</span><h2>HR policies ${unread ? `<span class="pink">${unread} to read</span>` : ''}</h2></div>${isAdmin() ? '<button class="btn pri" data-pol="new">+ Add policy</button>' : ''}</div>
-${isAdmin() && !pols.length ? '<div class="card"><p>No policies yet.</p><button class="btn" data-pol="seed">Add starter policies (attendance, breaks, leave)</button></div>' : ''}
+${isAdmin() && !pols.length ? '<div class="card"><p>No policies yet.</p><button class="btn" style="white-space:normal;text-align:left" data-pol="seed">Add starter policies (attendance, breaks, leave)</button></div>' : ''}
 ${!pols.length && !isAdmin() ? '<div class="card muted">HR has not added policies yet.</div>' : ''}
 ${groups.map(([c, ps]) => `<div><div class="grp">${esc(c)}</div><div class="stack" style="gap:8px">${ps.map(p => { const read = (mine[p.id] || 0) >= p.version; const n = acks.filter(a => a.policy_id === p.id && a.version >= p.version).length;
 return `<div class="pol" data-pol="open" data-id="${p.id}"><span class="pi">📘</span><div class="grow"><b>${esc(p.title)}</b><small>Updated ${fmtD(ymd(p.updated_at))}${p.version > 1 ? ' · v' + p.version : ''}</small></div>${isAdmin() ? `<span class="chip">${n}/${active} read</span>` : ''}${read ? '<span class="chip good">✓ Read</span>' : '<span class="chip warn">New · please read</span>'}</div>`; }).join('')}</div></div>`).join('')}</div>`;
