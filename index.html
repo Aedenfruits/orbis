@@ -1567,7 +1567,7 @@ dlg('🔒 Unlock the vault', '<p class="small muted">Salaries and bank details a
 const go = async () => { try { const raw = await vaultOpenRaw($('#nd_pw').value, false); S.dek = await importDek(raw); raw.fill(0); vaultTouch(); closeDlg(); after && after(); } catch (er) { toast(errMsg(er), true); } };
 $('#nd_un').onclick = go; $('#nd_pw').onkeydown = e => { if (e.key === 'Enter') go(); }; return false;
 }
-const payCfg = () => ({ basicPct: 50, hraPct: 40, pf: true, pfCap: 15000, esi: true, esiLimit: 21000, pt: 0, ...(C().pay || {}) });
+const payCfg = () => ({ basicPct: 50, hraPct: 40, pf: true, pfCap: 25000, esi: true, esiLimit: 21000, pt: 0, ...(C().pay || {}) });
 function payCalc(ctc, row, ex = {}) {
 const P = payCfg(), cal = row['Calendar days'] || 30, days = row['Payable days'] || 0;
 const gross = Math.round(ctc * days / cal), basic = Math.round(gross * P.basicPct / 100), hra = Math.round(basic * P.hraPct / 100), spec = gross - basic - hra;
@@ -2018,7 +2018,7 @@ more: '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5"
 };
 const mico = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${MI[k]}</svg>`;
 const TABS = [['punch', 'Home'], ['leave', 'Leave'], ['tasks', 'Tasks'], ['news', 'News']];
-const MGROUPS = [['Me', ['my', 'plan', 'pay', 'docs', 'policies', 'board', 'people']], ['Team', ['team']], ['HR & admin', ['register', 'payroll', 'employees', 'assets', 'exits', 'pulse', 'log', 'setup']]];
+const MGROUPS = [['Me', ['my', 'plan', 'pay', 'docs', 'policies', 'board', 'people']], ['Team', ['team']], ['HR & admin', ['register', 'payroll', 'statutory', 'employees', 'assets', 'exits', 'pulse', 'log', 'setup']]];
 const MCOL = { my: '#3b6cf6', plan: '#7b2ff7', pay: '#17834f', docs: '#c77700', policies: '#1D2B53', board: '#e0a100', people: '#0aa3a3', team: '#FF004D', register: '#5b3f8f', payroll: '#17834f', employees: '#3b6cf6', assets: '#475569', exits: '#cf2450', pulse: '#e0287a', log: '#334155', setup: '#64748b' };
 function mTitle() { const n = navList().find(x => x[0] === S.view); return S.view === 'punch' ? `${greeting()}, ${esc(S.me.name.split(' ')[0])}` : esc(n ? n[1] : 'ORBIS'); }
 const _shellM = shell;
@@ -2138,5 +2138,122 @@ return `<div class="card phnudge pushc"><span class="ava">🔔</span><div class=
 const _punchP = VIEWS.punch; VIEWS.punch = async () => { const h = await _punchP(); const c = pushCard(); return c ? `<div style="max-width:720px;margin:0 auto 12px">${c}</div>${h}` : h; };
 const _startRem = startReminders; startReminders = function () { _startRem(); setTimeout(() => pushSubscribe(false).catch(() => { }), 3000); };
 const _signOutP = signOut; signOut = async function () { try { if (pushOK()) { const reg = await navigator.serviceWorker.getRegistration(); const sub = await reg?.pushManager.getSubscription(); if (sub) await sb.from('push_subs').delete().eq('endpoint', sub.endpoint); } } catch { } lsSet('pushOn', false); return _signOutP(); };
+const fyOf = ym => { const [y, m] = ym.split('-').map(Number); const s = m >= 4 ? y : y - 1; return `${s}-${String(s + 1).slice(2)}`; };
+const fyStart = fy => `${fy.slice(0, 4)}-04`;
+const fyMonths = fy => { const s = Number(fy.slice(0, 4)); return [...Array(12)].map((_, i) => { const m = 4 + i, y = m > 12 ? s + 1 : s; return `${y}-${pad(m > 12 ? m - 12 : m)}`; }); };
+function taxCalc(gross, regime, d = {}, hraYr = 0, basicYr = 0) {
+const n = v => Math.max(0, Number(v) || 0); let std, ded = 0, slabs, rebLim, rebMax;
+if (regime === 'old') {
+std = 50000; const rent = n(d.rent) * 12, hraEx = rent ? Math.max(0, Math.min(hraYr, rent - 0.1 * basicYr, (d.metro ? 0.5 : 0.4) * basicYr)) : 0;
+ded = Math.min(150000, n(d.c80)) + Math.min(n(d.d80) || 0, 100000) + hraEx + Math.min(200000, n(d.hl)) + n(d.other);
+slabs = [[250000, 0], [500000, .05], [1000000, .2], [Infinity, .3]]; rebLim = 500000; rebMax = 12500;
+} else { std = 75000; slabs = [[400000, 0], [800000, .05], [1200000, .1], [1600000, .15], [2000000, .2], [2400000, .25], [Infinity, .3]]; rebLim = 1200000; rebMax = 60000; }
+const taxable = Math.max(0, Math.round(gross - std - ded)); let tax = 0, prev = 0;
+for (const [lim, r] of slabs) { if (taxable > prev) tax += (Math.min(taxable, lim) - prev) * r; prev = lim; }
+if (taxable <= rebLim) tax = Math.max(0, tax - rebMax); else if (regime !== 'old') tax = Math.min(tax, taxable - rebLim); // marginal relief (new regime)
+const cess = Math.round(tax * 0.04); return { std, ded: Math.round(ded), taxable, tax: Math.round(tax), cess, total: Math.round(tax) + cess };
+}
+async function taxDecl(empId, fy) { try { return await q(sb.from('tax_decl').select('*').eq('employee_id', empId).eq('fy', fy).maybeSingle()); } catch { return null; } }
+const _payCalc0 = payCalc;
+payCalc = function (ctc, row, ex = {}) {
+const o = _payCalc0(ctc, row, ex), P = payCfg(), cal = row['Calendar days'] || 30;
+const basic = (o.earn.find(z => z[0] === 'Basic') || [0, 0])[1];
+const pfWage = P.pf ? Math.min(basic, P.pfCap) : 0, pf = Math.round(pfWage * 0.12), eps = Math.round(pfWage * 0.0833);
+const esiOn = P.esi && ctc <= P.esiLimit, esiWage = esiOn ? o.gross : 0, esiEE = esiOn && (o.gross - o.bonus) / cal > 176 ? Math.ceil(esiWage * 0.0075) : 0;
+const ded = o.ded.filter(z => !/^Provident fund|^ESI/.test(z[0])); if (pf) ded.unshift(['Provident fund (12%)', pf]); if (esiEE) ded.splice(pf ? 1 : 0, 0, ['ESI (0.75%)', esiEE]);
+const tD = ded.reduce((s, z) => s + z[1], 0);
+return { ...o, ded, totalDed: tD, net: o.gross - tD, pfWage, pf, eps, epfER: pf - eps, edli: Math.round(pfWage * 0.005), pfAdm: Math.round(pfWage * 0.005), esiWage, esi: esiEE, esiER: esiOn ? Math.ceil(esiWage * 0.0325) : 0, pt: (ded.find(z => z[0] === 'Professional tax') || [0, 0])[1], ncp: row['Absent / LOP days'] || 0 };
+};
+const _payPrep0 = payPrepare;
+payPrepare = async function (ym) {
+const rows = await _payPrep0(ym), fy = fyOf(ym), months = fyMonths(fy), idx = months.indexOf(ym), remaining = 12 - idx;
+const past = await q(sb.from('payslips').select('employee_id,month,data').gte('month', months[0]).lt('month', ym)).catch(() => []);
+const decl = await q(sb.from('tax_decl').select('*').eq('fy', fy)).catch(() => []);
+const P = payCfg(), saved = new Set((await q(sb.from('payslips').select('employee_id').eq('month', ym)).catch(() => [])).map(z => z.employee_id));
+for (const x of rows) {
+if (!x.ctc) continue; const mine = past.filter(s => s.employee_id === x.e.id), cur = payCalc(x.ctc, x.r, { ...x.ex, tds: 0 });
+const proj = mine.reduce((s, z) => s + (z.data?.gross || 0), 0) + cur.gross + x.ctc * Math.max(0, 11 - mine.length), done = mine.reduce((s, z) => s + (z.data?.tds || 0), 0);
+const dc = decl.find(z => z.employee_id === x.e.id), basicYr = proj * P.basicPct / 100, hraYr = basicYr * P.hraPct / 100;
+const t = taxCalc(proj, dc?.regime || 'new', dc?.data || {}, hraYr, basicYr); x.tdsSug = Math.max(0, Math.round((t.total - done) / remaining)); x.taxInfo = { proj, ...t, done, regime: dc?.regime || 'new' };
+if (!saved.has(x.e.id)) x.ex.tds = x.tdsSug;
+}
+return rows;
+};
+document.addEventListener('focusin', e => { const i = e.target.closest('[data-px][data-k="tds"]'); if (!i || !S.payDraft) return; const x = S.payDraft.rows[i.dataset.px]; if (x?.taxInfo) i.title = `Suggested ${inr(x.tdsSug)}/month · ${x.taxInfo.regime} regime · projected income ${inr(x.taxInfo.proj)} · tax for year ${inr(x.taxInfo.total)} · deducted so far ${inr(x.taxInfo.done)}`; });
+VIEWS.statutory = async () => {
+const ym = S.stMonth || shiftMonth(todayStr().slice(0, 7), -1), fy = S.stFy || fyOf(ym), tab = S.stTab || 'pf';
+let slips; try { slips = await q(sb.from('payslips').select('*').eq('month', ym)); } catch { return p3Missing(); }
+S.stSlips = slips; const D = slips.map(s => ({ ...s.data, employee_id: s.employee_id })).sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+const sum = k => D.reduce((s, d) => s + (Number(d[k]) || 0), 0);
+const seg = `<div class="seg">${[['pf', 'PF'], ['esi', 'ESI'], ['pt', 'Professional tax'], ['tds', 'Income tax (TDS)']].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-st="${k}">${l}</button>`).join('')}</div>`;
+const head = `<div class="row"><div><span class="eyebrow">HR · accounts</span><h2>Compliance</h2></div>${tab !== 'tds' ? `<div class="hstack"><button class="btn sm" data-stm="-1">‹</button><b>${esc(monthName(ym))}</b><button class="btn sm" data-stm="1">›</button></div>` : `<div class="hstack"><button class="btn sm" data-stfy="-1">‹</button><b>FY ${fy}</b><button class="btn sm" data-stfy="1">›</button></div>`}</div>`;
+const none = `<div class="card muted">No payslips for ${esc(monthName(ym))} yet. Prepare them in Payroll first.</div>`;
+let body = '';
+if (tab === 'pf') { const P = D.filter(d => d.pf > 0), miss = P.filter(d => !/^\d{12}$/.test(String(d.uan || '').replace(/\s/g, '')));
+body = !D.length ? none : `<div class="kpis"><div><b>${P.length}</b><small>Members</small></div><div><b>${inr(sum('pfWage'))}</b><small>PF wages</small></div><div><b>${inr(sum('pf') * 2 + sum('edli') + sum('pfAdm'))}</b><small>Total to pay</small></div></div>
+<div class="card"><h3>PF challan for ${esc(monthName(ym))}</h3><table><tbody>
+<tr><td>Employee share (12%) — A/c 1</td><td class="right">${inr(sum('pf'))}</td></tr><tr><td>Employer EPF (3.67%) — A/c 1</td><td class="right">${inr(sum('epfER'))}</td></tr><tr><td>Employer EPS (8.33%) — A/c 10</td><td class="right">${inr(sum('eps'))}</td></tr>
+<tr><td>EDLI (0.5%) — A/c 21</td><td class="right">${inr(sum('edli'))}</td></tr><tr><td>Admin charges (0.5%) — A/c 2</td><td class="right">${inr(sum('pfAdm'))}</td></tr></tbody></table>
+${miss.length ? `<div class="msg bad">${miss.length} member(s) have no valid 12-digit UAN: ${miss.map(d => esc(d.name)).join(', ')}. Add the UAN in 🔒 private details and prepare payslips again.</div>` : ''}
+<div class="hstack wrap"><button class="btn pri" data-sx="ecr">⬇ ECR text file (for EPFO upload)</button><button class="btn" data-sx="pfx">⬇ PF register (Excel)</button></div>
+<p class="small muted">PF wages = basic, limited to the wage ceiling (₹${payCfg().pfCap.toLocaleString('en-IN')} from 17 Sep 2026). NCP days = loss-of-pay days. Due by the 15th of next month. Check figures with your auditor before uploading.</p></div>`; }
+if (tab === 'esi') { const E = D.filter(d => d.esiWage > 0), miss = E.filter(d => !/^\d{10}$/.test(String(d.esino || '').replace(/\s/g, '')));
+body = !D.length ? none : `<div class="kpis"><div><b>${E.length}</b><small>Insured staff</small></div><div><b>${inr(sum('esiWage'))}</b><small>ESI wages</small></div><div><b>${inr(sum('esi') + sum('esiER'))}</b><small>Total to pay</small></div></div>
+<div class="card"><h3>ESI for ${esc(monthName(ym))}</h3><table><tbody><tr><td>Employee share (0.75%)</td><td class="right">${inr(sum('esi'))}</td></tr><tr><td>Employer share (3.25%)</td><td class="right">${inr(sum('esiER'))}</td></tr></tbody></table>
+${miss.length ? `<div class="msg bad">${miss.length} employee(s) have no valid 10-digit ESI (IP) number: ${miss.map(d => esc(d.name)).join(', ')}.</div>` : ''}
+<div class="hstack wrap"><button class="btn pri" data-sx="esi">⬇ ESIC monthly contribution file (Excel)</button></div>
+<p class="small muted">Covers staff with monthly salary up to ₹21,000. Staff whose daily wage is ₹176 or less pay no employee share; the employer share is still due. Due by the 15th of next month.</p></div>`; }
+if (tab === 'pt') body = !D.length ? none : `<div class="card"><h3>Professional tax · ${esc(monthName(ym))}</h3><p>${D.filter(d => d.pt > 0).length} employees · total <b>${inr(sum('pt'))}</b></p><div class="hstack wrap"><button class="btn pri" data-sx="pt">⬇ PT register (Excel)</button></div><p class="small muted">PT is deducted at the fixed monthly amount set in Payroll → Salary structure. Kerala local bodies collect PT half-yearly on half-year salary slabs — check the amount with your municipality / panchayat.</p></div>`;
+if (tab === 'tds') { const months = fyMonths(fy);
+const [all, decl] = await Promise.all([q(sb.from('payslips').select('employee_id,month,data').gte('month', months[0]).lte('month', months[11])).catch(() => []), q(sb.from('tax_decl').select('*').eq('fy', fy)).catch(() => [])]);
+const ids = [...new Set(all.map(s => s.employee_id))]; const P = payCfg();
+S.stTax = ids.map(id => { const mine = all.filter(s => s.employee_id === id).sort((a, b) => a.month.localeCompare(b.month)), last = mine[mine.length - 1].data, paidM = mine.length, remain = Math.max(0, 12 - mine.length);
+const gross = mine.reduce((s, z) => s + (z.data.gross || 0), 0), proj = gross + (last.ctc || 0) * remain, done = mine.reduce((s, z) => s + (z.data.tds || 0), 0), dc = decl.find(z => z.employee_id === id);
+const t = taxCalc(proj, dc?.regime || 'new', dc?.data || {}, proj * P.basicPct / 100 * P.hraPct / 100, proj * P.basicPct / 100);
+return { id, name: last.name, code: last.code, pan: last.pan, regime: dc?.regime || 'new', declared: !!dc, months: paidM, gross, proj, done, ...t, bal: t.total - done }; }).sort((a, b) => b.total - a.total);
+body = `<div class="card flush"><div class="scrollx"><table><thead><tr><th>Employee</th><th>Regime</th><th>Paid so far</th><th>Projected year</th><th>Taxable</th><th>Tax for year</th><th>TDS deducted</th><th>Balance</th><th></th></tr></thead><tbody>
+${S.stTax.map((r, i) => `<tr><td><b>${esc(r.name)}</b><div class="small muted">${esc(r.code)}${r.pan ? ' · ' + esc(r.pan) : ' · <span class="pink">no PAN</span>'}</div></td><td>${r.regime === 'old' ? 'Old' : 'New'}${r.declared ? '' : ' <span class="small muted">(default)</span>'}</td><td>${inr(r.gross)}<div class="small muted">${r.months} month${r.months > 1 ? 's' : ''}</div></td><td>${inr(r.proj)}</td><td>${inr(r.taxable)}</td><td><b>${inr(r.total)}</b></td><td>${inr(r.done)}</td><td class="${r.bal > 0 ? 'pink' : ''}">${inr(r.bal)}</td><td><button class="btn sm" data-sx="f16" data-i="${i}">🖨 Statement</button></td></tr>`).join('') || '<tr><td colspan=9 class="muted">No payslips in this year yet.</td></tr>'}</tbody></table></div></div>
+<div class="hstack wrap"><button class="btn" data-sx="tdsx">⬇ TDS working (Excel)</button></div>
+<p class="small muted">Tax worked out on FY ${fy} slabs: new regime nil up to ₹4 lakh, then 5–30%, ₹75,000 standard deduction, no tax up to ₹12 lakh taxable (rebate). Old regime with the deductions staff declare. 4% cess added. Each month's payroll suggests the TDS to deduct. This is a working estimate — Form 16 Part A comes from TRACES after you file 24Q; confirm with your auditor.</p>`; }
+return `<div class="stack">${head}${seg}${body}</div>`;
+};
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-st],[data-stm],[data-stfy],[data-sx]'); if (!b) return;
+if (b.dataset.st) { S.stTab = b.dataset.st; return render(); }
+if (b.dataset.stm) { S.stMonth = shiftMonth(S.stMonth || shiftMonth(todayStr().slice(0, 7), -1), Number(b.dataset.stm)); return render(); }
+if (b.dataset.stfy) { const fy = S.stFy || fyOf(S.stMonth || shiftMonth(todayStr().slice(0, 7), -1)), s = Number(fy.slice(0, 4)) + Number(b.dataset.stfy); S.stFy = `${s}-${String(s + 1).slice(2)}`; return render(); }
+const a = b.dataset.sx, ym = S.stMonth || shiftMonth(todayStr().slice(0, 7), -1), D = (S.stSlips || []).map(s => s.data);
+try {
+if (a === 'ecr') { const L = D.filter(d => d.pf > 0).map(d => [String(d.uan || '').replace(/\D/g, ''), String(d.name || '').toUpperCase().replace(/[^A-Z .]/g, '').slice(0, 85), Math.round(d.gross), Math.round(d.pfWage), Math.round(d.pfWage), Math.round(d.pfWage), Math.round(d.pf), Math.round(d.eps), Math.round(d.epfER), Math.round(d.ncp || 0), 0].join('#~#'));
+const blob = new Blob([L.join('\r\n')], { type: 'text/plain' }), u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = `ECR-${ym}.txt`; l.click(); setTimeout(() => URL.revokeObjectURL(u), 3000); toast('⬇ ECR file downloaded — upload it on the EPFO employer portal'); }
+if (a === 'pfx') await xlsxOut(D.filter(d => d.pf > 0).map(d => ({ UAN: d.uan, Name: d.name, Code: d.code, 'Gross wages': d.gross, 'EPF wages': d.pfWage, 'EPS wages': d.pfWage, 'EDLI wages': d.pfWage, 'Employee 12%': d.pf, 'Employer EPF 3.67%': d.epfER, 'Employer EPS 8.33%': d.eps, 'EDLI 0.5%': d.edli, 'Admin 0.5%': d.pfAdm, 'NCP days': d.ncp })), 'PF ' + ym, `ORBIS-PF-${ym}.xlsx`);
+if (a === 'esi') await xlsxOut(D.filter(d => d.esiWage > 0).map(d => ({ 'IP Number (10 Digits)': d.esino, 'IP Name ( Only Alphabets and Space )': String(d.name || '').replace(/[^A-Za-z ]/g, ''), 'No of Days for which wages paid/payable during the month': Math.round(d.payable), 'Total Monthly Wages': Math.round(d.esiWage), 'Reason Code for Zero workings days(numeric only; provide 0 for all other reasons- Click on the link for reference)': d.payable > 0 ? 0 : 1, 'Last Working Day( Format DD/MM/YYYY or DD-MM-YYYY)': '', 'Employee share': d.esi, 'Employer share': d.esiER })), 'ESI ' + ym, `ORBIS-ESIC-${ym}.xlsx`);
+if (a === 'pt') await xlsxOut(D.map(d => ({ Code: d.code, Name: d.name, 'Gross salary': d.gross, 'Professional tax': d.pt || 0 })), 'PT ' + ym, `ORBIS-PT-${ym}.xlsx`);
+if (a === 'tdsx') await xlsxOut((S.stTax || []).map(r => ({ Code: r.code, Name: r.name, PAN: r.pan, Regime: r.regime, 'Months paid': r.months, 'Gross paid so far': r.gross, 'Projected annual': r.proj, 'Standard deduction': r.std, 'Other deductions': r.ded, Taxable: r.taxable, Tax: r.tax, Cess: r.cess, 'Total tax': r.total, 'TDS deducted': r.done, Balance: r.bal })), 'TDS', `ORBIS-TDS-working.xlsx`);
+if (a === 'f16') { const r = S.stTax[b.dataset.i], fy = S.stFy || fyOf(ym), co = idCfg();
+openDoc(letterHTML(`Salary & tax statement FY ${fy}`, `<p><b>${esc(r.name)}</b> · ${esc(r.code)}${r.pan ? ' · PAN ' + esc(r.pan) : ''} · ${r.regime === 'old' ? 'Old' : 'New'} tax regime</p>
+<table><tbody><tr><td>Gross salary paid (${r.months} months)</td><td class="n">${inr(r.gross)}</td></tr><tr><td>Projected salary for the year</td><td class="n">${inr(r.proj)}</td></tr><tr><td>Less: standard deduction</td><td class="n">−${inr(r.std)}</td></tr>${r.ded ? `<tr><td>Less: deductions declared (80C, 80D, HRA, home loan…)</td><td class="n">−${inr(r.ded)}</td></tr>` : ''}
+<tr><td><b>Taxable income</b></td><td class="n"><b>${inr(r.taxable)}</b></td></tr><tr><td>Income tax</td><td class="n">${inr(r.tax)}</td></tr><tr><td>Health & education cess (4%)</td><td class="n">${inr(r.cess)}</td></tr></tbody><tfoot><tr><td>Total tax for the year</td><td class="n">${inr(r.total)}</td></tr></tfoot></table>
+<div class="net"><span>TDS deducted so far</span><b>${inr(r.done)}</b></div><p>Balance to be deducted in the remaining months: <b>${inr(Math.max(0, r.bal))}</b>.</p>
+<p class="small" style="color:#666">This is an employer working statement from ORBIS. The official Form 16 (Part A) is downloaded from TRACES after the quarterly TDS returns (Form 24Q) are filed.</p><div class="sig"><span></span><div>For ${esc(co.company)}<br>${esc(co.signatory)}</div></div>`)); }
+} catch (er) { toast(errMsg(er), true); }
+});
+const _navStat = navList; navList = function () { const n = _navStat(); const i = n.findIndex(x => x[0] === 'payroll'); if (i >= 0 && !n.some(x => x[0] === 'statutory')) n.splice(i + 1, 0, ['statutory', 'Compliance', '🏛️']); return n; };
+const _payV = VIEWS.pay;
+VIEWS.pay = async () => {
+const h = await _payV(), fy = fyOf(todayStr().slice(0, 7)), dc = await taxDecl(S.me.id, fy), d = dc?.data || {}, rg = dc?.regime || 'new';
+const slips = (S.mySlips || []).filter(s => s.month >= fyStart(fy)), last = slips[0]?.data, P = payCfg();
+let cmp = ''; if (last?.ctc) { const proj = slips.reduce((s, z) => s + (z.data.gross || 0), 0) + last.ctc * Math.max(0, 12 - slips.length), bY = proj * P.basicPct / 100, hY = bY * P.hraPct / 100;
+const tn = taxCalc(proj, 'new', d, hY, bY), to = taxCalc(proj, 'old', d, hY, bY), better = tn.total <= to.total ? 'new' : 'old';
+cmp = `<div class="grid2"><div class="lb ${rg === 'new' ? 'on' : ''}"><small>NEW REGIME</small><div class="lbn"><b>${inr(tn.total)}</b><span>tax / year</span></div></div><div class="lb ${rg === 'old' ? 'on' : ''}"><small>OLD REGIME</small><div class="lbn"><b>${inr(to.total)}</b><span>tax / year</span></div></div></div><div class="msg">Estimated on a yearly salary of ${inr(proj)}. The <b>${better} regime</b> looks better for you${tn.total === to.total ? ' (both equal)' : ` — about ${inr(Math.abs(tn.total - to.total))} less tax`}.</div>`; }
+const f = (k, l, hint) => `<label>${l}<input type="number" min="0" id="td_${k}" value="${esc(d[k] || '')}" placeholder="${hint}"></label>`;
+return h + `<div class="stack narrow" style="margin-top:14px"><div class="card"><div class="row"><h3>🧾 My tax declaration · FY ${fy}</h3>${dc ? `<span class="chip good">Saved</span>` : '<span class="chip warn">Not given</span>'}</div>
+<p class="small muted">Tell HR which tax regime you choose and your tax-saving investments. ORBIS uses it to work out the TDS on your payslip. Keep proofs ready — HR may ask for them.</p>${cmp}
+<label>Tax regime<select id="td_rg"><option value="new" ${rg === 'new' ? 'selected' : ''}>New regime (default, lower rates, few deductions)</option><option value="old" ${rg === 'old' ? 'selected' : ''}>Old regime (claim 80C, HRA, home loan…)</option></select></label>
+<div class="grid2">${f('c80', '80C — PF, LIC, PPF, ELSS, tuition (₹/year)', 'max 1,50,000')}${f('d80', '80D — health insurance (₹/year)', 'e.g. 25000')}${f('rent', 'House rent paid (₹/month)', 'for HRA')}${f('hl', 'Home loan interest (₹/year)', 'max 2,00,000')}${f('other', 'Other deductions (₹/year)', '80E, 80G…')}<label class="chk" style="align-self:end"><input type="checkbox" id="td_metro" ${d.metro ? 'checked' : ''}> I live in a metro city (Mumbai, Chennai…)</label></div>
+<button class="btn pri" id="tdSave">Save declaration</button></div></div>`;
+};
+document.addEventListener('click', async e => { if (!e.target.closest('#tdSave')) return; const fy = fyOf(todayStr().slice(0, 7)), data = {}; ['c80', 'd80', 'rent', 'hl', 'other'].forEach(k => { const v = Number($('#td_' + k).value); if (v) data[k] = v; }); if ($('#td_metro').checked) data.metro = true;
+try { await q(sb.from('tax_decl').upsert({ employee_id: S.me.id, fy, regime: $('#td_rg').value, data, updated_at: new Date().toISOString() })); toast('🧾 Tax declaration saved'); render(); } catch (er) { toast(errMsg(er), true); } });
 boot();
 </script></body></html>
