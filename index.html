@@ -241,7 +241,16 @@ body{font-optical-sizing:auto}h1,h2,h3,h4{letter-spacing:-.015em}b,strong{font-w
 .orgwrap{overflow:auto}.otree,.otree ul{list-style:none;margin:0;padding:0}.otree ul{margin-left:22px;padding-left:18px;border-left:2px solid #e3e7f1}.otree li{position:relative;padding:6px 0}.otree ul>li::before{content:'';position:absolute;left:-18px;top:28px;width:16px;border-top:2px solid #e3e7f1}.ocard{display:inline-flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 2px 8px rgba(29,43,83,.05);min-width:220px}.ocard.me{border-color:#FF004D;box-shadow:0 0 0 3px #ffe0ea}.ocard b{display:block;font-size:14px}.ocard small{color:#8a93a8;font-size:12px}.ocount{margin-left:auto;background:#eef1f8;border-radius:99px;padding:2px 8px;font-size:11px;font-weight:800;color:#1D2B53}
 .wishbar{display:grid;gap:8px;margin:12px 0 4px}.wishrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.7);border-radius:12px;padding:8px 12px}
 .poll h3{font-size:17px}.popt{position:relative;display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;margin:6px 0;cursor:pointer;overflow:hidden;font-weight:600;background:#fff}.popt input{width:18px;height:18px}.popt.res{cursor:default}.popt.res i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#ffe0ea,#fff0f5);z-index:0}.popt.res.sel i{background:linear-gradient(90deg,#ffc2d4,#ffe0ea)}.popt.res span,.popt.res b{position:relative;z-index:1}.popt.res b{margin-left:auto}
-/* smoother launch on phones: only transform/opacity, no filters or big shadows */
+.oi{width:24px;height:24px;flex:none;display:block}.oi .a{stroke:#FF004D}.oi .af{fill:#FF004D;stroke:none}
+.ib{font-style:normal;display:grid;place-items:center;background:var(--ib);color:#1D2B53;border:1px solid rgba(29,43,83,.06)}
+.mgrid .ib{width:52px;height:52px;border-radius:17px}.mgrid .ib .oi{width:25px;height:25px}.mgrid a.on .ib{box-shadow:0 0 0 2px #FF004D}
+.mquick .ib{width:48px;height:48px;border-radius:16px}.mquick .ib .oi{width:24px;height:24px}
+nav a .ni{display:inline-grid;place-items:center;width:22px}nav a .ni .oi{width:20px;height:20px;color:#fff;opacity:.9}nav a .ni .oi .a{stroke:#ff6b98}nav a .ni .oi .af{fill:#ff6b98}nav a.on .ni .oi{opacity:1}
+.mlist>* .oi{width:22px;height:22px;color:#1D2B53}.mlist .danger .oi{color:var(--crit)}.mlist .danger .oi .a{stroke:var(--crit)}
+.hic{display:inline-grid;place-items:center;width:1.5em;height:1.5em;margin-right:.35em;vertical-align:-.3em;border-radius:.45em;background:#ffeef3;color:#1D2B53}.hic .oi{width:.95em;height:.95em}
+h3 .hic{width:1.6em;height:1.6em}
+@media (min-width:700px) and (max-width:999px){.mquick .ib{width:60px;height:60px;border-radius:19px}.mquick .ib .oi{width:28px;height:28px}}
+.mgrid i.ib{background:var(--ib);box-shadow:none;border:1px solid rgba(29,43,83,.06)}
 .fxlayer i{filter:none!important;will-change:transform,opacity}.fxlayer i.w{filter:none!important}
 .fxring{box-shadow:none!important;border-width:2px!important;will-change:transform,opacity}
 @keyframes wtOut{to{opacity:0;transform:translate(var(--tx,0),var(--ty,40px)) scale(.55) rotate(var(--tr,0deg))}}
@@ -439,7 +448,7 @@ return n;
 function route() { const h = location.hash.slice(1) || 'punch'; const ok = navList().map(x => x[0]); S.view = ok.includes(h) ? h : 'punch'; render(); }
 addEventListener('hashchange', () => { if (S.me) route(); });
 function shell(body) {
-const nav = navList().map(([k, l, i]) => `<a href="#${k}" class="${S.view === k ? 'on' : ''}"><span>${i}</span>${l}</a>`).join('');
+const nav = navList().map(([k, l, i]) => `<a href="#${k}" class="${S.view === k ? 'on' : ''}"><span class="ni">${navIco(k, i)}</span>${l}</a>`).join('');
 const qn = queue().length;
 return `<header class="top"><div class="alg">${LOGO}</div><div class="brand"><b>ORBIS</b><small>Everything. Connected.</small></div>
 <div class="who"><button class="btn sm inst" type="button" ${S.canInstall ? '' : 'hidden'}>⬇ Install app</button>${qn ? `<span class="chip warn">⏳ ${qn} waiting to sync</span>` : ''}${navigator.onLine ? '' : '<span class="chip crit">Offline</span>'}<button class="mebtn hide-s" data-photo="${S.me.id}" title="My photo">${avatarHTML(S.me, 'xs')}${esc(S.me.name)}</button><button class="btn sm" onclick="pwDlg()" title="Change my password">🔑</button><button class="btn sm" onclick="signOut()">Sign out</button></div></header>
@@ -450,8 +459,8 @@ async function render() {
 document.body.className = 'app';
 const v = VIEWS[S.view] || VIEWS.punch;
 try { $('#app').innerHTML = shell('<div class="loading"><div class="ldorb"><span class="ldr"><i></i></span><b>' + LOGO + '</b></div><div class="skel"><i></i><i></i><i></i></div></div>'); $('#main').innerHTML = await v();
-if (S.view === 'punch' && S.me && !S.me.photo_at) $('#main').insertAdjacentHTML('afterbegin', `<div class="card phnudge"><span class="ava">📷</span><div class="grow"><b>Add your photo</b><div class="small muted">It goes on your Aeden ID card. Takes 10 seconds.</div></div><button class="btn pri sm" data-photo="${S.me.id}">Add photo</button></div>`);
-if (S.view === 'punch' && (S.badge || {}).news) $('#main').insertAdjacentHTML('afterbegin', `<a class="card phnudge" href="#news" style="text-decoration:none;color:inherit"><span class="ava">📢</span><div class="grow"><b>${S.badge.news} new announcement${S.badge.news > 1 ? 's' : ''}</b><div class="small muted">Tap to read</div></div><span class="btn sm">Open</span></a>`);
+if (S.view === 'punch' && S.me && !S.me.photo_at) $('#main').insertAdjacentHTML('afterbegin', `<div class="card phnudge"><span class="ava ib" style="--ib:#ffeef3">${ico('photo')}</span><div class="grow"><b>Add your photo</b><div class="small muted">It goes on your Aeden ID card. Takes 10 seconds.</div></div><button class="btn pri sm" data-photo="${S.me.id}">Add photo</button></div>`);
+if (S.view === 'punch' && (S.badge || {}).news) $('#main').insertAdjacentHTML('afterbegin', `<a class="card phnudge" href="#news" style="text-decoration:none;color:inherit"><span class="ava ib" style="--ib:#ffeef3">${ico('news')}</span><div class="grow"><b>${S.badge.news} new announcement${S.badge.news > 1 ? 's' : ''}</b><div class="small muted">Tap to read</div></div><span class="btn sm">Open</span></a>`);
 after(); fillAvatars(); paintBadges(); }
 catch (e) { $('#main').innerHTML = `<div class="card"><h3>Something went wrong</h3><p>${esc(errMsg(e))}</p></div>`; }
 }
@@ -2094,13 +2103,13 @@ return h + `<div class="mtop"><div class="alg">${LOGO}</div><div class="mt"><sma
 function openSheet(kind) {
 const nl = navList(), by = Object.fromEntries(nl.map(x => [x[0], x])), p = $('#mspanel'); if (!p) return;
 if (kind === 'more') {
-p.innerHTML = `<div class="msgrab"></div>${MGROUPS.map(([g, ks]) => { const it = ks.filter(k => by[k]); return it.length ? `<div class="msg-h">${g}</div><div class="mgrid">${it.map(k => `<a href="#${k}" class="${S.view === k ? 'on' : ''}" data-msclose><i style="--c:${MCOL[k] || '#1D2B53'}">${by[k][2]}</i><span>${esc(by[k][1])}</span>${(S.badge || {})[k] ? `<em class="nb">${S.badge[k]}</em>` : ''}</a>`).join('')}</div>` : ''; }).join('')}`;
+p.innerHTML = `<div class="msgrab"></div>${MGROUPS.map(([g, ks]) => { const it = ks.filter(k => by[k]); return it.length ? `<div class="msg-h">${g}</div><div class="mgrid">${it.map(k => `<a href="#${k}" class="${S.view === k ? 'on' : ''}" data-msclose>${icTile(k, by[k][2])}<span>${esc(by[k][1])}</span>${(S.badge || {})[k] ? `<em class="nb">${S.badge[k]}</em>` : ''}</a>`).join('')}</div>` : ''; }).join('')}`;
 } else {
 const e = S.me;
 p.innerHTML = `<div class="msgrab"></div><div class="mme">${avatarHTML(e, 'lg')}<div><b>${esc(e.name)}</b><small>${esc(e.code)}${e.desig ? ' · ' + esc(e.desig) : ''}</small><small>${esc([e.dept, e.office].filter(Boolean).join(' · '))}</small></div></div>
-<div class="mlist"><button data-photo="${e.id}" data-msclose>📷<span>My photo</span></button><button onclick="pwDlg()" data-msclose>🔑<span>Change password</span></button>
-${S.canInstall ? '<button class="inst" data-msclose>⬇<span>Install ORBIS on this phone</span></button>' : ''}<button id="notifOn" data-msclose>🔔<span>${lsGet('pushOn', false) && window.Notification?.permission === 'granted' ? 'Notifications on · send a test' : 'Turn on notifications'}</span></button>
-<button class="danger" onclick="signOut()" data-msclose>↪<span>Sign out</span></button></div><p class="small muted center">ORBIS · Aeden Fruits International</p>`;
+<div class="mlist"><button data-photo="${e.id}" data-msclose>${ico('photo')}<span>My photo</span></button><button onclick="pwDlg()" data-msclose>${ico('key')}<span>Change password</span></button>
+${S.canInstall ? `<button class="inst" data-msclose>${ico('install')}<span>Install ORBIS on this phone</span></button>` : ''}<button id="notifOn" data-msclose>${ico('bell')}<span>${lsGet('pushOn', false) && window.Notification?.permission === 'granted' ? 'Notifications on · send a test' : 'Turn on notifications'}</span></button>
+<button class="danger" onclick="signOut()" data-msclose>${ico('signout')}<span>Sign out</span></button></div><p class="small muted center">ORBIS · Aeden Fruits International</p>`;
 }
 fillAvatars(); const s = $('#msheet'); s.hidden = false; requestAnimationFrame(() => s.classList.add('open'));
 }
@@ -2118,7 +2127,7 @@ const _punchM = VIEWS.punch;
 VIEWS.punch = async () => {
 const h = await _punchM(); const b = S.badge || {};
 const q = [['leave', '🏖️', 'Apply leave', ''], ['my', '🗓️', 'My attendance', ''], ['tasks', '✅', 'My tasks', b.tasks], ['pay', '💰', 'Payslips', b.pay], ['plan', '📝', 'Work plan', b.plan], ['news', '📢', 'News', b.news]].filter(x => navList().some(n => n[0] === x[0]));
-return h + `<div class="mquick">${q.map(([k, i, l, n]) => `<a href="#${k}"><i>${i}</i><span>${l}</span>${n ? `<em class="nb">${n}</em>` : ''}</a>`).join('')}</div>`;
+return h + `<div class="mquick">${q.map(([k, i, l, n]) => `<a href="#${k}">${icTile(k, i)}<span>${l}</span>${n ? `<em class="nb">${n}</em>` : ''}</a>`).join('')}</div>`;
 };
 const DEP_ICON = n => { n = String(n).toLowerCase(); return /proc|purchas/.test(n) ? '🛒' : /doc/.test(n) ? '📑' : /fleet|transport|logist|driver/.test(n) ? '🚚' : /ware|store|godown/.test(n) ? '🏭' : /acc|financ/.test(n) ? '💰' : /sale|market/.test(n) ? '🍎' : /hr|human/.test(n) ? '🧑‍💼' : /admin|manag|md|ceo/.test(n) ? '🏢' : /it\b|tech/.test(n) ? '💻' : '🏷️'; };
 function deptNet() {
@@ -2170,6 +2179,56 @@ return `<svg class="calico" viewBox="0 0 32 34" aria-hidden="true"><rect x="1.5"
 function wFit() { const el = $('#wHM'); if (!el) return; el.style.fontSize = ''; let fs = parseFloat(getComputedStyle(el).fontSize); while (el.scrollWidth > el.clientWidth + 1 && fs > 22) { fs -= 2; el.style.fontSize = fs + 'px'; } }
 addEventListener('resize', () => wFit());
 function wCount(e, k) { const n = Number(e.dataset.n) || 0, t0 = performance.now() + 700 + k * 150; (function f(t) { const q2 = Math.max(0, Math.min(1, (t - t0) / 900)); e.textContent = Math.round(n * (1 - Math.pow(1 - q2, 3))); if (q2 < 1) requestAnimationFrame(f); })(performance.now()); }
+const ICP = {
+punch: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
+news: '<path d="M3 10.5v3a1 1 0 0 0 1 1h2.2L11 18.5v-13L6.2 9.5H4a1 1 0 0 0-1 1z"/><path class="a" d="M15 9a4.2 4.2 0 0 1 0 6"/><path class="a" d="M17.8 6.2a8.2 8.2 0 0 1 0 11.6"/>',
+my: '<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/><path class="a" d="m9 15.2 2 2 4-4.2"/>',
+leave: '<path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5h-17A8.5 8.5 0 0 1 12 3.5z"/><path class="a" d="M12 12v6.5a2 2 0 0 0 4 0"/>',
+plan: '<rect x="5.5" y="4.5" width="13" height="16.5" rx="2.5"/><path d="M9 3h6v3.2H9z"/><path class="a" d="M9 11h6M9 15h4"/>',
+tasks: '<rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path class="a" d="m8 12.3 2.8 2.8 5.2-6"/>',
+reviews: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle class="af" cx="12" cy="12" r="1.3"/>',
+policies: '<path d="M4.5 19V5.5A2.5 2.5 0 0 1 7 3h12.5v14H7a2.5 2.5 0 0 0-2.5 2.5A2.5 2.5 0 0 0 7 22h12.5v-5"/><path class="a" d="M9 7.5h6"/>',
+help: '<path d="M20.5 12a8.5 8.5 0 0 1-12.3 7.6L3.5 21l1.3-4.4A8.5 8.5 0 1 1 20.5 12z"/><path class="a" d="M9.8 9.6a2.3 2.3 0 1 1 3.2 2.1c-.6.3-1 .8-1 1.4v.3"/><circle class="af" cx="12" cy="16.4" r=".9"/>',
+board: '<path d="M8 21h8M12 16.5V21"/><path d="M7 3.5h10v5.5a5 5 0 0 1-10 0z"/><path class="a" d="M17 5h3v1.8a3.2 3.2 0 0 1-3.2 3.2M7 5H4v1.8A3.2 3.2 0 0 0 7.2 10"/>',
+people: '<rect x="4" y="3" width="16" height="18" rx="3"/><circle class="a" cx="12" cy="10" r="2.8"/><path class="a" d="M7.8 17a4.6 4.6 0 0 1 8.4 0"/>',
+org: '<rect x="9" y="3" width="6" height="5" rx="1.5"/><rect x="3" y="16" width="6" height="5" rx="1.5"/><rect x="15" y="16" width="6" height="5" rx="1.5"/><path class="a" d="M12 8v4M6 16v-1.5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2V16"/>',
+docs: '<path d="M3.5 7a2 2 0 0 1 2-2H9l2 2.2h7.5a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path class="a" d="M3.5 10.5h17"/>',
+pay: '<path d="M4 7.5V7a2 2 0 0 1 2-2h11v3"/><rect x="3.5" y="7.5" width="17" height="12.5" rx="2.5"/><path class="a" d="M20.5 11.5h-3.5a2 2 0 0 0 0 4h3.5"/>',
+team: '<circle cx="9" cy="8" r="3.5"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path class="a" d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.2 14a6 6 0 0 1 3 6"/>',
+insights: '<path d="M3.5 3.5v17h17"/><path class="a" d="m7.5 15 3.8-4 3 2.8 5-6.3"/><circle class="af" cx="19.3" cy="7.5" r="1.2"/>',
+register: '<rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 9h17M9.2 9v11M14.8 9v11"/><circle class="af" cx="6.3" cy="6.5" r=".9"/>',
+bio: '<path d="M6.5 7.5A7 7 0 0 1 18.8 9"/><path d="M5.2 11.5A7 7 0 0 0 5 13c0 1.4.3 2.7.8 3.8"/><path class="a" d="M9 10.5A3.2 3.2 0 0 1 15.2 12c0 2.7-.6 5.2-1.7 7.3"/><path class="a" d="M12 12v1.3a9.5 9.5 0 0 1-2 5.9"/><path d="M18.7 12.5c0 1.6-.2 3.1-.6 4.5"/>',
+payroll: '<path d="M5.5 3h13v18l-2.6-1.7-2.2 1.7-2.2-1.7-2.2 1.7-2.2-1.7L5.5 21z"/><path class="a" d="M9 8h6M9 12h6M9 16h3.5"/>',
+advances: '<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle class="a" cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/>',
+statutory: '<path d="M3 21h18M5.5 21v-9.5M18.5 21v-9.5M10 21v-9.5M14 21v-9.5"/><path class="a" d="M2.5 9.5 12 3l9.5 6.5z"/>',
+employees: '<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/><path class="a" d="M10 15.5h4"/>',
+onboard: '<rect x="3.5" y="7" width="17" height="13" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path class="a" d="M12 11v5M9.5 13.5h5"/>',
+assets: '<rect x="4.5" y="4.5" width="15" height="11" rx="2"/><path d="M2.5 19.5h19"/><path class="a" d="M10 12.5h4"/>',
+exits: '<path d="M14.5 3.5H18a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-3.5"/><path class="a" d="m9.5 16.5 4.5-4.5-4.5-4.5M14 12H4"/>',
+pulse: '<path d="M19.6 13.4 12 21l-7.6-7.6A4.9 4.9 0 0 1 12 6.4a4.9 4.9 0 0 1 7.6 7z"/><path class="a" d="M3.5 12.3h4l1.8-2.6 2.6 5.2 1.8-2.6h6.8"/>',
+log: '<path d="M3.8 12a8.2 8.2 0 1 0 2.4-5.8L3.8 8.5"/><path d="M3.8 3.8v4.7h4.7"/><path class="a" d="M12 7.5V12l3.2 2"/>',
+setup: '<path d="M4 6.5h9M17 6.5h3M4 12h3M11 12h9M4 17.5h11M19 17.5h1"/><circle class="a" cx="15" cy="6.5" r="2"/><circle class="a" cx="9" cy="12" r="2"/><circle class="a" cx="17" cy="17.5" r="2"/>',
+bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path class="a" d="M10 21h4"/>',
+key: '<circle cx="8" cy="14.5" r="4.5"/><path class="a" d="M11.3 11.2 20 2.5M16.5 6l2.5 2.5M14 8.5l2 2"/>',
+install: '<path d="M12 3.5v11"/><path class="a" d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 15.5v2a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3v-2"/>',
+signout: '<path d="M9.5 20.5H6a2 2 0 0 1-2-2v-13a2 2 0 0 1 2-2h3.5"/><path class="a" d="m15 16.5 4.5-4.5L15 7.5M19.5 12H9"/>',
+photo: '<path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5l1.5 2h2a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle class="a" cx="12" cy="13" r="3.5"/>',
+};
+const ICGRP = { punch: 'b', news: 'p', my: 'b', leave: 't', plan: 'v', tasks: 'g', reviews: 'p', policies: 'b', help: 'v', board: 'o', people: 't', org: 't', docs: 'o', pay: 'g',
+team: 'p', insights: 'v', register: 'b', bio: 'o', payroll: 'g', advances: 'g', statutory: 'b', employees: 'v', onboard: 'o', assets: 't', exits: 'p', pulse: 'p', log: 'b', setup: 'b', bell: 'o', photo: 'v' };
+const ico = (k, cls = '') => ICP[k] ? `<svg class="oi ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICP[k]}</svg>` : '';
+const ICBG = { b: '#eef1fb', p: '#ffeef3', v: '#f2edff', t: '#e9f8f6', o: '#fff4e6', g: '#eafaf1' };
+const navIco = (k, fb) => ICP[k] ? ico(k) : fb;
+const icTile = (k, fb) => `<i class="ib" style="--ib:${ICBG[ICGRP[k]] || '#eef1fb'}">${navIco(k, fb)}</i>`;
+const EMO2IC = { '📢': 'news', '🧠': 'insights', '🎯': 'reviews', '🙋': 'help', '🌳': 'org', '💵': 'advances', '🏛️': 'statutory', '🎒': 'onboard', '🕘': 'punch', '💗': 'pulse', '🔔': 'bell', '📷': 'photo', '🧾': 'payroll', '🗓️': 'my', '📊': 'insights', '🏖️': 'leave', '✅': 'tasks', '💰': 'pay', '📝': 'plan', '📘': 'policies', '🏆': 'board', '📇': 'people', '📂': 'docs', '👥': 'team', '🗂️': 'register', '🖐️': 'bio', '🧑‍💼': 'employees', '💻': 'assets', '🚪': 'exits', '🕵️': 'log', '⚙️': 'setup' };
+const EMO_RE = /^\s*(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|\p{Emoji_Modifier})*)\s*/u;
+function iconTitles(root = document) {
+root.querySelectorAll('#main h2, #main h3, #dlg .dh h3, #dlg header b, .mtop .mt b').forEach(h => {
+if (h.dataset.ic) return; const n = [...h.childNodes].find(x => x.nodeType === 3 ? x.textContent.trim() : true); if (!n || n.nodeType !== 3) return;
+const m = n.textContent.match(EMO_RE); if (!m) return; h.dataset.ic = 1; n.textContent = n.textContent.slice(m[0].length);
+const k = EMO2IC[m[1]] || EMO2IC[m[1].replace(/\uFE0F/g, '')]; if (k) h.insertAdjacentHTML('afterbegin', `<span class="hic">${ico(k)}</span>`);
+}); }
+new MutationObserver(() => { clearTimeout(window.__icT); window.__icT = setTimeout(iconTitles, 30); }).observe(document.documentElement, { childList: true, subtree: true });
 const PUSH_FN = SB_URL + '/functions/v1/orbis-push';
 const pushOK = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
@@ -2198,7 +2257,7 @@ catch (er) { toast('Could not turn on notifications: ' + errMsg(er), true); } fi
 function pushCard() {
 if (KMODE() || (lsGet('pushOn', false) && pushOK() && Notification.permission === 'granted')) return '';
 const blocked = pushOK() && Notification.permission === 'denied', ios = !pushOK() && isIOS();
-return `<div class="card phnudge pushc"><span class="ava">🔔</span><div class="grow"><b>Get reminders even when ORBIS is closed</b><div class="small muted">${blocked ? 'Notifications are blocked. Allow them for aedenorbis.com in your browser or phone settings.' : ios ? 'On iPhone: Share → Add to Home Screen, then open ORBIS from the home screen and tap Turn on.' : 'Missed check-out, long breaks, approvals, tasks and payslips.'}</div></div>${blocked || ios ? '' : '<button class="btn pri sm" id="notifOn">Turn on</button>'}</div>`;
+return `<div class="card phnudge pushc"><span class="ava ib" style="--ib:#ffeef3">${ico('bell')}</span><div class="grow"><b>Get reminders even when ORBIS is closed</b><div class="small muted">${blocked ? 'Notifications are blocked. Allow them for aedenorbis.com in your browser or phone settings.' : ios ? 'On iPhone: Share → Add to Home Screen, then open ORBIS from the home screen and tap Turn on.' : 'Missed check-out, long breaks, approvals, tasks and payslips.'}</div></div>${blocked || ios ? '' : '<button class="btn pri sm" id="notifOn">Turn on</button>'}</div>`;
 }
 const _punchP = VIEWS.punch; VIEWS.punch = async () => { const h = await _punchP(); const c = pushCard(); return c ? `<div style="max-width:720px;margin:0 auto 12px">${c}</div>${h}` : h; };
 const _startRem = startReminders; startReminders = function () { _startRem(); setTimeout(() => pushSubscribe(false).catch(() => { }), 3000); };
@@ -2738,7 +2797,7 @@ const _astChipsIns = astChips; astChips = function () { const c = _astChipsIns()
 function updBar() { if ($('#updbar')) return; if ((document.body.className === 'auth' || !S.me) && !document.activeElement?.matches?.('input,textarea') && !sessionStorage.getItem('orbisUpd')) { sessionStorage.setItem('orbisUpd', '1'); return location.reload(); } const b = document.createElement('button'); b.id = 'updbar'; b.innerHTML = '✨ New version of ORBIS ready — <b>tap to refresh</b>'; b.onclick = () => location.reload(); document.body.append(b); }
 if ('serviceWorker' in navigator) { navigator.serviceWorker.addEventListener('message', e => { if (e.data?.orbis === 'update') updBar(); }); navigator.serviceWorker.ready.then(r => setTimeout(() => (navigator.serviceWorker.controller || r.active)?.postMessage({ orbis: 'check' }), 4000)).catch(() => { }); }
 function goFull(ev) { try { if (document.body.classList.contains('auth') || ev?.target?.closest?.('.gobtn') || sessionStorage.getItem('orbisFull') || document.fullscreenElement || matchMedia('(display-mode: fullscreen)').matches) return; const inApp = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: minimal-ui)').matches;
-  if (onMobile() && inApp && document.documentElement.requestFullscreen) { sessionStorage.setItem('orbisFull', '1'); document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => { }); } } catch { } }
+if (onMobile() && inApp && document.documentElement.requestFullscreen) { sessionStorage.setItem('orbisFull', '1'); document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => { }); } } catch { } }
 addEventListener('pointerup', goFull, true); addEventListener('touchend', goFull, true);
 async function advLoad(empId) {
 let a = sb.from('advances').select('*').order('created_at', { ascending: false }); if (empId) a = a.eq('employee_id', empId);
