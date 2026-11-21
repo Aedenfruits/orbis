@@ -70,6 +70,12 @@ dialog{border:0;border-radius:18px;padding:0;width:min(560px,94vw);box-shadow:0 
 .ava{display:inline-grid;place-items:center;flex:none;width:38px;height:38px;border-radius:50%;overflow:hidden;font-weight:800;font-size:13px;color:#fff;background:linear-gradient(135deg,#1e2f58,#5b3f8f)}.ava img{width:100%;height:100%;object-fit:cover}.ava.sm{width:34px;height:34px;font-size:12px}.ava.xs{width:26px;height:26px;font-size:10px;margin-right:6px;vertical-align:middle}.mebtn{display:inline-flex;align-items:center;border:0;background:none;font:inherit;font-weight:600;color:inherit;cursor:pointer;padding:2px 6px;border-radius:99px}.mebtn:hover{background:rgba(30,47,88,.07)}.phwrap{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}.phbox{width:200px;height:250px;border-radius:14px;overflow:hidden;background:#e7eaf2;display:grid;place-items:center;font-size:44px;font-weight:800;color:#1e2f58;box-shadow:0 0 0 3px #fff,0 0 0 5px #e01664}.phbox img,.phbox video{width:100%;height:100%;object-fit:cover}.phbox video{transform:scaleX(-1)}.phnudge{display:flex;align-items:center;gap:12px;border:2px dashed rgba(224,22,100,.4);background:#fff7fb}.phnudge .ava{background:#ffe3ef;font-size:18px}.iclist{display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow:auto;padding:4px;border:1px solid var(--line);border-radius:12px;margin-top:6px}.iclist .chk{display:flex;align-items:center;gap:10px}
 .reg td.h{background:#fff4cc;color:#8a6200;font-weight:700}
 nav a{position:relative}em.nb{font-style:normal;position:absolute;top:4px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e01664;color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;animation:nbPop .4s cubic-bezier(.2,.9,.3,1.6)}nav.bottom em.nb{top:0;right:2px}@keyframes nbPop{0%{transform:scale(0)}100%{transform:scale(1)}}.celeb{position:relative;overflow:hidden;background:linear-gradient(135deg,#fff4fa,#fff9e6);border:2px solid #ffd2e6}.celeb .row{margin:4px 0}.confetti{position:absolute;inset:-10px;pointer-events:none;font-size:18px;letter-spacing:22px;line-height:44px;word-break:break-all;opacity:.18;animation:cf 9s linear infinite}@keyframes cf{from{transform:translateY(-40px)}to{transform:translateY(40px)}}.starc{background:linear-gradient(135deg,#1e2f58,#5b3f8f);color:#fff}.starc .muted{color:rgba(255,255,255,.75)!important}.starc .eyebrow{color:#ffd54a}.starc h3{color:#fff}.ann.pin{border-left:4px solid #e01664}.ann.unread{box-shadow:0 0 0 2px rgba(224,22,100,.35)}.ann .at{font-size:16px}.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}.pcard{display:flex;gap:12px;align-items:flex-start;margin:0}.pcard .ava{width:52px;height:52px;font-size:16px}.org,.org ul{list-style:none;margin:0;padding-left:26px;position:relative}.org{padding-left:0}.org li{position:relative;padding:6px 0 6px 0}.org ul li::before{content:'';position:absolute;left:-16px;top:0;bottom:50%;border-left:2px solid #d5dbe8;border-bottom:2px solid #d5dbe8;width:14px;border-bottom-left-radius:8px}.org ul li:not(:last-child)::after{content:'';position:absolute;left:-16px;top:50%;bottom:0;border-left:2px solid #d5dbe8}.onode{display:inline-flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:8px 14px 8px 8px;box-shadow:0 2px 8px rgba(30,47,88,.06)}.onode small{display:block;color:var(--muted);font-size:12px}
+.scrollx{overflow-x:auto}.hstack.wrap{flex-wrap:wrap}.chip.pink{background:var(--pink);color:#fff}
+.paytbl td,.paytbl th{white-space:nowrap}.paytbl tr.dim{opacity:.55}.pin{width:86px;padding:5px 7px}
+.task{display:flex;gap:12px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:12px;padding:12px 14px}
+.task.hi{border-left-color:var(--pink)}.task.done{opacity:.6}.task.done b{text-decoration:line-through}.task .tr{margin-top:4px;color:var(--navy)}.task select{max-width:150px}
+.rev{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}.rev .btn{margin-left:auto}
+.stars{color:#f5a623;letter-spacing:1px}.starpick{display:flex;gap:6px;margin:6px 0 12px}.starpick button{font-size:30px;background:none;border:0;color:#ccc;cursor:pointer;transition:transform .15s}.starpick button.on{color:#f5a623}.starpick button:hover{transform:scale(1.2)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body><div id="app"><div class="loading">Loading ORBIS…</div></div><dialog id="dlg"></dialog><div id="toast"></div>
@@ -241,9 +247,9 @@ await new Promise(res => { const b = $('.gobtn'); function done() { clearInterva
 await launchFx();
 }
 function navList() {
-const n = [['punch', 'Punch', '⏱️'], ['news', 'News', '📢'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['people', 'Directory', '📇'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂']];
+const n = [['punch', 'Punch', '⏱️'], ['news', 'News', '📢'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['tasks', 'Tasks', '✅'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['people', 'Directory', '📇'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂'], ['pay', 'My payslips', '💰']];
 if (S.team.length || isAdmin()) n.push(['team', isAdmin() ? 'All staff' : 'My team', '👥']);
-if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['employees', 'Employees', '🧑‍💼'], ['setup', 'Computers & settings', '⚙️']);
+if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['payroll', 'Payroll', '🧾'], ['employees', 'Employees', '🧑‍💼'], ['setup', 'Computers & settings', '⚙️']);
 return n;
 }
 function route() { const h = location.hash.slice(1) || 'punch'; const ok = navList().map(x => x[0]); S.view = ok.includes(h) ? h : 'punch'; render(); }
@@ -412,9 +418,9 @@ function countDays(f, t) { let n = 0; for (let d = f; d <= t; d = addDays(d, 1))
 VIEWS.leave = async () => {
 const yr = todayStr().slice(0, 4);
 const mine = await q(sb.from('leave_requests').select('*').eq('employee_id', S.me.id).gte('from_date', yr + '-01-01').order('created_at', { ascending: false }));
-S.myLeaves = mine;
-const cards = ltypes().map(t => { const used = mine.filter(l => l.type === t.k && l.status === 'approved').reduce((s, l) => s + Number(l.days), 0); const pend = mine.filter(l => l.type === t.k && l.status === 'pending').reduce((s, l) => s + Number(l.days), 0); const left = t.days - used;
-return `<div class="lb" data-lt="${t.k}"><div class="row"><span>${esc(t.name)}</span><small>${t.k}</small></div><div class="lbn"><b class="${left <= 0 ? 'neg' : ''}">${left}</b><span>of ${t.days} left</span></div><div class="bar"><i style="width:${Math.max(0, Math.min(100, left / t.days * 100))}%"></i></div><small>${used} used${pend ? ` · <b class="pend">${pend} pending</b>` : ''}</small></div>`; }).join('');
+S.myLeaves = mine; S.ladj = await loadAdj(S.me.id, yr);
+const cards = ltypes().map(t => { const used = mine.filter(l => l.type === t.k && l.status === 'approved').reduce((s, l) => s + Number(l.days), 0); const pend = mine.filter(l => l.type === t.k && l.status === 'pending').reduce((s, l) => s + Number(l.days), 0); const left = ltq(t) - used, cf = Number(S.ladj[t.k]?.days || 0);
+return `<div class="lb" data-lt="${t.k}"><div class="row"><span>${esc(t.name)}</span><small>${t.k}</small></div><div class="lbn"><b class="${left <= 0 ? 'neg' : ''}">${left}</b><span>of ${ltq(t)} left</span></div><div class="bar"><i style="width:${Math.max(0, Math.min(100, left / (ltq(t) || 1) * 100))}%"></i></div><small>${cf ? `+${cf} carried · ` : ''}${used} used${pend ? ` · <b class="pend">${pend} pending</b>` : ''}</small></div>`; }).join('');
 const mgr = empById(S.me.reports_to);
 const reqs = mine.slice(0, 10).map(l => `<div class="li"><div><b>${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.status === 'pending' ? ` · waiting for ${mgr ? esc(mgr.name.split(' ')[0]) : 'HR'}` : l.decided_by ? ' · by ' + esc(empById(l.decided_by)?.name || '') : ''}${l.note ? ' · ' + esc(l.note) : ''}</small></div><div class="hstack">${stChip(l.status)}${l.status === 'pending' ? `<button class="btn sm" data-lcancel="${l.id}">Cancel</button>` : ''}</div></div>`).join('');
 afterFns.push(leaveAfter);
@@ -426,7 +432,7 @@ ${holCard()}
 };
 function leaveAfter() {
 const upd = () => { const t = $('#a_type').value, f = $('#a_from').value, to = $('#a_to').value; document.querySelectorAll('.lb').forEach(c => c.classList.toggle('on', c.dataset.lt === t));
-if (!f || !to || to < f) { $('#a_after').innerHTML = ''; return; } const days = countDays(f, to); const lt = ltypes().find(x => x.k === t); const used = S.myLeaves.filter(l => l.type === t && ['approved', 'pending'].includes(l.status)).reduce((s, l) => s + Number(l.days), 0); const after = lt.days - used - days;
+if (!f || !to || to < f) { $('#a_after').innerHTML = ''; return; } const days = countDays(f, to); const lt = ltypes().find(x => x.k === t); const used = S.myLeaves.filter(l => l.type === t && ['approved', 'pending'].includes(l.status)).reduce((s, l) => s + Number(l.days), 0); const after = ltq(lt) - used - days;
 $('#a_after').innerHTML = `<div class="msg ${after < 0 ? 'bad' : ''}">${days} working day${days !== 1 ? 's' : ''} · after this: <b>${after} ${t} left</b>${after < 0 ? ' — more than your balance; the extra may be loss of pay' : ''}</div>`; };
 ['a_type', 'a_from', 'a_to'].forEach(id => $('#' + id).addEventListener('change', upd)); upd();
 document.querySelectorAll('.lb').forEach(c => c.onclick = () => { $('#a_type').value = c.dataset.lt; upd(); });
@@ -444,13 +450,13 @@ const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return 
 VIEWS.plan = async () => {
 const t = todayStr(), y = addDays(t, -1);
 const [it, iy] = await Promise.all([getPlan(S.me.id, t), getPlan(S.me.id, y)]); S.planT = it; S.planY = iy;
-const open = iy.filter(x => x.st !== 'done'); const last = it.length ? it[it.length - 1].to : '09:00';
+const rvc = await myReviewsCard(); const open = iy.filter(x => x.st !== 'done'); const last = it.length ? it[it.length - 1].to : '09:00';
 afterFns.push(() => { const k = $('#wp_k'); if (k) k.onkeydown = e => { if (e.key === 'Enter') $('#wp_add').click(); }; });
 return `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</span><h2>Today · ${fmtD(t)}</h2><p class="small muted">Seen only by you, your department head / managers and the MD.</p></div>
 ${iy.length ? `<div class="card"><div class="row"><h3>Yesterday — update status</h3>${planSum(iy)}</div><div class="stack" style="gap:6px">${iy.map(i => planRow(i, true, y)).join('')}</div>${open.length ? `<div class="right"><button class="btn sm" id="wp_carry">↪ Move ${open.length} unfinished to today</button></div>` : ''}</div>` : ''}
 <div class="card"><div class="row"><h3>Today's plan</h3>${it.length ? planSum(it) : ''}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, true, t)).join('')}</div>` : '<p class="small muted">No tasks yet — plan your day hour by hour.</p>'}
 <div class="wpadd"><div class="grid3"><label>From<input type="time" id="wp_f" value="${last}"></label><label>To<input type="time" id="wp_t" value="${addMinHM(last, 60)}"></label><label class="grow">Work<input id="wp_k" maxlength="140" placeholder="e.g. Bank entry"></label></div>
-<div class="row"><label class="chk"><input type="checkbox" id="wp_u"> ⚡ Emergency / urgent work</label><button class="btn pri" id="wp_add">+ Add to plan</button></div></div></div></div>`;
+<div class="row"><label class="chk"><input type="checkbox" id="wp_u"> ⚡ Emergency / urgent work</label><button class="btn pri" id="wp_add">+ Add to plan</button></div></div></div>${rvc}</div>`;
 };
 document.addEventListener('click', async e => {
 const b = e.target.closest('button'); if (!b || S.view !== 'plan') return; const t = todayStr();
@@ -526,10 +532,10 @@ body = `<div class="card"><h3>Extra break requests</h3><p class="small muted">Mo
 }
 if (tab === 'plans') {
 const d = S.tmDay || t;
-const plans = await q(sb.from('work_plans').select('*').eq('day', d));
+const plans = await q(sb.from('work_plans').select('*').eq('day', d)); S.prv = await q(sb.from('plan_reviews').select('*').eq('day', d)).catch(() => []);
 const vis = team.filter(e => S.me.access === 'md' || S.team.includes(e.id));
 body = `<div class="row"><b>${d === t ? 'Today' : fmtD(d)}</b><div class="hstack"><button class="btn sm" data-tday="-1">‹</button><button class="btn sm" data-tday="1" ${d >= t ? 'disabled' : ''}>›</button></div></div>
-${vis.map(e => { const p = plans.find(x => x.employee_id === e.id); const it = (p?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); return `<div class="card"><div class="row"><div><b>${esc(e.name)}</b><div class="small muted">${esc(e.dept)}</div></div>${it.length ? planSum(it) : '<span class="chip warn">No plan</span>'}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, false)).join('')}</div>` : ''}</div>`; }).join('') || '<div class="card muted">No team members</div>'}`;
+${vis.map(e => { const p = plans.find(x => x.employee_id === e.id); const it = (p?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); return `<div class="card"><div class="row"><div><b>${esc(e.name)}</b><div class="small muted">${esc(e.dept)}</div></div>${it.length ? planSum(it) : '<span class="chip warn">No plan</span>'}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, false)).join('')}</div>${revHTML(S.prv.find(r => r.employee_id === e.id), e.id, d)}` : ''}</div>`; }).join('') || '<div class="card muted">No team members</div>'}`;
 }
 return `<div class="stack"><div><span class="eyebrow">${isAdmin() ? (S.me.access === 'md' ? 'MD — all employees' : 'HR — all employees') : 'Reporting manager / department head'}</span><h2>${isAdmin() ? 'All staff' : 'My team'} <span class="pink">${team.length}</span></h2></div>${seg}${body}</div>`;
 };
@@ -621,7 +627,7 @@ return `<div class="stack narrow"><div><span class="eyebrow">HR setup</span><h2>
 <div class="card"><h3>Office internet</h3><p class="small muted">When addresses are added, punching works only from these internet connections. Leave empty to allow any network (registered computers only).</p>
 <p>This connection: <b>${esc(ip || 'unknown')}</b> ${ip && !ips.includes(ip) ? '<button class="btn sm pri" id="ipAdd">+ Add as office network</button>' : ips.includes(ip) ? '<span class="chip good">office network</span>' : ''}</p>
 ${ips.map(x => `<div class="li"><span>${esc(x)}</span><button class="btn sm" data-iprm="${esc(x)}">Remove</button></div>`).join('')}</div>
-${holSetupCard()}${backupCard()}
+${holSetupCard()}${yearEndCard()}${backupCard()}
 <div class="card"><h3>Rules</h3><div class="grid3"><label>Shift start<input type="time" id="c_ss" value="${esc(C().shiftStart || '09:00')}"></label><label>Shift end<input type="time" id="c_se" value="${esc(C().shiftEnd || '18:00')}"></label><label>Grace (min)<input type="number" id="c_gr" value="${C().graceMin ?? 10}"></label>
 ${brCfg().map((b, i) => `<label>${esc(b.name)} break (min)<input type="number" id="c_b${i}" value="${b.min}"></label>`).join('')}<label>Extra break per month (min)<input type="number" id="c_x" value="${C().extraMonthlyMin ?? 30}"></label></div>
 <h4>Leave per year</h4><div class="grid3">${ltypes().map((t, i) => `<label>${esc(t.name)}<input type="number" id="c_l${i}" value="${t.days}"></label>`).join('')}</div>
@@ -1243,8 +1249,8 @@ if (b.dataset.fxcancel) { await q(sb.from('punch_fixes').delete().eq('id', b.dat
 if (b.dataset.dfx) { const note = b.dataset.dfx === 'rejected' ? (prompt('Reason (optional)') || null) : null; await rpc('decide_fix', { p_id: b.dataset.id, p_status: b.dataset.dfx, p_note: note }); toast(b.dataset.dfx === 'approved' ? '✓ Attendance corrected' : 'Request rejected'); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
-async function salarySummary(ym) {
-const X = await loadXLSX(); const [y, m] = ym.split('-').map(Number), last = new Date(y, m, 0).getDate(), t = todayStr();
+async function salaryRows(ym) {
+const [y, m] = ym.split('-').map(Number), last = new Date(y, m, 0).getDate(), t = todayStr();
 const from = ym + '-01', to = `${ym}-${pad(last)}`, half = C().halfDayMin || 240;
 const [att, brk, lv, fx] = await Promise.all([q(sb.from('attendance').select('*').gte('day', from).lte('day', to)), q(sb.from('breaks').select('*').gte('day', from).lte('day', to)),
 q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', to).gte('to_date', from)), q(sb.from('punch_fixes').select('*').eq('status', 'approved').gte('day', from).lte('day', to)).catch(() => [])]);
@@ -1272,6 +1278,10 @@ const elig = e.join_date && e.join_date > from ? last - Number(e.join_date.slice
 r['Payable days'] = Math.max(0, elig - r['Absent / LOP days'] - 0.5 * r['Half days']);
 sum.push(r); grid.push(g);
 }
+return { sum, grid, lv, half, lim, allow, last, emps };
+}
+async function salarySummary(ym) {
+const X = await loadXLSX(); const { sum, grid, lv, half, lim, allow, last } = await salaryRows(ym);
 const wb = X.utils.book_new();
 const ws = X.utils.json_to_sheet(sum); ws['!cols'] = Object.keys(sum[0] || { a: 1 }).map(k => ({ wch: Math.max(10, k.length + 2) })); X.utils.book_append_sheet(wb, ws, 'Salary summary');
 const wg = X.utils.json_to_sheet(grid); wg['!cols'] = [{ wch: 10 }, { wch: 22 }, ...[...Array(last)].map(() => ({ wch: 5 }))]; X.utils.book_append_sheet(wb, wg, 'Daily');
@@ -1287,7 +1297,7 @@ try { await salarySummary(S.regMonth || todayStr().slice(0, 7)); toast('Salary s
 async function fetchAll(table, order) { const out = []; for (let i = 0; ; i += 1000) { let qy = sb.from(table).select('*').range(i, i + 999); if (order) qy = qy.order(order); const r = await q(qy); out.push(...r); if (r.length < 1000) break; } return out; }
 async function makeBackup(silent) {
 const X = await loadXLSX(); const wb = X.utils.book_new(); const T = [['employees', 'code'], ['attendance', 'day'], ['breaks', 'day'], ['leave_requests', 'created_at'], ['extra_breaks', 'created_at'], ['punch_fixes', 'created_at'], ['holidays', 'day'],
-['policies', 'created_at'], ['dept_heads', null], ['app_settings', null], ['employee_private', null], ['emp_docs', 'uploaded_at'], ['doc_vault', null], ['work_plans', 'day'], ['devices', 'created_at']];
+['policies', 'created_at'], ['dept_heads', null], ['app_settings', null], ['employee_private', null], ['emp_docs', 'uploaded_at'], ['doc_vault', null], ['work_plans', 'day'], ['devices', 'created_at'], ['announcements', 'created_at'], ['tasks', 'created_at'], ['plan_reviews', 'day'], ['payslips', 'month'], ['leave_adjust', null]];
 let n = 0;
 for (const [t, o] of T) { let rows; try { rows = await fetchAll(t, o); } catch { continue; }
 if (t === 'devices') rows = rows.map(({ token, ...r }) => r);
@@ -1406,5 +1416,222 @@ if (Date.now() - (S.badgeT || 0) > 300000) { S.badgeT = Date.now(); const b = aw
 } catch { }
 }
 function startReminders() { clearInterval(S.remI); S.remI = setInterval(remindTick, 60000); setTimeout(remindTick, 5000); }
+const p3Missing = () => `<div class="card"><h3>One setup step left</h3><p class="small muted">This page needs the <b>Phase 3 SQL</b>. HR: open Supabase → SQL Editor → New query, paste the Phase 3 script and press Run. Then reload ORBIS.</p></div>`;
+const inr = n => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+function inWords(n) {
+n = Math.round(Math.abs(Number(n) || 0)); if (!n) return 'Zero';
+const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+const two = x => x < 20 ? a[x] : b[Math.floor(x / 10)] + (x % 10 ? ' ' + a[x % 10] : '');
+const three = x => (x >= 100 ? a[Math.floor(x / 100)] + ' Hundred' + (x % 100 ? ' ' : '') : '') + (x % 100 ? two(x % 100) : '');
+const cr = Math.floor(n / 1e7); n %= 1e7; const l = Math.floor(n / 1e5); n %= 1e5; const th = Math.floor(n / 1000); n %= 1000;
+return [cr && three(cr) + ' Crore', l && two(l) + ' Lakh', th && two(th) + ' Thousand', n && three(n)].filter(Boolean).join(' ');
+}
+const monthName = ym => { const [y, m] = ym.split('-').map(Number); return new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }); };
+const shiftMonth = (ym, k) => { const [y, m] = ym.split('-').map(Number); const d = new Date(y, m - 1 + k, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const stars = n => '★'.repeat(n || 0) + '☆'.repeat(5 - (n || 0));
+async function needDek(after) {
+if (S.dek) { vaultTouch(); return true; }
+if (!(await vaultLoad())) { toast('Set up the Document Vault first (Documents page)', true); return false; }
+dlg('🔒 Unlock the vault', '<p class="small muted">Salaries and bank details are stored encrypted. Enter the vault password to continue.</p><label>Vault password<input id="nd_pw" type="password" autocomplete="off"></label>', '<button class="btn pri" id="nd_un">Unlock</button>');
+const go = async () => { try { const raw = await vaultOpenRaw($('#nd_pw').value, false); S.dek = await importDek(raw); raw.fill(0); vaultTouch(); closeDlg(); after && after(); } catch (er) { toast(errMsg(er), true); } };
+$('#nd_un').onclick = go; $('#nd_pw').onkeydown = e => { if (e.key === 'Enter') go(); }; return false;
+}
+const payCfg = () => ({ basicPct: 50, hraPct: 40, pf: true, pfCap: 15000, esi: true, esiLimit: 21000, pt: 0, ...(C().pay || {}) });
+function payCalc(ctc, row, ex = {}) {
+const P = payCfg(), cal = row['Calendar days'] || 30, days = row['Payable days'] || 0;
+const gross = Math.round(ctc * days / cal), basic = Math.round(gross * P.basicPct / 100), hra = Math.round(basic * P.hraPct / 100), spec = gross - basic - hra;
+const bonus = Math.round(Number(ex.bonus) || 0), adv = Math.round(Number(ex.adv) || 0), tds = Math.round(Number(ex.tds) || 0);
+const pf = P.pf ? Math.round(Math.min(basic, P.pfCap) * 0.12) : 0;
+const esi = P.esi && ctc <= P.esiLimit ? Math.ceil((gross + bonus) * 0.0075) : 0;
+const pt = days > 0 ? Math.round(Number(P.pt) || 0) : 0;
+const earn = [['Basic', basic], ['House rent allowance', hra], ['Special allowance', spec]]; if (bonus) earn.push(['Bonus / incentive', bonus]);
+const ded = []; if (pf) ded.push(['Provident fund (12%)', pf]); if (esi) ded.push(['ESI (0.75%)', esi]); if (pt) ded.push(['Professional tax', pt]); if (tds) ded.push(['Income tax (TDS)', tds]); if (adv) ded.push(['Advance / other deduction', adv]);
+const tE = gross + bonus, tD = ded.reduce((s, x) => s + x[1], 0);
+return { ctc, gross: tE, earn, ded, totalDed: tD, net: tE - tD, bonus, adv, tds };
+}
+async function payPrepare(ym) {
+const { sum, emps } = await salaryRows(ym); const old = await q(sb.from('payslips').select('*').eq('month', ym));
+const out = [];
+for (let i = 0; i < emps.length; i++) {
+const e = emps[i], r = sum[i]; let p = {}; try { p = await privGet(e.id); } catch { }
+const ctc = Number(String(p.ctc || '').replace(/[^\d.]/g, '')) || 0; const o = old.find(x => x.employee_id === e.id);
+out.push({ e, r, p, ctc, ex: { bonus: o?.data?.bonus || 0, adv: o?.data?.adv || 0, tds: o?.data?.tds || 0 }, published: !!o?.published });
+}
+S.payDraft = { ym, rows: out }; return out;
+}
+function slipData(x) {
+const { e, r, p } = x, c = payCfg(); const lv = ltypes().map(t => [t.k, r[t.name + ' (days)'] || 0]).filter(z => z[1]);
+return { code: e.code, name: e.name, desig: e.desig || '', dept: e.dept || '', office: e.office || '', doj: e.join_date || '', uan: p.uan || '', esino: p.esi || '', pan: p.pan || '', bank: p.bank || '', acct4: (p.acct || '').slice(-4),
+cal: r['Calendar days'], working: r['Working days'], present: r.Present, payable: r['Payable days'], lop: r['Absent / LOP days'], half: r['Half days'], leave: lv, basicPct: c.basicPct, ...payCalc(x.ctc, r, x.ex) };
+}
+function payslipHTML(d, ym) {
+const co = idCfg(); const rows = Math.max(d.earn.length, d.ded.length);
+const tr = [...Array(rows)].map((_, i) => `<tr><td>${esc(d.earn[i]?.[0] || '')}</td><td class="n">${d.earn[i] ? inr(d.earn[i][1]) : ''}</td><td>${esc(d.ded[i]?.[0] || '')}</td><td class="n">${d.ded[i] ? inr(d.ded[i][1]) : ''}</td></tr>`).join('');
+const kv = (k, v) => v ? `<div><span>${k}</span><b>${esc(String(v))}</b></div>` : '';
+return `<!doctype html><html><head><meta charset="utf-8"><title>Payslip ${esc(d.code)} ${ym}</title><style>
+*{box-sizing:border-box}body{font:13px/1.45 system-ui,Segoe UI,Arial;color:#1d1b2e;margin:0;padding:24px;background:#f4f3f8}.pg{max-width:760px;margin:auto;background:#fff;border-radius:14px;padding:28px 32px;box-shadow:0 2px 14px #0001}
+.hd{display:flex;gap:14px;align-items:center;border-bottom:3px solid #2b1d6b;padding-bottom:14px}.hd svg{width:52px;height:52px;color:#2b1d6b}.hd h1{font-size:19px;margin:0}.hd small{color:#666}.tt{margin-left:auto;text-align:right}.tt b{display:block;font-size:15px;color:#e0287a}
+.info{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin:16px 0}.info div{display:flex;justify-content:space-between;border-bottom:1px dashed #ddd;padding:3px 0}.info span{color:#666}
+.att{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}.att div{background:#f4f3f8;border-radius:8px;padding:6px 10px;text-align:center;flex:1}.att b{display:block;font-size:16px}.att small{color:#666}
+table{width:100%;border-collapse:collapse}th{background:#2b1d6b;color:#fff;text-align:left;padding:7px 9px}td{padding:6px 9px;border-bottom:1px solid #eee}.n{text-align:right}tfoot td{font-weight:700;background:#f4f3f8}
+.net{margin-top:16px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#2b1d6b,#e0287a);color:#fff;border-radius:12px;padding:14px 18px}.net b{font-size:22px}.w{margin-top:6px;color:#444}
+.ft{margin-top:22px;color:#888;font-size:11px;text-align:center}.pb{text-align:center;margin:14px}.pb button{font:inherit;padding:9px 18px;border-radius:8px;border:0;background:#2b1d6b;color:#fff;cursor:pointer}
+@media print{body{background:#fff;padding:0}.pg{box-shadow:none}.pb{display:none}}</style></head><body><div class="pb"><button onclick="print()">🖨 Print / Save as PDF</button></div><div class="pg">
+<div class="hd">${LOGO}<div><h1>${esc(co.company)}</h1><small>${esc(co.address || co.website || '')}</small></div><div class="tt"><small>PAYSLIP</small><b>${esc(monthName(ym))}</b></div></div>
+<div class="info">${kv('Employee', d.name)}${kv('Employee code', d.code)}${kv('Designation', d.desig)}${kv('Department', d.dept)}${kv('Office', d.office)}${kv('Date of joining', d.doj && fmtD(d.doj))}${kv('PAN', d.pan)}${kv('UAN', d.uan)}${kv('ESI no.', d.esino)}${kv('Bank', d.bank && d.acct4 ? `${d.bank} ••${d.acct4}` : d.bank)}</div>
+<div class="att"><div><b>${d.cal}</b><small>Days in month</small></div><div><b>${d.present}</b><small>Present</small></div>${(d.leave || []).map(([k, n]) => `<div><b>${n}</b><small>${esc(k)} leave</small></div>`).join('')}<div><b>${d.lop}</b><small>LOP days</small></div><div><b>${d.payable}</b><small>Paid days</small></div></div>
+<table><thead><tr><th>Earnings</th><th class="n">Amount</th><th>Deductions</th><th class="n">Amount</th></tr></thead><tbody>${tr}</tbody><tfoot><tr><td>Total earnings</td><td class="n">${inr(d.gross)}</td><td>Total deductions</td><td class="n">${inr(d.totalDed)}</td></tr></tfoot></table>
+<div class="net"><span>Net pay</span><b>${inr(d.net)}</b></div><div class="w">Rupees ${esc(inWords(d.net))} only</div>
+<div class="ft">Monthly CTC ${inr(d.ctc)} · This is a computer-generated payslip from ORBIS and needs no signature.</div></div></body></html>`;
+}
+function openSlip(d, ym) { const w = window.open('', '_blank'); if (!w) return toast('Allow pop-ups for aedenorbis.com to open the payslip', true); w.document.write(payslipHTML(d, ym)); w.document.close(); }
+VIEWS.payroll = async () => {
+const ym = S.payMonth || shiftMonth(todayStr().slice(0, 7), -1);
+let slips; try { slips = await q(sb.from('payslips').select('*').eq('month', ym)); } catch { return p3Missing(); }
+S.paySlips = slips; const P = payCfg(); const dr = S.payDraft && S.payDraft.ym === ym ? S.payDraft.rows : null;
+const tot = k => slips.reduce((s, x) => s + (Number(x.data?.[k]) || 0), 0);
+const draftTbl = dr ? `<div class="card flush"><div class="row" style="padding:12px 14px"><h3>Prepare ${esc(monthName(ym))}</h3><span class="small muted">Edit bonus, TDS or advance — net updates live.</span></div><div class="scrollx"><table class="paytbl"><thead><tr><th>Employee</th><th>Monthly CTC</th><th>Paid days</th><th>Gross</th><th>Bonus</th><th>TDS</th><th>Advance</th><th>Deductions</th><th>Net</th></tr></thead><tbody>
+${dr.map((x, i) => { const c = payCalc(x.ctc, x.r, x.ex); return `<tr class="${x.ctc ? '' : 'dim'}"><td><b>${esc(x.e.name)}</b><small class="muted"> ${esc(x.e.code)}</small></td><td>${x.ctc ? inr(x.ctc) : '<span class="chip warn">No salary</span>'}</td><td>${x.r['Payable days']} / ${x.r['Calendar days']}</td><td>${inr(c.gross - c.bonus)}</td>
+${['bonus', 'tds', 'adv'].map(k => `<td><input class="pin" type="number" min="0" data-px="${i}" data-k="${k}" value="${x.ex[k] || ''}" ${x.ctc ? '' : 'disabled'}></td>`).join('')}<td id="pd${i}">${inr(c.totalDed)}</td><td><b id="pn${i}">${inr(c.net)}</b></td></tr>`; }).join('')}</tbody></table></div>
+<div class="row" style="padding:12px 14px"><span class="small muted">Rows without a monthly salary are skipped. Add salary in Employees → 🔒 details.</span><div class="hstack"><button class="btn" data-pay="save">Save as draft</button><button class="btn pri" data-pay="pub">✓ Save & publish to staff</button></div></div></div>` : '';
+return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · accounts</span><h2>Payroll</h2></div><div class="hstack"><button class="btn sm" data-pm="-1">‹</button><b>${esc(monthName(ym))}</b><button class="btn sm" data-pm="1">›</button></div></div>
+${slips.length ? `<div class="kpis"><div><b>${slips.length}</b><small>Payslips</small></div><div><b>${inr(tot('gross'))}</b><small>Gross</small></div><div><b>${inr(tot('totalDed'))}</b><small>Deductions</small></div><div><b>${inr(tot('net'))}</b><small>Net pay</small></div></div>` : ''}
+<div class="card"><div class="row"><div><h3>${slips.length ? 'Payslips for this month' : 'No payslips yet for this month'}</h3><p class="small muted">Uses the attendance register (paid days = days in month − LOP − ½ × half days) and the monthly salary saved in 🔒 private details.</p></div>
+<div class="hstack wrap"><button class="btn pri" data-pay="prep">${slips.length ? '↻ Recalculate' : '⚙ Prepare payslips'}</button>${slips.length ? `<button class="btn" data-pay="bank">⬇ Bank transfer sheet</button><button class="btn" data-pay="reg">⬇ Payroll register</button>${slips.some(s => !s.published) ? '<button class="btn" data-pay="puball">Publish all</button>' : ''}` : ''}</div></div>
+${slips.length ? `<div class="stack" style="gap:6px">${slips.slice().sort((a, b) => (a.data?.name || '').localeCompare(b.data?.name || '')).map(s => `<div class="li"><div><b>${esc(s.data?.name)}</b><small>${esc(s.data?.code)} · ${s.data?.payable} paid days · gross ${inr(s.data?.gross)} · deductions ${inr(s.data?.totalDed)}</small></div><div class="hstack"><b>${inr(s.data?.net)}</b>${s.published ? '<span class="chip good">Published</span>' : '<span class="chip warn">Draft</span>'}<button class="btn sm" data-slip="${s.id}">View</button></div></div>`).join('')}</div>` : ''}</div>
+${draftTbl}
+<div class="card"><h3>Salary structure</h3><p class="small muted">How the monthly salary (CTC) is split on the payslip. Check these with your auditor.</p><div class="grid3">
+<label>Basic (% of gross)<input type="number" id="ps_b" value="${P.basicPct}"></label><label>HRA (% of basic)<input type="number" id="ps_h" value="${P.hraPct}"></label><label>Professional tax / month (₹)<input type="number" id="ps_pt" value="${P.pt}"></label>
+<label class="chk"><input type="checkbox" id="ps_pf" ${P.pf ? 'checked' : ''}> PF 12% of basic (basic capped at ₹${P.pfCap.toLocaleString('en-IN')})</label><label class="chk"><input type="checkbox" id="ps_esi" ${P.esi ? 'checked' : ''}> ESI 0.75% when salary ≤ ₹${P.esiLimit.toLocaleString('en-IN')}</label></div>
+<button class="btn" data-pay="cfg">Save structure</button></div></div>`;
+};
+document.addEventListener('input', e => { const i = e.target.closest('[data-px]'); if (!i || !S.payDraft) return; const x = S.payDraft.rows[i.dataset.px]; x.ex[i.dataset.k] = Number(i.value) || 0; const c = payCalc(x.ctc, x.r, x.ex); $('#pd' + i.dataset.px).textContent = inr(c.totalDed); $('#pn' + i.dataset.px).textContent = inr(c.net); });
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-pay],[data-pm],[data-slip],[data-myslip]'); if (!b) return;
+if (b.dataset.pm) { S.payMonth = shiftMonth(S.payMonth || shiftMonth(todayStr().slice(0, 7), -1), Number(b.dataset.pm)); S.payDraft = null; return render(); }
+if (b.dataset.slip) { const s = S.paySlips.find(x => x.id === b.dataset.slip); return openSlip(s.data, s.month); }
+if (b.dataset.myslip) { const s = S.mySlips.find(x => x.id === b.dataset.myslip); lsSet('paySeen', s.month > (lsGet('paySeen') || '') ? s.month : lsGet('paySeen')); refreshBadges(); return openSlip(s.data, s.month); }
+const a = b.dataset.pay, ym = S.payMonth || shiftMonth(todayStr().slice(0, 7), -1); const t0 = b.textContent;
+try {
+if (a === 'cfg') { await saveSettings({ pay: { ...payCfg(), basicPct: Number($('#ps_b').value) || 0, hraPct: Number($('#ps_h').value) || 0, pt: Number($('#ps_pt').value) || 0, pf: $('#ps_pf').checked, esi: $('#ps_esi').checked } }); toast('Salary structure saved'); return render(); }
+if (a === 'prep') { if (!(await needDek(() => b.click()))) return; b.disabled = true; b.textContent = 'Calculating…'; await payPrepare(ym); render(); setTimeout(() => document.querySelector('.paytbl')?.scrollIntoView({ behavior: 'smooth' }), 200); return; }
+if (a === 'save' || a === 'pub') { const rows = S.payDraft.rows.filter(x => x.ctc > 0); if (!rows.length) return toast('No one has a monthly salary saved', true);
+b.disabled = true; b.textContent = 'Saving…';
+await q(sb.from('payslips').upsert(rows.map(x => ({ employee_id: x.e.id, month: ym, data: slipData(x), published: a === 'pub' || x.published, created_by: S.me.id })), { onConflict: 'employee_id,month' }));
+S.payDraft = null; toast(a === 'pub' ? `✓ ${rows.length} payslips published — staff can see them under My payslips` : `Saved ${rows.length} draft payslips`); return render(); }
+if (a === 'puball') { await q(sb.from('payslips').update({ published: true }).eq('month', ym)); toast('All payslips published'); return render(); }
+if (a === 'reg') { const X = await loadXLSX(); const wb = X.utils.book_new();
+const rows = S.paySlips.map(s => { const d = s.data, o = { Code: d.code, Name: d.name, Department: d.dept, 'Monthly CTC': d.ctc, 'Days in month': d.cal, 'Paid days': d.payable, 'LOP days': d.lop }; d.earn.forEach(([k, v]) => o[k] = v); o['Gross'] = d.gross; d.ded.forEach(([k, v]) => o[k] = v); o['Total deductions'] = d.totalDed; o['Net pay'] = d.net; o.Status = s.published ? 'Published' : 'Draft'; return o; });
+X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows), 'Payroll ' + ym); X.writeFile(wb, `ORBIS-payroll-register-${ym}.xlsx`); return; }
+if (a === 'bank') { if (!(await needDek(() => b.click()))) return; const X = await loadXLSX(); const rows = [];
+for (const s of S.paySlips) { let p = {}; try { p = await privGet(s.employee_id); } catch { } rows.push({ 'Employee code': s.data.code, 'Beneficiary name': s.data.name, 'Bank': p.bank || '', 'Account number': p.acct || '', 'IFSC': p.ifsc || '', 'Amount': s.data.net, 'Narration': `Salary ${monthName(ym)}` }); }
+const ws = X.utils.json_to_sheet(rows); ws['!cols'] = [{ wch: 12 }, { wch: 26 }, { wch: 18 }, { wch: 20 }, { wch: 13 }, { wch: 12 }, { wch: 24 }]; const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Bank transfer');
+X.writeFile(wb, `ORBIS-salary-bank-transfer-${ym}.xlsx`); toast('⬇ Bank sheet downloaded — it has account numbers, keep it safe'); return; }
+} catch (er) { toast(errMsg(er), true); } finally { b.disabled = false; b.textContent = t0; }
+});
+VIEWS.pay = async () => {
+let rows; try { rows = await q(sb.from('payslips').select('*').eq('employee_id', S.me.id).eq('published', true).order('month', { ascending: false })); } catch { return p3Missing(); }
+S.mySlips = rows; const seen = lsGet('paySeen') || '';
+return `<div class="stack narrow"><div><span class="eyebrow">Salary</span><h2>My payslips</h2><p class="small muted">Only you, HR and the MD can see these.</p></div>
+${rows.length ? `<div class="card"><div class="stack" style="gap:6px">${rows.map(s => `<div class="li"><div><b>${esc(monthName(s.month))}</b>${s.month > seen ? ' <span class="chip pink">New</span>' : ''}<small>${s.data?.payable} paid days · gross ${inr(s.data?.gross)}</small></div><div class="hstack"><b>${inr(s.data?.net)}</b><button class="btn sm pri" data-myslip="${s.id}">Open</button></div></div>`).join('')}</div></div>` : '<div class="card muted">No payslips yet. They appear here when HR publishes the month’s salary.</div>'}</div>`;
+};
+const TST = { open: ['To do', '', '⏳'], doing: ['In progress', 'warn', '🔄'], done: ['Done', 'good', '✅'] };
+function taskPeople() { const ids = isAdmin() ? S.emps.filter(e => e.active).map(e => e.id) : [S.me.id, ...S.team]; return S.emps.filter(e => e.active && ids.includes(e.id)); }
+function taskCard(t) {
+const mine = t.assigned_to === S.me.id, gave = t.assigned_by === S.me.id, today = todayStr(); const od = t.due && t.status !== 'done' && t.due < today;
+const [lab, c, ic] = TST[t.status] || TST.open; const by = empById(t.assigned_by), to = empById(t.assigned_to);
+return `<div class="task ${t.priority === 'high' ? 'hi' : ''} ${t.status}"><div class="grow"><div class="row"><b>${t.priority === 'high' ? '⚡ ' : ''}${esc(t.title)}</b>${t.due ? `<span class="chip ${od ? 'crit' : t.due === today ? 'warn' : ''}">📅 ${t.due === today ? 'Today' : fmtD(t.due)}${od ? ' · overdue' : ''}</span>` : ''}</div>
+<small class="muted">${mine && !gave ? `From ${esc(by?.name || '—')}` : gave && !mine ? `For ${esc(to?.name || '—')}` : 'My own task'} · ${fmtD(ymd(t.created_at))}${t.done_at ? ' · done ' + fmtD(ymd(t.done_at)) : ''}</small>
+${t.notes ? `<div class="small">${esc(t.notes)}</div>` : ''}${t.reply ? `<div class="small tr">💬 ${esc(t.reply)}</div>` : ''}</div>
+<div class="hstack">${mine ? `<select data-tst="${t.id}">${Object.entries(TST).map(([k, v]) => `<option value="${k}" ${t.status === k ? 'selected' : ''}>${v[2]} ${v[0]}</option>`).join('')}</select><button class="btn sm" data-tk="reply" data-id="${t.id}" title="Reply">💬</button>` : `<span class="chip ${c}">${ic} ${lab}</span>`}${gave || isAdmin() ? `<button class="btn sm" data-tk="del" data-id="${t.id}" title="Delete">✕</button>` : ''}</div></div>`;
+}
+VIEWS.tasks = async () => {
+let rows; try { rows = await q(sb.from('tasks').select('*').order('created_at', { ascending: false }).limit(400)); } catch { return p3Missing(); }
+S.tasks = rows; const tab = S.tkTab || 'mine';
+const mine = rows.filter(t => t.assigned_to === S.me.id), given = rows.filter(t => t.assigned_by === S.me.id && t.assigned_to !== S.me.id);
+const list = tab === 'mine' ? mine : given; const ord = (a, b) => (a.due || '9999').localeCompare(b.due || '9999') || (b.priority === 'high') - (a.priority === 'high');
+const open = list.filter(t => t.status !== 'done').sort(ord), done = list.filter(t => t.status === 'done').slice(0, 15);
+const canGive = taskPeople().length > 1;
+return `<div class="stack narrow"><div class="row"><div><span class="eyebrow">Work</span><h2>Tasks ${open.length ? `<span class="pink">${open.length} open</span>` : ''}</h2></div><button class="btn pri" data-tk="new">+ New task</button></div>
+${canGive || given.length ? `<div class="seg"><button class="${tab === 'mine' ? 'on' : ''}" data-tkt="mine">My tasks (${mine.filter(t => t.status !== 'done').length})</button><button class="${tab === 'given' ? 'on' : ''}" data-tkt="given">Given by me (${given.filter(t => t.status !== 'done').length})</button></div>` : ''}
+<div class="stack" style="gap:8px">${open.map(taskCard).join('') || `<div class="card muted">${tab === 'mine' ? 'No open tasks 🎉' : 'You have not given any open tasks.'}</div>`}</div>
+${done.length ? `<div class="grp">Recently done</div><div class="stack" style="gap:8px">${done.map(taskCard).join('')}</div>` : ''}</div>`;
+};
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-tk],[data-tkt]'); if (!b) return;
+if (b.dataset.tkt) { S.tkTab = b.dataset.tkt; return render(); }
+const a = b.dataset.tk, id = b.dataset.id;
+try {
+if (a === 'new') { const ppl = taskPeople();
+dlg('New task', `<label>Task<input id="tk_t" maxlength="160" placeholder="e.g. Send GST working to auditor"></label><label>Details (optional)<textarea id="tk_n" rows="3"></textarea></label>
+<div class="grid3"><label>For<select id="tk_to">${ppl.map(p => `<option value="${p.id}" ${p.id === S.me.id ? 'selected' : ''}>${p.id === S.me.id ? 'Me' : esc(p.name)}</option>`).join('')}</select></label><label>Due date<input type="date" id="tk_d" min="${todayStr()}"></label><label>Priority<select id="tk_p"><option value="normal">Normal</option><option value="high">⚡ High</option></select></label></div>`, '<button class="btn pri" data-tk="add">Add task</button>'); $('#tk_t').focus(); }
+if (a === 'add') { const title = $('#tk_t').value.trim(); if (!title) return toast('Write the task', true);
+await q(sb.from('tasks').insert({ title, notes: $('#tk_n').value.trim(), assigned_to: $('#tk_to').value, assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value }));
+closeDlg(); toast($('#tk_to')?.value === S.me.id ? 'Task added' : '✓ Task sent'); if ($('#tk_to') && $('#tk_to').value !== S.me.id) S.tkTab = 'given'; render(); refreshBadges(); }
+if (a === 'reply') { const t = S.tasks.find(x => x.id === id); dlg('Reply / update', `<p><b>${esc(t.title)}</b></p><label>Your note for ${esc(empById(t.assigned_by)?.name || 'the sender')}<textarea id="tk_r" rows="3">${esc(t.reply || '')}</textarea></label>`, `<button class="btn pri" data-tk="rsave" data-id="${id}">Save</button>`); }
+if (a === 'rsave') { await q(sb.from('tasks').update({ reply: $('#tk_r').value.trim().slice(0, 500) }).eq('id', id)); closeDlg(); render(); }
+if (a === 'del') { if (!confirm('Delete this task?')) return; await q(sb.from('tasks').delete().eq('id', id)); render(); refreshBadges(); }
+} catch (er) { toast(errMsg(er), true); }
+});
+document.addEventListener('change', async e => { const s = e.target.closest('[data-tst]'); if (!s) return;
+try { await q(sb.from('tasks').update({ status: s.value, done_at: s.value === 'done' ? new Date().toISOString() : null }).eq('id', s.dataset.tst)); if (s.value === 'done') toast('✅ Nice work!'); render(); refreshBadges(); } catch (er) { toast(errMsg(er), true); } });
+function revHTML(r, empId, day) {
+const can = empId !== S.me.id;
+return `<div class="rev">${r ? `<span class="stars">${stars(r.rating)}</span>${r.comment ? `<span class="small">“${esc(r.comment)}”</span>` : ''}<small class="muted">— ${esc(empById(r.reviewer)?.name?.split(' ')[0] || '')}</small>` : '<span class="small muted">No feedback yet</span>'}${can ? `<button class="btn sm" data-rev="${empId}" data-d="${day}">${r ? 'Edit' : '⭐ Give feedback'}</button>` : ''}</div>`;
+}
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-rev],[data-rvs],[data-rvsave]'); if (!b) return;
+if (b.dataset.rvs) { document.querySelectorAll('[data-rvs]').forEach(x => x.classList.toggle('on', Number(x.dataset.rvs) <= Number(b.dataset.rvs))); S.rvN = Number(b.dataset.rvs); return; }
+if (b.dataset.rev) { const r = (S.prv || []).find(x => x.employee_id === b.dataset.rev && x.day === b.dataset.d); S.rvN = r?.rating || 0;
+return dlg(`Feedback · ${esc(empById(b.dataset.rev)?.name || '')}`, `<p class="small muted">On the work plan for ${fmtD(b.dataset.d)}. The employee sees this on their Work plan page.</p><div class="starpick">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-rvs="${n}" class="${n <= S.rvN ? 'on' : ''}">★</button>`).join('')}</div><label>Comment<textarea id="rv_c" rows="3" maxlength="400" placeholder="e.g. Good planning — finish the pending bank entries first tomorrow">${esc(r?.comment || '')}</textarea></label>`, `<button class="btn pri" data-rvsave="${b.dataset.rev}" data-d="${b.dataset.d}">Save feedback</button>`); }
+if (b.dataset.rvsave) { if (!S.rvN) return toast('Choose 1 to 5 stars', true);
+try { await q(sb.from('plan_reviews').upsert({ employee_id: b.dataset.rvsave, day: b.dataset.d, reviewer: S.me.id, rating: S.rvN, comment: $('#rv_c').value.trim(), created_at: new Date().toISOString() })); closeDlg(); toast('Feedback saved'); render(); } catch (er) { toast(errMsg(er), true); } }
+});
+async function myReviewsCard() {
+let r; try { r = await q(sb.from('plan_reviews').select('*').eq('employee_id', S.me.id).gte('day', addDays(todayStr(), -14)).order('day', { ascending: false })); } catch { return ''; }
+if (r.length) lsSet('revSeen', r[0].created_at > (lsGet('revSeen') || '') ? r[0].created_at : lsGet('revSeen'));
+return r.length ? `<div class="card"><h3>Feedback on my plans</h3><div class="stack" style="gap:6px">${r.map(x => `<div class="li"><div><b>${fmtD(x.day)} · <span class="stars">${stars(x.rating)}</span></b>${x.comment ? `<small>“${esc(x.comment)}”</small>` : ''}</div><small class="muted">${esc(empById(x.reviewer)?.name || '')}</small></div>`).join('')}</div></div>` : '';
+}
+const carryCfg = () => ({ EL: 30, ...(C().leaveCarry || {}) });
+const ltq = t => Number(t.days) + Number((S.ladj || {})[t.k]?.days || 0);
+async function loadAdj(emp, yr) { try { const r = await q(sb.from('leave_adjust').select('*').eq('employee_id', emp).eq('year', Number(yr))); return Object.fromEntries(r.map(x => [x.type, x])); } catch { return {}; } }
+async function carryCalc(Y) {
+const [lv, adj] = await Promise.all([q(sb.from('leave_requests').select('employee_id,type,days,from_date').eq('status', 'approved').gte('from_date', Y + '-01-01').lte('from_date', Y + '-12-31')), q(sb.from('leave_adjust').select('*').eq('year', Y))]);
+const cap = carryCfg();
+return S.emps.filter(e => e.active).map(e => { const t = {}; ltypes().forEach(tp => { const used = lv.filter(l => l.employee_id === e.id && l.type === tp.k).reduce((s, l) => s + Number(l.days), 0); const a = adj.find(x => x.employee_id === e.id && x.type === tp.k);
+const quota = Number(tp.days) + Number(a?.days || 0), left = Math.max(0, quota - used); t[tp.k] = { quota, used, left, carry: Math.min(left, Number(cap[tp.k]) || 0) }; }); return { e, t }; });
+}
+function yearEndCard() {
+const cap = carryCfg(), y = Number(todayStr().slice(0, 4)), Y = todayStr().slice(5) >= '12-01' ? y : y - 1;
+return `<div class="card"><h3>Leave year-end · carry forward</h3><p class="small muted">Unused leave can move to the next year. Set the most days each type can carry (0 = it lapses). Then preview and apply — you can change any number before applying.</p>
+<div class="grid3">${ltypes().map(t => `<label>${esc(t.name)} · carry up to<input type="number" min="0" id="cf_${t.k}" value="${Number(cap[t.k]) || 0}"></label>`).join('')}</div>
+<div class="hstack wrap"><label>From year<select id="cf_y">${[y - 1, y].map(v => `<option ${v === Y ? 'selected' : ''}>${v}</option>`).join('')}</select></label><button class="btn" id="cfPrev">Preview carry-forward</button></div><div id="cfOut"></div></div>`;
+}
+document.addEventListener('click', async e => {
+const b = e.target.closest('#cfPrev,#cfApply,#cfXls'); if (!b) return;
+try {
+if (b.id === 'cfPrev') { const leaveCarry = Object.fromEntries(ltypes().map(t => [t.k, Number($('#cf_' + t.k).value) || 0])); await saveSettings({ leaveCarry }); const Y = Number($('#cf_y').value);
+b.disabled = true; const rows = await carryCalc(Y); S.cf = { Y, rows }; b.disabled = false; const ts = ltypes().filter(t => leaveCarry[t.k] > 0);
+if (!ts.length) { $('#cfOut').innerHTML = '<div class="msg">All carry limits are 0 — unused leave will lapse. Nothing to carry.</div>'; return; }
+$('#cfOut').innerHTML = `<div class="scrollx"><table><thead><tr><th>Employee</th>${ts.map(t => `<th>${t.k} left in ${Y}</th><th>${t.k} → ${Y + 1}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr><td>${esc(r.e.name)}</td>${ts.map(t => `<td>${r.t[t.k].left} <small class="muted">of ${r.t[t.k].quota}</small></td><td><input class="pin" type="number" min="0" step="0.5" data-cf="${i}" data-k="${t.k}" value="${r.t[t.k].carry}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+<div class="row"><span class="small muted">Applying sets each person’s extra ${ts.map(t => t.k).join('/')} for ${Y + 1}. Running it again replaces the earlier numbers.</span><div class="hstack"><button class="btn" id="cfXls">⬇ Excel</button><button class="btn pri" id="cfApply">Apply to ${Y + 1}</button></div></div>`; }
+if (b.id === 'cfApply' || b.id === 'cfXls') { const { Y, rows } = S.cf; document.querySelectorAll('[data-cf]').forEach(i => rows[i.dataset.cf].t[i.dataset.k].carry = Number(i.value) || 0);
+const ts = ltypes().filter(t => Number(carryCfg()[t.k]) > 0);
+if (b.id === 'cfXls') { const X = await loadXLSX(); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows.map(r => { const o = { Code: r.e.code, Name: r.e.name }; ts.forEach(t => { o[`${t.k} quota ${Y}`] = r.t[t.k].quota; o[`${t.k} used`] = r.t[t.k].used; o[`${t.k} left`] = r.t[t.k].left; o[`${t.k} carried to ${Y + 1}`] = r.t[t.k].carry; }); return o; })), 'Carry forward'); X.writeFile(wb, `ORBIS-leave-carry-forward-${Y}.xlsx`); return; }
+if (!confirm(`Add the carried leave to everyone's ${Y + 1} balance?`)) return;
+await q(sb.from('leave_adjust').upsert(rows.flatMap(r => ts.map(t => ({ employee_id: r.e.id, year: Y + 1, type: t.k, days: r.t[t.k].carry, note: `Carried forward from ${Y}`, updated_at: new Date().toISOString() })))));
+toast(`✓ Leave carried forward to ${Y + 1}`); $('#cfOut').innerHTML = `<div class="msg">✓ Done. Staff will see the extra days in their ${Y + 1} leave balance.</div>`; }
+} catch (er) { b.disabled = false; toast(errMsg(er), true); }
+});
+const _rb3 = refreshBadges;
+refreshBadges = async function () {
+const b = await _rb3(); const t = todayStr();
+try { const tk = await q(sb.from('tasks').select('id,title,due,status').eq('assigned_to', S.me.id).neq('status', 'done')); b.tasks = tk.length;
+tk.filter(x => x.due && x.due <= t).forEach(x => notify('task' + x.id + t, x.due < t ? 'Task overdue' : 'Task due today', x.title)); } catch { }
+try { const p = await q(sb.from('payslips').select('month').eq('employee_id', S.me.id).eq('published', true).gt('month', lsGet('paySeen') || '')); b.pay = p.length; if (p.length) notify('pay' + p[0].month, 'Payslip ready', 'Open My payslips'); } catch { }
+try { const r = await q(sb.from('plan_reviews').select('created_at').eq('employee_id', S.me.id).gt('created_at', lsGet('revSeen') || '1970')); b.plan = r.length; } catch { }
+S.badge = b; paintBadges(); return b;
+};
 boot();
 </script></body></html>
