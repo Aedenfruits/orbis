@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
-<link rel="icon" href="/icon-192.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="ORBIS">
+<link rel="icon" href="/icon-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <style>
 :root{--navy:#1D2B53;--pink:#FF004D;--bg:#F4F6FB;--card:#fff;--line:#e3e7f0;--muted:#6b7590;--good:#17834f;--warn:#c77700;--crit:#cf2450;--r:14px}
 *{box-sizing:border-box}html,body{margin:0}body{font-family:"Segoe UI",Inter,system-ui,sans-serif;background:var(--bg);color:#1b2440;font-size:14.5px}
@@ -193,7 +193,6 @@ $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div>
 <label>Password<input id="l_pw" type="password" autocomplete="current-password" required></label>
 <button class="btn pri wide" type="submit">Sign in</button><div id="l_msg" class="msg">${msg ? esc(msg) : ''}</div>
 <p class="small muted">Forgot your password? Ask HR to reset it.</p></form>
-<p class="center"><button class="btn sm inst" type="button" ${S.canInstall ? '' : 'hidden'}>⬇ Install ORBIS app on this computer</button></p>
 <p class="small muted center" id="fsWrap" style="display:none">First time setting up ORBIS? <a href="#" id="firstSetup">Create the first HR account</a></p></div>`;
 $('#loginF').onsubmit = async e => {
 e.preventDefault(); const b = e.submitter; b.disabled = true; $('#l_msg').textContent = 'Signing in…';
@@ -1882,5 +1881,12 @@ const _signOut0 = signOut; signOut = async function () { clearInterval(S.kIdleI)
 maybeKioskLogout = function () { if (KMODE()) { S.kLeft = Math.min(S.kLeft || 60, 8); } };
 document.addEventListener('change', async e => { const s = e.target.closest('[data-devown]'); if (!s) return;
 try { await q(sb.from('devices').update({ owner: s.value || null }).eq('id', s.dataset.devown)); toast(s.value ? `🔒 Only ${empById(s.value)?.name} can punch on this computer` : 'Anyone can punch on this computer'); } catch (er) { toast(errMsg(er), true); } });
+function pwaOn(on) {
+const H = document.head, has = H.querySelector('link[rel=manifest]');
+if (on && !has) { H.insertAdjacentHTML('beforeend', '<link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes" data-pwa><meta name="mobile-web-app-capable" content="yes" data-pwa><meta name="apple-mobile-web-app-title" content="ORBIS" data-pwa>'); }
+if (!on) { has?.remove(); H.querySelectorAll('[data-pwa]').forEach(x => x.remove()); installEvt = null; S.canInstall = false; document.querySelectorAll('.inst').forEach(b => b.hidden = true); }
+}
+const _route0 = route; route = function () { pwaOn(!!S.me && !KMODE()); return _route0(); };
+const _renderLogin1 = renderLogin; renderLogin = function (m) { pwaOn(false); return _renderLogin1(m); };
 boot();
 </script></body></html>
