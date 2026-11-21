@@ -76,7 +76,7 @@ nav a{position:relative}em.nb{font-style:normal;position:absolute;top:4px;right:
 .task.hi{border-left-color:var(--pink)}.task.done{opacity:.6}.task.done b{text-decoration:line-through}.task .tr{margin-top:4px;color:var(--navy)}.task select{max-width:150px}
 .rev{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}.rev .btn{margin-left:auto}
 .stars{color:#f5a623;letter-spacing:1px}.starpick{display:flex;gap:6px;margin:6px 0 12px}.starpick button{font-size:30px;background:none;border:0;color:#ccc;cursor:pointer;transition:transform .15s}.starpick button.on{color:#f5a623}.starpick button:hover{transform:scale(1.2)}
-</style>
+.task>.hstack{flex-wrap:nowrap}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body><div id="app"><div class="loading">Loading ORBIS…</div></div><dialog id="dlg"></dialog><div id="toast"></div>
 <script>
@@ -1471,12 +1471,12 @@ const tr = [...Array(rows)].map((_, i) => `<tr><td>${esc(d.earn[i]?.[0] || '')}<
 const kv = (k, v) => v ? `<div><span>${k}</span><b>${esc(String(v))}</b></div>` : '';
 return `<!doctype html><html><head><meta charset="utf-8"><title>Payslip ${esc(d.code)} ${ym}</title><style>
 *{box-sizing:border-box}body{font:13px/1.45 system-ui,Segoe UI,Arial;color:#1d1b2e;margin:0;padding:24px;background:#f4f3f8}.pg{max-width:760px;margin:auto;background:#fff;border-radius:14px;padding:28px 32px;box-shadow:0 2px 14px #0001}
-.hd{display:flex;gap:14px;align-items:center;border-bottom:3px solid #2b1d6b;padding-bottom:14px}.hd svg{width:52px;height:52px;color:#2b1d6b}.hd h1{font-size:19px;margin:0}.hd small{color:#666}.tt{margin-left:auto;text-align:right}.tt b{display:block;font-size:15px;color:#e0287a}
+.hd{display:flex;gap:14px;align-items:center;border-bottom:3px solid #1D2B53;padding-bottom:14px}.hd svg{width:52px;height:52px;color:#1D2B53}.hd h1{font-size:19px;margin:0}.hd small{color:#666}.tt{margin-left:auto;text-align:right}.tt b{display:block;font-size:15px;color:#FF004D}
 .info{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin:16px 0}.info div{display:flex;justify-content:space-between;border-bottom:1px dashed #ddd;padding:3px 0}.info span{color:#666}
 .att{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px}.att div{background:#f4f3f8;border-radius:8px;padding:6px 10px;text-align:center;flex:1}.att b{display:block;font-size:16px}.att small{color:#666}
-table{width:100%;border-collapse:collapse}th{background:#2b1d6b;color:#fff;text-align:left;padding:7px 9px}td{padding:6px 9px;border-bottom:1px solid #eee}.n{text-align:right}tfoot td{font-weight:700;background:#f4f3f8}
-.net{margin-top:16px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#2b1d6b,#e0287a);color:#fff;border-radius:12px;padding:14px 18px}.net b{font-size:22px}.w{margin-top:6px;color:#444}
-.ft{margin-top:22px;color:#888;font-size:11px;text-align:center}.pb{text-align:center;margin:14px}.pb button{font:inherit;padding:9px 18px;border-radius:8px;border:0;background:#2b1d6b;color:#fff;cursor:pointer}
+table{width:100%;border-collapse:collapse}th{background:#1D2B53;color:#fff;text-align:left;padding:7px 9px}td{padding:6px 9px;border-bottom:1px solid #eee}.n{text-align:right}tfoot td{font-weight:700;background:#f4f3f8}
+.net{margin-top:16px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,#1D2B53,#FF004D);color:#fff;border-radius:12px;padding:14px 18px}.net b{font-size:22px}.w{margin-top:6px;color:#444}
+.ft{margin-top:22px;color:#888;font-size:11px;text-align:center}.pb{text-align:center;margin:14px}.pb button{font:inherit;padding:9px 18px;border-radius:8px;border:0;background:#1D2B53;color:#fff;cursor:pointer}
 @media print{body{background:#fff;padding:0}.pg{box-shadow:none}.pb{display:none}}</style></head><body><div class="pb"><button onclick="print()">🖨 Print / Save as PDF</button></div><div class="pg">
 <div class="hd">${LOGO}<div><h1>${esc(co.company)}</h1><small>${esc(co.address || co.website || '')}</small></div><div class="tt"><small>PAYSLIP</small><b>${esc(monthName(ym))}</b></div></div>
 <div class="info">${kv('Employee', d.name)}${kv('Employee code', d.code)}${kv('Designation', d.desig)}${kv('Department', d.dept)}${kv('Office', d.office)}${kv('Date of joining', d.doj && fmtD(d.doj))}${kv('PAN', d.pan)}${kv('UAN', d.uan)}${kv('ESI no.', d.esino)}${kv('Bank', d.bank && d.acct4 ? `${d.bank} ••${d.acct4}` : d.bank)}</div>
