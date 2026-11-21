@@ -1,4 +1,4 @@
-const C = 'orbis-v7';
+const C = 'orbis-v8'; let pending = false;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { for (const k of await caches.keys()) if (k !== C) await caches.delete(k); await self.clients.claim(); })()); });
 self.addEventListener('fetch', e => {
@@ -6,7 +6,17 @@ self.addEventListener('fetch', e => {
   if (u.origin === location.origin) {
     if (u.pathname.endsWith('.webmanifest') || /\/(icon|apple-touch)/.test(u.pathname)) { e.respondWith(fetch(r, { cache: 'no-cache' }).catch(() => caches.match(r))); return; }
     if (r.mode === 'navigate' || u.pathname === '/' || u.pathname.endsWith('.html')) {
-      e.respondWith(fetch(r.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => { if (res.ok) { const cp = res.clone(); caches.open(C).then(c => c.put('/', cp)); } return res; }).catch(() => caches.match('/')));
+      /* open instantly from the saved copy, fetch the new version in the background */
+      pending = false;
+      e.respondWith(caches.open(C).then(async c => {
+        const old = await c.match('/');
+        const net = fetch(r.url, { cache: 'no-cache', credentials: 'same-origin' }).then(async res => {
+          if (res.ok) { const t = await res.clone().text(), o = old ? await old.clone().text() : null; await c.put('/', res.clone());
+            if (o !== null && o !== t) { pending = true; const all = await self.clients.matchAll({ type: 'window' }); all.forEach(w => w.postMessage({ orbis: 'update' })); } }
+          return res; }).catch(() => old);
+        if (old) { e.waitUntil(net.catch(() => { })); return old; }
+        return net;
+      }));
       return;
     }
     e.respondWith(caches.match(r).then(m => m || fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(C).then(c => c.put(r, cp)); } return res; })));
@@ -17,6 +27,7 @@ self.addEventListener('fetch', e => {
   }
 });
 
+self.addEventListener('message', e => { if (e.data && e.data.orbis === 'check' && pending && e.source) e.source.postMessage({ orbis: 'update' }); });
 self.addEventListener('push', e => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'ORBIS', body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || 'ORBIS', { body: d.body || '', icon: '/icon-orbis-192.png', badge: '/icon-orbis-192.png', tag: d.tag || undefined, renotify: !!d.tag, data: { url: d.url || '/#punch' }, vibrate: [120, 60, 120] }));
