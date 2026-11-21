@@ -76,7 +76,11 @@ nav a{position:relative}em.nb{font-style:normal;position:absolute;top:4px;right:
 .task.hi{border-left-color:var(--pink)}.task.done{opacity:.6}.task.done b{text-decoration:line-through}.task .tr{margin-top:4px;color:var(--navy)}.task select{max-width:150px}
 .rev{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}.rev .btn{margin-left:auto}
 .stars{color:#f5a623;letter-spacing:1px}.starpick{display:flex;gap:6px;margin:6px 0 12px}.starpick button{font-size:30px;background:none;border:0;color:#ccc;cursor:pointer;transition:transform .15s}.starpick button.on{color:#f5a623}.starpick button:hover{transform:scale(1.2)}
-.task>.hstack{flex-wrap:nowrap}</style>
+.task>.hstack{flex-wrap:nowrap}.pulse{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#fff4fa,#f4f6ff);border:2px solid #ffd2e6}.pulse input{flex-basis:100%;margin:0}.pm{display:flex;gap:8px}.pm button{display:grid;place-items:center;gap:2px;font-size:30px;width:70px;padding:8px 0;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;transition:transform .15s}.pm button:hover{transform:translateY(-3px) scale(1.06);border-color:var(--pink)}.pm small{font-size:11px;color:var(--muted);font-weight:700}
+.pdist>div{display:grid;grid-template-columns:110px 1fr 30px;gap:10px;align-items:center;margin:6px 0}.pdist .bar{height:12px}.pnote{background:#f4f6fb;border-radius:10px;padding:8px 12px;margin:6px 0;font-style:italic}
+.ptrend{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;text-align:center}.pcol{height:110px;background:#f4f6fb;border-radius:10px;display:flex;align-items:flex-end;overflow:hidden}.pcol i{display:block;width:100%;background:linear-gradient(0deg,var(--navy),var(--pink));border-radius:10px 10px 0 0}.ptrend span{display:block;font-size:20px;margin-top:4px}.ptrend small{color:var(--muted);font-size:11px}
+tr.lg-delete td{color:var(--crit)}.exc .hstack{gap:10px}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head><body><div id="app"><div class="loading">Loading ORBIS…</div></div><dialog id="dlg"></dialog><div id="toast"></div>
 <script>
@@ -249,7 +253,7 @@ await launchFx();
 function navList() {
 const n = [['punch', 'Punch', '⏱️'], ['news', 'News', '📢'], ['my', 'My attendance', '📅'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['tasks', 'Tasks', '✅'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['people', 'Directory', '📇'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂'], ['pay', 'My payslips', '💰']];
 if (S.team.length || isAdmin()) n.push(['team', isAdmin() ? 'All staff' : 'My team', '👥']);
-if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['payroll', 'Payroll', '🧾'], ['employees', 'Employees', '🧑‍💼'], ['setup', 'Computers & settings', '⚙️']);
+if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['payroll', 'Payroll', '🧾'], ['employees', 'Employees', '🧑‍💼'], ['assets', 'Assets', '💻'], ['exits', 'Exits', '🚪'], ['pulse', 'Team pulse', '💗'], ['log', 'Activity log', '🕵️'], ['setup', 'Computers & settings', '⚙️']);
 return n;
 }
 function route() { const h = location.hash.slice(1) || 'punch'; const ok = navList().map(x => x[0]); S.view = ok.includes(h) ? h : 'punch'; render(); }
@@ -1297,7 +1301,7 @@ try { await salarySummary(S.regMonth || todayStr().slice(0, 7)); toast('Salary s
 async function fetchAll(table, order) { const out = []; for (let i = 0; ; i += 1000) { let qy = sb.from(table).select('*').range(i, i + 999); if (order) qy = qy.order(order); const r = await q(qy); out.push(...r); if (r.length < 1000) break; } return out; }
 async function makeBackup(silent) {
 const X = await loadXLSX(); const wb = X.utils.book_new(); const T = [['employees', 'code'], ['attendance', 'day'], ['breaks', 'day'], ['leave_requests', 'created_at'], ['extra_breaks', 'created_at'], ['punch_fixes', 'created_at'], ['holidays', 'day'],
-['policies', 'created_at'], ['dept_heads', null], ['app_settings', null], ['employee_private', null], ['emp_docs', 'uploaded_at'], ['doc_vault', null], ['work_plans', 'day'], ['devices', 'created_at'], ['announcements', 'created_at'], ['tasks', 'created_at'], ['plan_reviews', 'day'], ['payslips', 'month'], ['leave_adjust', null]];
+['policies', 'created_at'], ['dept_heads', null], ['app_settings', null], ['employee_private', null], ['emp_docs', 'uploaded_at'], ['doc_vault', null], ['work_plans', 'day'], ['devices', 'created_at'], ['announcements', 'created_at'], ['tasks', 'created_at'], ['plan_reviews', 'day'], ['payslips', 'month'], ['leave_adjust', null], ['assets', 'tag'], ['exits', 'created_at'], ['pulse', 'week'], ['activity_log', 'at']];
 let n = 0;
 for (const [t, o] of T) { let rows; try { rows = await fetchAll(t, o); } catch { continue; }
 if (t === 'devices') rows = rows.map(({ token, ...r }) => r);
@@ -1633,5 +1637,181 @@ try { const p = await q(sb.from('payslips').select('month').eq('employee_id', S.
 try { const r = await q(sb.from('plan_reviews').select('created_at').eq('employee_id', S.me.id).gt('created_at', lsGet('revSeen') || '1970')); b.plan = r.length; } catch { }
 S.badge = b; paintBadges(); return b;
 };
+const p4Missing = () => p3Missing().replace('Phase 3', 'Phase 4');
+function letterHTML(title, body, ym) {
+const co = idCfg();
+return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>*{box-sizing:border-box}body{font:14px/1.6 system-ui,Segoe UI,Arial;color:#1b2440;margin:0;padding:24px;background:#f4f6fb}.pg{max-width:780px;margin:auto;background:#fff;border-radius:14px;padding:36px 44px;box-shadow:0 2px 14px #0001}
+.hd{display:flex;gap:14px;align-items:center;border-bottom:3px solid #1D2B53;padding-bottom:14px;margin-bottom:22px}.hd svg{height:34px;width:auto;color:#1D2B53}.hd h1{font-size:18px;margin:0}.hd small{color:#666}.hd .r{margin-left:auto;text-align:right;color:#666;font-size:12px}
+h2{font-size:17px;text-align:center;letter-spacing:.06em;margin:6px 0 20px;color:#1D2B53}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#1D2B53;color:#fff;text-align:left;padding:7px 9px}td{padding:6px 9px;border-bottom:1px solid #eee}.n{text-align:right}tfoot td{font-weight:700;background:#f4f6fb}
+.net{display:flex;justify-content:space-between;background:linear-gradient(90deg,#1D2B53,#FF004D);color:#fff;border-radius:12px;padding:12px 18px;margin-top:10px}.net b{font-size:20px}.sig{margin-top:56px;display:flex;justify-content:space-between}.sig div{border-top:1px solid #999;padding-top:6px;min-width:200px;text-align:center}
+.pb{text-align:center;margin:14px}.pb button{font:inherit;padding:9px 18px;border-radius:8px;border:0;background:#1D2B53;color:#fff;cursor:pointer}@media print{body{background:#fff;padding:0}.pg{box-shadow:none}.pb{display:none}}</style></head><body>
+<div class="pb"><button onclick="print()">🖨 Print / Save as PDF</button></div><div class="pg"><div class="hd">${LOGO}<div><h1>${esc(co.company)}</h1><small>${esc([co.address, co.phone, co.website].filter(Boolean).join(' · '))}</small></div><div class="r">${fmtD(todayStr())}</div></div><h2>${esc(title.toUpperCase())}</h2>${body}</div></body></html>`;
+}
+function openDoc(html) { const w = window.open('', '_blank'); if (!w) return toast('Allow pop-ups for aedenorbis.com to open this page', true); w.document.write(html); w.document.close(); }
+async function xlsxOut(rows, sheet, file) { const X = await loadXLSX(); const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows.length ? rows : [{ Note: 'Nothing to export' }]), sheet); X.writeFile(wb, file); }
+const AKINDS = ['Laptop', 'Desktop', 'Mobile phone', 'SIM card', 'ID card', 'Access card / keys', 'Vehicle', 'Tablet', 'Other'];
+const AST = { stock: ['In store', ''], assigned: ['With employee', 'good'], repair: ['In repair', 'warn'], retired: ['Retired / lost', 'crit'] };
+VIEWS.assets = async () => {
+let rows; try { rows = await q(sb.from('assets').select('*').order('kind').order('tag')); } catch { return p4Missing(); }
+S.assets = rows; const f = S.astF || 'all', s = (S.astQ || '').toLowerCase();
+const vis = rows.filter(a => (f === 'all' || a.status === f) && (!s || [a.tag, a.kind, a.name, a.serial, empById(a.assigned_to)?.name].join(' ').toLowerCase().includes(s)));
+afterFns.push(() => { const i = $('#astQ'); if (i) { i.oninput = () => { S.astQ = i.value; clearTimeout(S.astT); S.astT = setTimeout(() => { render(); }, 350); }; i.focus(); i.setSelectionRange(i.value.length, i.value.length); } });
+return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · admin</span><h2>Company assets <span class="pink">${rows.length}</span></h2></div><div class="hstack"><button class="btn" data-as="xls">⬇ Excel</button><button class="btn pri" data-as="new">+ Add asset</button></div></div>
+<div class="kpis">${Object.entries(AST).map(([k, v]) => `<div><b>${rows.filter(a => a.status === k).length}</b><small>${v[0]}</small></div>`).join('')}</div>
+<div class="row"><div class="seg">${[['all', 'All'], ...Object.entries(AST).map(([k, v]) => [k, v[0]])].map(([k, l]) => `<button class="${f === k ? 'on' : ''}" data-astf="${k}">${l}</button>`).join('')}</div><input id="astQ" placeholder="🔍 Search tag, model, serial, person" value="${esc(S.astQ || '')}" style="max-width:300px"></div>
+<div class="card flush"><div class="scrollx"><table><thead><tr><th>Tag</th><th>Item</th><th>Serial no.</th><th>With</th><th>Status</th><th></th></tr></thead><tbody>
+${vis.map(a => { const e = empById(a.assigned_to); return `<tr><td><b>${esc(a.tag || '—')}</b></td><td>${esc(a.kind)}<div class="small muted">${esc(a.name)}</div></td><td class="small">${esc(a.serial || '—')}</td><td>${e ? `${avatarHTML(e, 'xs')}${esc(e.name)}<div class="small muted">since ${a.assigned_at ? fmtD(a.assigned_at) : '—'}</div>` : '—'}</td><td><span class="chip ${AST[a.status]?.[1] || ''}">${AST[a.status]?.[0] || a.status}</span></td>
+<td class="right"><div class="hstack">${a.assigned_to ? `<button class="btn sm" data-as="ret" data-id="${a.id}">↩ Returned</button>` : ''}<button class="btn sm" data-as="edit" data-id="${a.id}">Edit</button></div></td></tr>`; }).join('') || '<tr><td colspan=6 class="muted">No assets yet — add laptops, phones, SIM cards, keys…</td></tr>'}</tbody></table></div></div></div>`;
+};
+function assetDlg(a = {}) {
+const ppl = S.emps.filter(e => e.active);
+dlg(a.id ? 'Edit asset' : 'Add asset', `<div class="grid2"><label>Asset tag<input id="as_tag" value="${esc(a.tag || '')}" placeholder="e.g. AEF-LAP-07"></label><label>Type<select id="as_kind">${AKINDS.map(k => `<option ${k === (a.kind || 'Laptop') ? 'selected' : ''}>${k}</option>`).join('')}</select></label>
+<label>Make / model<input id="as_name" value="${esc(a.name || '')}" placeholder="e.g. Dell Vostro 3520"></label><label>Serial / IMEI / number<input id="as_ser" value="${esc(a.serial || '')}"></label>
+<label>Given to<select id="as_to"><option value="">— nobody (in store) —</option>${ppl.map(e => `<option value="${e.id}" ${e.id === a.assigned_to ? 'selected' : ''}>${esc(e.name)} · ${esc(e.code)}</option>`).join('')}</select></label><label>Given on<input type="date" id="as_on" value="${a.assigned_at || todayStr()}"></label>
+<label>Status<select id="as_st">${Object.entries(AST).map(([k, v]) => `<option value="${k}" ${k === (a.status || 'stock') ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></label></div><label>Notes<textarea id="as_n" rows="2">${esc(a.notes || '')}</textarea></label>`,
+`${a.id ? `<button class="btn" data-as="del" data-id="${a.id}">Delete</button>` : ''}<button class="btn pri" data-as="save" data-id="${a.id || ''}">Save</button>`);
+$('#as_to').onchange = () => { $('#as_st').value = $('#as_to').value ? 'assigned' : 'stock'; };
+}
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-as],[data-astf]'); if (!b) return;
+if (b.dataset.astf) { S.astF = b.dataset.astf; return render(); }
+const a = b.dataset.as, id = b.dataset.id;
+try {
+if (a === 'new') assetDlg();
+if (a === 'edit') assetDlg(S.assets.find(x => x.id === id));
+if (a === 'save') { const to = $('#as_to').value || null; const row = { tag: $('#as_tag').value.trim(), kind: $('#as_kind').value, name: $('#as_name').value.trim(), serial: $('#as_ser').value.trim(), assigned_to: to, assigned_at: to ? $('#as_on').value || todayStr() : null, status: to && $('#as_st').value === 'stock' ? 'assigned' : !to && $('#as_st').value === 'assigned' ? 'stock' : $('#as_st').value, notes: $('#as_n').value.trim() };
+if (!row.tag && !row.name) return toast('Give a tag or model', true);
+if (id) await q(sb.from('assets').update(row).eq('id', id)); else await q(sb.from('assets').insert(row)); closeDlg(); toast('Saved'); render(); }
+if (a === 'ret') { await q(sb.from('assets').update({ assigned_to: null, assigned_at: null, status: 'stock' }).eq('id', id)); toast('↩ Back in store'); render(); }
+if (a === 'del') { if (!confirm('Delete this asset record?')) return; await q(sb.from('assets').delete().eq('id', id)); closeDlg(); render(); }
+if (a === 'xls') await xlsxOut(S.assets.map(x => ({ Tag: x.tag, Type: x.kind, Model: x.name, Serial: x.serial, Status: AST[x.status]?.[0] || x.status, 'With': empById(x.assigned_to)?.name || '', Code: empById(x.assigned_to)?.code || '', 'Given on': x.assigned_at || '', Notes: x.notes })), 'Assets', `ORBIS-assets-${todayStr()}.xlsx`);
+} catch (er) { toast(errMsg(er), true); }
+});
+async function myAssetsCard() {
+let r; try { r = await q(sb.from('assets').select('*').eq('assigned_to', S.me.id)); } catch { return ''; }
+return r.length ? `<div class="card"><h3>💻 Company items with me</h3><div class="stack" style="gap:6px">${r.map(a => `<div class="li"><div><b>${esc(a.kind)} · ${esc(a.name || a.tag)}</b><small>${esc(a.tag)}${a.serial ? ' · ' + esc(a.serial) : ''}${a.assigned_at ? ' · since ' + fmtD(a.assigned_at) : ''}</small></div></div>`).join('')}</div><p class="small muted">Something wrong here? Tell HR.</p></div>` : '';
+}
+const _docsV = VIEWS.docs; VIEWS.docs = async () => { const h = await _docsV(); if (isAdmin()) return h; return h + `<div class="narrow" style="margin-top:14px">${await myAssetsCard()}</div>`; };
+const EXST = { notice: ['Serving notice', 'warn'], settled: ['Settlement ready', ''], closed: ['Closed', 'good'] };
+const EX_ITEMS = [['handover', 'Work handed over'], ['idcard', 'ID card returned'], ['access', 'Keys / access cards returned'], ['login', 'ORBIS, email & software access removed'], ['dues', 'Advances / dues checked'], ['att', 'Final attendance checked'], ['exitint', 'Exit talk done']];
+const noticeDays = () => Number(C().noticeDays ?? 30);
+VIEWS.exits = async () => {
+let rows; try { rows = await q(sb.from('exits').select('*').order('last_day', { ascending: false })); } catch { return p4Missing(); }
+S.exits = rows;
+return `<div class="stack narrow"><div class="row"><div><span class="eyebrow">HR</span><h2>Exits</h2><p class="small muted">Resignation → notice period → return checklist → full & final settlement → relieving letter.</p></div><button class="btn pri" data-ex="new">+ Record a resignation</button></div>
+${rows.map(x => { const e = empById(x.employee_id) || { name: '(removed)' }; const done = EX_ITEMS.filter(([k]) => x.checklist?.[k]).length; const left = Math.round((new Date(x.last_day) - new Date(todayStr())) / 864e5);
+return `<div class="card exc"><div class="row"><div class="hstack">${avatarHTML(e, 'sm')}<div><b>${esc(e.name)}</b><div class="small muted">${esc(e.code || '')} · ${esc(e.desig || e.dept || '')}</div></div></div><span class="chip ${EXST[x.status]?.[1] || ''}">${EXST[x.status]?.[0] || x.status}</span></div>
+<div class="small">Resigned ${fmtD(x.resign_date)} · last day <b>${fmtD(x.last_day)}</b>${x.status === 'notice' ? left > 0 ? ` · ${left} days to go` : left === 0 ? ' · <b class="pink">today</b>' : ' · <b class="pink">past last day</b>' : ''} · checklist ${done}/${EX_ITEMS.length}</div>
+<div class="right"><button class="btn sm pri" data-ex="open" data-id="${x.id}">Open</button></div></div>`; }).join('') || '<div class="card muted">No exits recorded.</div>'}</div>`;
+};
+async function exitOpen(id) {
+const x = S.exits.find(z => z.id === id), e = empById(x.employee_id) || {}; const as = await q(sb.from('assets').select('*').eq('assigned_to', x.employee_id)).catch(() => []);
+const ck = x.checklist || {}; const st = x.settlement || {};
+dlg(`🚪 ${esc(e.name)} — exit`, `<div class="grid3"><label>Resigned on<input type="date" id="ex_r" value="${x.resign_date}"></label><label>Last working day<input type="date" id="ex_l" value="${x.last_day}"></label><label>Reason<input id="ex_why" value="${esc(x.reason)}"></label></div>
+<h4>Return checklist</h4><div class="stack" style="gap:4px">${EX_ITEMS.map(([k, l]) => `<label class="chk"><input type="checkbox" data-ck="${k}" ${ck[k] ? 'checked' : ''}> ${l}</label>`).join('')}
+${as.map(a => `<div class="li"><span>💻 ${esc(a.kind)} · ${esc(a.name || a.tag)} <small class="muted">${esc(a.tag)}</small></span><button class="btn sm" data-ex="aret" data-a="${a.id}" data-id="${id}">↩ Mark returned</button></div>`).join('') || '<p class="small muted">✓ No company items are with this person.</p>'}</div>
+<h4>Full & final settlement</h4>${st.net != null ? `<div class="msg">Prepared: net ${st.net < 0 ? 'recoverable' : 'payable'} <b>${inr(Math.abs(st.net))}</b></div>` : '<p class="small muted">Needs the vault password (salary is encrypted).</p>'}
+<div class="hstack wrap"><button class="btn" data-ex="ff" data-id="${id}">🧮 ${st.net != null ? 'Edit' : 'Prepare'} settlement</button>${st.net != null ? `<button class="btn" data-ex="ffprint" data-id="${id}">🖨 F&F statement</button>` : ''}<button class="btn" data-ex="rel" data-id="${id}">🖨 Relieving letter</button><button class="btn" data-ex="exp" data-id="${id}">🖨 Experience letter</button></div>`,
+`<button class="btn" data-ex="del" data-id="${id}">Delete</button><button class="btn" data-ex="save" data-id="${id}">Save</button>${x.status !== 'closed' ? `<button class="btn pri" data-ex="close" data-id="${id}">✓ Close exit</button>` : ''}`);
+$('#dlg').classList.add('wide'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('wide'), { once: true });
+}
+async function ffCalc(x) {
+const e = empById(x.employee_id) || {}; let p = {}; try { p = await privGet(x.employee_id); } catch { }
+const ctc = Number(String(p.ctc || '').replace(/[^\d.]/g, '')) || 0; const ym = x.last_day.slice(0, 7); const [y, m] = ym.split('-').map(Number), cal = new Date(y, m, 0).getDate();
+const from = e.join_date && e.join_date > ym + '-01' ? Number(e.join_date.slice(8)) : 1; const days = Math.max(0, Number(x.last_day.slice(8)) - from + 1);
+let el = 0; try { const r = (await carryCalc(Number(x.last_day.slice(0, 4)))).find(z => z.e.id === x.employee_id); el = r?.t?.EL?.left || 0; } catch { }
+const served = Math.round((new Date(x.last_day) - new Date(x.resign_date)) / 864e5) + 1, short = Math.max(0, noticeDays() - served);
+const yrs = e.join_date ? (new Date(x.last_day) - new Date(e.join_date)) / (365.25 * 864e5) : 0; const basic = ctc * payCfg().basicPct / 100;
+return { ctc, cal, days, lop: 0, el, short, yrs: Math.round(yrs * 10) / 10, grat: yrs >= 4.75 ? Math.round(15 / 26 * basic * Math.round(yrs)) : 0, bonus: 0, adv: 0, other: 0 };
+}
+function ffTotals(f) { const sal = Math.round(f.ctc * Math.max(0, f.days - f.lop) / f.cal), enc = Math.round(f.ctc / 30 * f.el), np = Math.round(f.ctc / 30 * f.short);
+const earn = [['Salary for ' + Math.max(0, f.days - f.lop) + ' days of the last month', sal], ['Leave encashment (' + f.el + ' EL days)', enc], ['Gratuity (' + f.yrs + ' years)', f.grat], ['Bonus / other dues', f.bonus]].filter(z => z[1]);
+const ded = [['Notice shortfall (' + f.short + ' days)', np], ['Advance recovery', f.adv], ['Other deductions / items not returned', f.other]].filter(z => z[1]);
+const tE = earn.reduce((s, z) => s + z[1], 0), tD = ded.reduce((s, z) => s + z[1], 0); return { ...f, earn, ded, tE, tD, net: tE - tD }; }
+function ffDlg(x, f) {
+const F = [['days', 'Days to pay in last month'], ['lop', 'LOP days in last month'], ['el', 'EL days to encash'], ['short', 'Notice shortfall days to recover'], ['grat', 'Gratuity (₹)'], ['bonus', 'Bonus / other dues (₹)'], ['adv', 'Advance recovery (₹)'], ['other', 'Other deductions (₹)']];
+const show = () => { const t = ffTotals(f); $('#ff_out').innerHTML = `<table><tbody>${t.earn.map(z => `<tr><td>${esc(z[0])}</td><td class="n">${inr(z[1])}</td></tr>`).join('')}${t.ded.map(z => `<tr><td>− ${esc(z[0])}</td><td class="n">−${inr(z[1])}</td></tr>`).join('')}</tbody><tfoot><tr><td>Net ${t.net < 0 ? 'recoverable from employee' : 'payable to employee'}</td><td class="n">${inr(Math.abs(t.net))}</td></tr></tfoot></table>`; };
+dlg(`🧮 Full & final — ${esc(empById(x.employee_id)?.name || '')}`, `<p class="small muted">Monthly salary ${inr(f.ctc)} · ${f.yrs} years of service · notice ${noticeDays()} days. Gratuity is filled only after about 5 years. Change any number.</p>
+<div class="grid2">${F.map(([k, l]) => `<label>${l}<input type="number" step="0.5" min="0" data-ff="${k}" value="${f[k]}"></label>`).join('')}</div><div id="ff_out"></div>`, `<button class="btn pri" data-ex="ffsave" data-id="${x.id}">Save settlement</button>`);
+document.querySelectorAll('[data-ff]').forEach(i => i.oninput = () => { f[i.dataset.ff] = Number(i.value) || 0; show(); }); S.ff = f; show();
+}
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-ex]'); if (!b) return; const a = b.dataset.ex, id = b.dataset.id, x = (S.exits || []).find(z => z.id === id);
+try {
+if (a === 'new') { const open = new Set((S.exits || []).filter(z => z.status !== 'closed').map(z => z.employee_id));
+dlg('Record a resignation', `<label>Employee<select id="ex_e">${S.emps.filter(z => z.active && !open.has(z.id)).map(z => `<option value="${z.id}">${esc(z.name)} · ${esc(z.code)}</option>`).join('')}</select></label>
+<div class="grid2"><label>Resignation date<input type="date" id="ex_r" value="${todayStr()}"></label><label>Last working day<input type="date" id="ex_l" value="${addDays(todayStr(), noticeDays() - 1)}"></label></div><label>Notice period (days, for everyone)<input type="number" id="ex_nd" value="${noticeDays()}"></label><label>Reason<input id="ex_why" placeholder="e.g. Higher studies"></label>`, '<button class="btn pri" data-ex="add">Save</button>');
+$('#ex_r').onchange = $('#ex_nd').oninput = () => { $('#ex_l').value = addDays($('#ex_r').value, (Number($('#ex_nd').value) || 0) - 1); }; }
+if (a === 'add') { if (Number($('#ex_nd').value) !== noticeDays()) await saveSettings({ noticeDays: Number($('#ex_nd').value) || 0 });
+await q(sb.from('exits').insert({ employee_id: $('#ex_e').value, resign_date: $('#ex_r').value, last_day: $('#ex_l').value, reason: $('#ex_why').value.trim(), created_by: S.me.id })); closeDlg(); toast('Resignation recorded'); render(); }
+if (a === 'open') await exitOpen(id);
+if (a === 'save' || a === 'close') { const checklist = { ...(x.checklist || {}) }; document.querySelectorAll('[data-ck]').forEach(c => checklist[c.dataset.ck] = c.checked);
+const row = { resign_date: $('#ex_r').value, last_day: $('#ex_l').value, reason: $('#ex_why').value.trim(), checklist };
+if (a === 'close') { const miss = EX_ITEMS.filter(([k]) => !checklist[k]).length; const as = await q(sb.from('assets').select('id').eq('assigned_to', x.employee_id)).catch(() => []);
+if (!confirm(`${miss ? miss + ' checklist item(s) are not ticked. ' : ''}${as.length ? as.length + ' company item(s) are still with this person. ' : ''}Close the exit and switch off ${empById(x.employee_id)?.name}'s ORBIS login?`)) return;
+row.status = 'closed'; await q(sb.from('employees').update({ active: false }).eq('id', x.employee_id)); }
+await q(sb.from('exits').update(row).eq('id', id)); closeDlg(); toast(a === 'close' ? '✓ Exit closed — login switched off' : 'Saved'); if (a === 'close') await loadCore(); render(); }
+if (a === 'aret') { await q(sb.from('assets').update({ assigned_to: null, assigned_at: null, status: 'stock' }).eq('id', b.dataset.a)); toast('↩ Returned'); b.closest('.li').remove(); }
+if (a === 'ff') { if (!(await needDek(() => { exitOpen(id).then(() => document.querySelector(`[data-ex="ff"][data-id="${id}"]`)?.click()); }))) return; const f = x.settlement?.net != null ? { ...x.settlement } : await ffCalc(x); ffDlg(x, f); }
+if (a === 'ffsave') { const t = ffTotals(S.ff); await q(sb.from('exits').update({ settlement: t, status: x.status === 'closed' ? 'closed' : 'settled' }).eq('id', id)); toast('Settlement saved'); S.exits = await q(sb.from('exits').select('*').order('last_day', { ascending: false })); exitOpen(id); }
+if (a === 'del') { if (!confirm('Delete this exit record?')) return; await q(sb.from('exits').delete().eq('id', id)); closeDlg(); render(); }
+if (a === 'ffprint' || a === 'rel' || a === 'exp') { const em = empById(x.employee_id) || {}; const co = idCfg(); const he = /^(ms|mrs|miss)\b/i.test(em.name || '') ? 'her' : 'his';
+const intro = `<p><b>${esc(em.name)}</b> (Employee code ${esc(em.code)}${em.desig ? ', ' + esc(em.desig) : ''}${em.dept ? ', ' + esc(em.dept) : ''})</p>`;
+const sig = `<div class="sig"><span></span><div>For ${esc(co.company)}<br>${esc(co.signatory)}</div></div>`;
+if (a === 'ffprint') { const t = x.settlement; const rows = Math.max(t.earn.length, t.ded.length);
+openDoc(letterHTML('Full and final settlement', `${intro}<p>Joined ${em.join_date ? fmtD(em.join_date) : '—'} · resigned ${fmtD(x.resign_date)} · last working day ${fmtD(x.last_day)} · monthly salary ${inr(t.ctc)}</p>
+<table><thead><tr><th>Payable</th><th class="n">Amount</th><th>Recoverable</th><th class="n">Amount</th></tr></thead><tbody>${[...Array(rows)].map((_, i) => `<tr><td>${esc(t.earn[i]?.[0] || '')}</td><td class="n">${t.earn[i] ? inr(t.earn[i][1]) : ''}</td><td>${esc(t.ded[i]?.[0] || '')}</td><td class="n">${t.ded[i] ? inr(t.ded[i][1]) : ''}</td></tr>`).join('')}</tbody><tfoot><tr><td>Total</td><td class="n">${inr(t.tE)}</td><td>Total</td><td class="n">${inr(t.tD)}</td></tr></tfoot></table>
+<div class="net"><span>Net ${t.net < 0 ? 'recoverable' : 'payable'}</span><b>${inr(Math.abs(t.net))}</b></div><p>Rupees ${esc(inWords(t.net))} only.</p><p>I have received the above amount in full and final settlement and have no further claims on the company.</p>
+<div class="sig"><div>Employee signature</div><div>For ${esc(co.company)}<br>${esc(co.signatory)}</div></div>`)); }
+if (a === 'rel') openDoc(letterHTML('Relieving letter', `<p>To,</p>${intro}<p>Dear ${esc((em.name || '').split(' ')[0])},</p><p>This is to confirm that your resignation dated ${fmtD(x.resign_date)} has been accepted and you are relieved from the services of ${esc(co.company)} at the close of business on <b>${fmtD(x.last_day)}</b>.</p><p>We confirm that you have handed over your responsibilities and company property. We thank you for your contribution and wish you success in the future.</p>${sig}`));
+if (a === 'exp') openDoc(letterHTML('Experience certificate', `<p><b>To whom it may concern</b></p><p>This is to certify that <b>${esc(em.name)}</b> (Employee code ${esc(em.code)}) worked with ${esc(co.company)}${em.join_date ? ` from <b>${fmtD(em.join_date)}</b>` : ''} to <b>${fmtD(x.last_day)}</b>${em.desig ? ` as <b>${esc(em.desig)}</b>` : ''}${em.dept ? ` in the ${esc(em.dept)} department` : ''}.</p><p>During this period we found ${he === 'her' ? 'her' : 'him'} sincere and hard-working. We wish ${he === 'her' ? 'her' : 'him'} the very best in ${he} future career.</p>${sig}`)); }
+} catch (er) { toast(errMsg(er), true); }
+});
+const MOODS = { 4: ['😀', 'Great'], 3: ['🙂', 'Good'], 2: ['😐', 'Okay'], 1: ['🙁', 'Tough'] };
+const weekOf = d => addDays(d, -((dowOf(d) + 6) % 7));
+async function pulseCard() {
+const t = todayStr(); if (![5, 6].includes(dowOf(t))) return ''; const wk = weekOf(t);
+let r; try { r = await q(sb.from('pulse').select('mood').eq('employee_id', S.me.id).eq('week', wk).maybeSingle()); } catch { return ''; }
+if (r) return '';
+return `<div class="card pulse"><div><b>💗 How was your week?</b><div class="small muted">One tap. HR sees only the team total — never who said what.</div></div><div class="pm">${[4, 3, 2, 1].map(n => `<button data-mood="${n}" title="${MOODS[n][1]}">${MOODS[n][0]}<small>${MOODS[n][1]}</small></button>`).join('')}</div><input id="pl_n" maxlength="300" placeholder="Anything to share? (optional, anonymous)"></div>`;
+}
+const _punchV = VIEWS.punch; VIEWS.punch = async () => { const h = await _punchV(); const c = await pulseCard(); return c ? `<div style="max-width:720px;margin:0 auto 14px">${c}</div>${h}` : h; };
+document.addEventListener('click', async e => { const b = e.target.closest('[data-mood]'); if (!b) return;
+try { await q(sb.from('pulse').upsert({ employee_id: S.me.id, week: weekOf(todayStr()), mood: Number(b.dataset.mood), note: ($('#pl_n')?.value || '').trim() })); b.closest('.pulse').innerHTML = `<b>${MOODS[b.dataset.mood][0]} Thanks! Have a good weekend.</b>`; } catch (er) { toast(errMsg(er), true); } });
+VIEWS.pulse = async () => {
+const t = todayStr(), wk = weekOf(t), from = addDays(wk, -7 * 7);
+let rows; try { rows = await q(sb.from('pulse').select('*').gte('week', from)); } catch { return p4Missing(); }
+const act = S.emps.filter(e => e.active).length, weeks = [...Array(8)].map((_, i) => addDays(from, i * 7));
+const avg = rs => rs.length ? rs.reduce((s, r) => s + r.mood, 0) / rs.length : 0; const face = v => v ? MOODS[Math.max(1, Math.min(4, Math.round(v)))][0] : '—';
+const cur = rows.filter(r => r.week === wk), notes = cur.filter(r => r.note).map(r => r.note).sort(() => Math.random() - .5);
+const depts = [...new Set(S.emps.filter(e => e.active).map(e => e.dept || 'Other'))].map(d => [d, rows.filter(r => r.week >= addDays(wk, -21) && (empById(r.employee_id)?.dept || 'Other') === d)]).filter(([, rs]) => rs.length >= 3);
+return `<div class="stack narrow"><div><span class="eyebrow">People</span><h2>Team pulse</h2><p class="small muted">Every Friday and Saturday staff see "How was your week?" on the Punch page. Answers are shown here only as totals — no names.</p></div>
+<div class="card"><div class="row"><h3>This week</h3><span class="small muted">${cur.length} of ${act} answered</span></div><div class="pdist">${[4, 3, 2, 1].map(n => { const c = cur.filter(r => r.mood === n).length; return `<div><span>${MOODS[n][0]} ${MOODS[n][1]}</span><div class="bar"><i style="width:${cur.length ? c / cur.length * 100 : 0}%"></i></div><b>${c}</b></div>`; }).join('')}</div>
+${notes.length ? `<h4>What people said (anonymous)</h4>${notes.map(n => `<div class="pnote">“${esc(n)}”</div>`).join('')}` : ''}</div>
+<div class="card"><h3>Last 8 weeks</h3><div class="ptrend">${weeks.map(w => { const rs = rows.filter(r => r.week === w), v = avg(rs); return `<div title="${rs.length} answers"><div class="pcol"><i style="height:${v / 4 * 100}%"></i></div><span>${face(v)}</span><small>${fmtD(w).slice(0, -5)}</small></div>`; }).join('')}</div></div>
+${depts.length ? `<div class="card"><h3>By department <span class="small muted">(last 4 weeks, 3+ answers)</span></h3>${depts.map(([d, rs]) => `<div class="li"><span>${esc(d)}</span><span>${face(avg(rs))} <b>${avg(rs).toFixed(1)}</b><small class="muted"> / 4</small></span></div>`).join('')}</div>` : ''}</div>`;
+};
+const LOGT = { employees: 'employee', attendance: 'attendance', leave_requests: 'leave request', extra_breaks: 'extra break', punch_fixes: 'punch correction', employee_private: '🔒 private details', emp_docs: 'document', payslips: 'payslip', policies: 'policy', holidays: 'holiday', devices: 'computer', app_settings: 'settings', leave_adjust: 'leave balance', announcements: 'announcement', assets: 'asset', exits: 'exit', doc_vault: 'document vault' };
+const LOGV = { insert: 'added', update: 'changed', delete: 'deleted' };
+function logLine(l) {
+const who = l.actor ? empById(l.actor)?.name || 'Someone' : 'System', about = l.emp && l.emp !== l.actor ? empById(l.emp)?.name : '';
+const d = Object.entries(l.detail || {}).filter(([k]) => !['id', 'employee_id', 'decided_by', 'updated_by', 'created_by', 'auth_uid'].includes(k)).slice(0, 6).map(([k, v]) => `${k.replace(/_/g, ' ')}: ${typeof v === 'object' ? (v === null ? '—' : '…') : String(v).replace(/T(\d\d:\d\d).*/, ' $1')}`).join(' · ');
+return { who, what: `${LOGV[l.op] || l.op} ${LOGT[l.tbl] || l.tbl}${about ? ' of ' + about : ''}`, d };
+}
+VIEWS.log = async () => {
+const day = S.logDay || todayStr(), who = S.logWho || '', tb = S.logT || '';
+let qy = sb.from('activity_log').select('*').gte('at', new Date(day + 'T00:00:00+05:30').toISOString()).lt('at', new Date(addDays(day, 1) + 'T00:00:00+05:30').toISOString()).order('at', { ascending: false }).limit(500);
+if (who) qy = qy.eq('actor', who); if (tb) qy = qy.eq('tbl', tb);
+let rows; try { rows = await q(qy); } catch { return p4Missing(); } S.logRows = rows;
+return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · MD</span><h2>Activity log</h2><p class="small muted">Recorded by the database itself — entries can't be edited or deleted, not even by HR.</p></div><button class="btn" data-lg="xls">⬇ Excel</button></div>
+<div class="hstack wrap"><button class="btn sm" data-lgd="-1">‹</button><input type="date" id="lg_d" value="${day}" max="${todayStr()}" style="width:auto"><button class="btn sm" data-lgd="1" ${day >= todayStr() ? 'disabled' : ''}>›</button>
+<select id="lg_w" style="width:auto"><option value="">Everyone</option>${S.emps.map(e => `<option value="${e.id}" ${e.id === who ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select>
+<select id="lg_t" style="width:auto"><option value="">Everything</option>${Object.entries(LOGT).map(([k, v]) => `<option value="${k}" ${k === tb ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+<div class="card flush"><table><thead><tr><th>Time</th><th>Who</th><th>What</th><th>Details</th></tr></thead><tbody>${rows.map(l => { const x = logLine(l); return `<tr class="lg-${l.op}"><td>${hm(l.at)}</td><td>${esc(x.who)}</td><td>${esc(x.what)}</td><td class="small muted">${esc(x.d)}</td></tr>`; }).join('') || '<tr><td colspan=4 class="muted">Nothing recorded on this day.</td></tr>'}</tbody></table></div></div>`;
+};
+document.addEventListener('change', e => { const t = e.target; if (t.id === 'lg_d') { S.logDay = t.value; render(); } if (t.id === 'lg_w') { S.logWho = t.value; render(); } if (t.id === 'lg_t') { S.logT = t.value; render(); } });
+document.addEventListener('click', async e => { const b = e.target.closest('[data-lgd],[data-lg]'); if (!b) return;
+if (b.dataset.lgd) { S.logDay = addDays(S.logDay || todayStr(), Number(b.dataset.lgd)); return render(); }
+try { await xlsxOut(S.logRows.map(l => { const x = logLine(l); return { Time: new Date(l.at).toLocaleString('en-IN', { timeZone: TZ }), Who: x.who, What: x.what, Details: x.d }; }), 'Activity', `ORBIS-activity-${S.logDay || todayStr()}.xlsx`); } catch (er) { toast(errMsg(er), true); } });
 boot();
 </script></body></html>
