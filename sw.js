@@ -1,6 +1,8 @@
-const C = 'orbis-v8'; let pending = false;
+const C = 'orbis-v9'; let pending = false;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-192.png'])).catch(() => { })); });
-self.addEventListener('activate', e => { e.waitUntil((async () => { for (const k of await caches.keys()) if (k !== C) await caches.delete(k); await self.clients.claim(); })()); });
+self.addEventListener('activate', e => { e.waitUntil((async () => { let had = false; for (const k of await caches.keys()) if (k !== C) { had = true; await caches.delete(k); } await self.clients.claim();
+  /* an older version was running: reload open windows once so they show the newest ORBIS */
+  if (had) for (const w of await self.clients.matchAll({ type: 'window' })) { try { await w.navigate(w.url); } catch { } } })()); });
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return; const u = new URL(r.url);
   if (u.origin === location.origin) {
@@ -8,15 +10,15 @@ self.addEventListener('fetch', e => {
     if (r.mode === 'navigate' || u.pathname === '/' || u.pathname.endsWith('.html')) {
       /* open instantly from the saved copy, fetch the new version in the background */
       pending = false;
-      e.respondWith(caches.open(C).then(async c => {
-        const old = await c.match('/');
+      e.respondWith((async () => {
+        const c = await caches.open(C), old = await c.match('/'), oldTxt = old ? await old.clone().text() : null;
         const net = fetch(r.url, { cache: 'no-cache', credentials: 'same-origin' }).then(async res => {
-          if (res.ok) { const t = await res.clone().text(), o = old ? await old.clone().text() : null; await c.put('/', res.clone());
-            if (o !== null && o !== t) { pending = true; const all = await self.clients.matchAll({ type: 'window' }); all.forEach(w => w.postMessage({ orbis: 'update' })); } }
+          if (res.ok) { const copy = res.clone(), t = await res.clone().text(); await c.put('/', copy);
+            if (oldTxt !== null && oldTxt !== t) { pending = true; const all = await self.clients.matchAll({ type: 'window' }); all.forEach(w => w.postMessage({ orbis: 'update' })); } }
           return res; }).catch(() => old);
         if (old) { e.waitUntil(net.catch(() => { })); return old; }
         return net;
-      }));
+      })());
       return;
     }
     e.respondWith(caches.match(r).then(m => m || fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(C).then(c => c.put(r, cp)); } return res; })));
