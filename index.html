@@ -3121,8 +3121,21 @@ else openDoc(letterHTML('Appointment letter', `${to}<p>Dear ${esc(name.split(' '
 <div class="sig"><div>Accepted by<br>${esc(name)}</div><div>For ${esc(co.company)}<br>${esc(co.signatory)}</div></div>`));
 closeDlg(); if (e) onbTick(e.id, kind === 'offer' ? 'offer' : 'appt', true, true);
 }
-async function onbTick(id, k, on, quiet) { const o = (S.onbRows || []).find(r => r.employee_id === id), items = { ...(o?.items || {}) }; if (on) items[k] = items[k] || new Date().toISOString(); else delete items[k];
-try { await q(sb.from('onboarding').upsert({ employee_id: id, items })); if (!quiet) toast('Saved'); render(); } catch (er) { toast(errMsg(er), true); } }
+const onbQ = {};
+async function onbTick(id, k, on, quiet) {
+let o = (S.onbRows || []).find(r => r.employee_id === id); if (!o) { o = { employee_id: id, items: {} }; (S.onbRows = S.onbRows || []).push(o); }
+o.items = { ...(o.items || {}) }; if (on) o.items[k] = o.items[k] || new Date().toISOString(); else delete o.items[k];
+const box = document.querySelector(`[data-onb="${id}"][data-k="${k}"]`), lab = box?.closest('.onbi');
+if (lab) { lab.classList.toggle('on', on); const sp = lab.querySelector('span'), sm = sp.querySelector('small'); if (sm) sm.remove(); if (on) sp.insertAdjacentHTML('beforeend', ` <small>${fmtD(o.items[k].slice(0, 10))}</small>`); }
+const card = lab?.closest('.card'), e = empById(id);
+if (card && e) { const [n, t] = onbPct(e, o, S.onbA); const ch = card.querySelector('.chip'); if (ch) { ch.textContent = `${n}/${t} done`; ch.classList.toggle('good', n === t); } const bar = card.querySelector('.advbar i'); if (bar) bar.style.width = Math.round(n / t * 100) + '%';
+if ((n === t) !== !!card.querySelector('[data-onbdone]')) { clearTimeout(onbQ['r' + id]); onbQ['r' + id] = setTimeout(() => { if (!onbQ[id]) render(); }, 1500); } }
+if (onbQ[id]) { onbQ[id].again = true; return; }
+onbQ[id] = { again: false };
+try { do { onbQ[id].again = false; await q(sb.from('onboarding').upsert({ employee_id: id, items: o.items })); } while (onbQ[id].again); if (!quiet) toast('Saved'); }
+catch (er) { toast(errMsg(er), true); delete onbQ[id]; render(); return; }
+delete onbQ[id];
+}
 document.addEventListener('change', e => { const c = e.target.closest('[data-onb]'); if (c) onbTick(c.dataset.onb, c.dataset.k, c.checked); });
 document.addEventListener('click', async e => {
 const t = e.target;
