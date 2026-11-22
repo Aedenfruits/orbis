@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
-<link rel="icon" href="/icon-orbis-n-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-n.png">
+<link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
 :root{--navy:#1D2B53;--pink:#FF004D;--bg:#F4F6FB;--card:#fff;--line:#e3e7f0;--muted:#6b7590;--good:#17834f;--warn:#c77700;--crit:#cf2450;--r:14px}
 *{box-sizing:border-box}html,body{margin:0}body{font-family:"Segoe UI",Inter,system-ui,sans-serif;background:var(--bg);color:#1b2440;font-size:14.5px}
@@ -1678,7 +1678,7 @@ S.badge = b; paintBadges(); return b;
 function paintBadges() { document.querySelectorAll('nav a').forEach(a => { const k = a.getAttribute('href').slice(1), n = (S.badge || {})[k]; let em = a.querySelector('em.nb'); if (n) { if (!em) { em = document.createElement('em'); em.className = 'nb'; a.appendChild(em); } em.textContent = n; } else if (em) em.remove(); }); }
 function notify(key, title, body) {
 S.notified = S.notified || {}; if (S.notified[key]) return; S.notified[key] = 1; toast(`🔔 ${title}${body ? ' — ' + body : ''}`);
-try { if (!lsGet('pushOn', false) && 'Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') new Notification(title, { body, icon: '/icon-orbis-n-192.png', tag: key }); } catch { }
+try { if (!lsGet('pushOn', false) && 'Notification' in window && Notification.permission === 'granted' && document.visibilityState !== 'visible') new Notification(title, { body, icon: '/icon-orbis-s-192.png', tag: key }); } catch { }
 }
 async function remindTick() {
 if (!S.me) return; const t = todayStr(), now = hm(new Date().toISOString()), c = C();
