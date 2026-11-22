@@ -495,7 +495,7 @@ function shell(body) {
 const nav = navList().map(([k, l, i]) => `<a href="#${k}" class="${S.view === k ? 'on' : ''}"><span class="ni">${navIco(k, i)}</span>${l}</a>`).join('');
 const qn = queue().length;
 return `<header class="top"><div class="alg">${LOGO}</div><div class="brand"><b>ORBIS</b><small>Everything. Connected.</small></div>
-<div class="who"><button class="btn sm inst" type="button" ${S.canInstall ? '' : 'hidden'}>⬇ Install app</button>${qn ? `<span class="chip warn">⏳ ${qn} waiting to sync</span>` : ''}${navigator.onLine ? '' : '<span class="chip crit">Offline</span>'}<button class="mebtn hide-s" data-photo="${S.me.id}" title="My photo">${avatarHTML(S.me, 'xs')}${esc(S.me.name)}</button><button class="btn sm" onclick="pwDlg()" title="Change my password">🔑</button><button class="btn sm" onclick="signOut()">Sign out</button></div></header>
+<div class="who"><button class="btn sm inst" type="button" ${S.canInstall || !isStandalone() ? '' : 'hidden'}>⬇ Install app</button>${qn ? `<span class="chip warn">⏳ ${qn} waiting to sync</span>` : ''}${navigator.onLine ? '' : '<span class="chip crit">Offline</span>'}<button class="mebtn hide-s" data-photo="${S.me.id}" title="My photo">${avatarHTML(S.me, 'xs')}${esc(S.me.name)}</button><button class="btn sm" onclick="pwDlg()" title="Change my password">🔑</button><button class="btn sm" onclick="signOut()">Sign out</button></div></header>
 <nav class="side">${nav}</nav><main id="main">${body}</main><nav class="bottom">${nav}</nav>`;
 }
 const VIEWS = {};
@@ -1069,12 +1069,21 @@ if (a === 'del') dlg('Delete document?', `<p>Delete <b>${esc(d._m.name)}</b> (${
 if (a === 'delok') { await sb.storage.from(DOC_BUCKET).remove([d.path]); await q(sb.from('emp_docs').delete().eq('id', d.id)); closeDlg(); toast('Deleted'); render(); }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; if (a === 'create') b.textContent = 'Create the vault'; }
 });
+function instHelp() {
+if (isIOS()) return iosA2HS();
+const u = navigator.userAgent, and = /Android/.test(u), sam = /SamsungBrowser/.test(u), edge = /Edg\//.test(u);
+const steps = and ? (sam ? ['Tap the <b>≡ menu</b> at the bottom right of Samsung Internet.', 'Tap <b>Add page to</b> → <b>Home screen</b>.', 'Tap <b>Add</b>. ORBIS appears on your home screen.']
+: ['Tap Chrome\'s <b>⋮ menu</b> at the top right.', 'Tap <b>Install app</b> (or <b>Add to Home screen</b> → <b>Install</b>).', 'Tap <b>Install</b>. ORBIS appears on your home screen and in your apps.'])
+: [`Look at the right end of the ${edge ? 'Edge' : 'Chrome'} address bar for the <b>install icon</b> (a small screen with a ⬇ arrow).`, `Or open the <b>${edge ? '…' : '⋮'} menu</b> → <b>${edge ? 'Apps → Install ORBIS' : 'Cast, save and share → Install ORBIS'}</b>.`, 'Click <b>Install</b>. ORBIS opens in its own window.'];
+dlg(`Install ORBIS on this ${and ? 'phone' : 'computer'}`, `<div class="a2hs"><ol>${steps.map((x, i) => `<li><span class="a2n">${i + 1}</span><div>${x}</div></li>`).join('')}</ol>
+${and ? '<p class="small muted">Don\'t see <b>Install app</b>? ORBIS may still be installed — look for it in your app list. If you removed only the home-screen icon, open <b>Settings → Apps → ORBIS → Uninstall</b>, then try again. Use Chrome, not the browser inside WhatsApp.</p>' : ''}</div>`, '<button class="btn pri" id="a2Ok">Got it</button>');
+}
 let installEvt = null;
 addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; S.canInstall = true; document.querySelectorAll('.inst').forEach(b => b.hidden = false); });
 addEventListener('appinstalled', () => { installEvt = null; S.canInstall = false; document.querySelectorAll('.inst').forEach(b => b.hidden = true); toast('✓ ORBIS app installed — find it on your desktop / Start menu'); });
 document.addEventListener('click', async e => {
 const b = e.target.closest('.inst'); if (!b) return;
-if (!installEvt) return toast('Use the browser menu → "Install ORBIS" (or "Add to Home screen" on phones)');
+if (!installEvt) return instHelp();
 installEvt.prompt(); const r = await installEvt.userChoice; if (r.outcome === 'accepted') { installEvt = null; S.canInstall = false; document.querySelectorAll('.inst').forEach(x => x.hidden = true); }
 });
 if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
@@ -2175,7 +2184,7 @@ p.innerHTML = `<div class="msgrab"></div>${MGROUPS.map(([g, ks]) => { const it =
 const e = S.me;
 p.innerHTML = `<div class="msgrab"></div><div class="mme">${avatarHTML(e, 'lg')}<div><b>${esc(e.name)}</b><small>${esc(e.code)}${e.desig ? ' · ' + esc(e.desig) : ''}</small><small>${esc([e.dept, e.office].filter(Boolean).join(' · '))}</small></div></div>
 <div class="mlist"><button data-photo="${e.id}" data-msclose>${ico('photo')}<span>My photo</span></button><button onclick="pwDlg()" data-msclose>${ico('key')}<span>Change password</span></button>
-${S.canInstall ? `<button class="inst" data-msclose>${ico('install')}<span>Install ORBIS on this phone</span></button>` : ''}<button id="notifOn" data-msclose>${ico('bell')}<span>${lsGet('pushOn', false) && window.Notification?.permission === 'granted' ? 'Notifications on · send a test' : 'Turn on notifications'}</span></button>
+${S.canInstall || !isStandalone() ? `<button class="inst" data-msclose>${ico('install')}<span>Install ORBIS on this ${onMobile() ? 'phone' : 'computer'}</span></button>` : ''}<button id="notifOn" data-msclose>${ico('bell')}<span>${lsGet('pushOn', false) && window.Notification?.permission === 'granted' ? 'Notifications on · send a test' : 'Turn on notifications'}</span></button>
 <button class="danger" onclick="signOut()" data-msclose>${ico('signout')}<span>Sign out</span></button></div><p class="small muted center">ORBIS · Aeden Fruits International</p>`;
 }
 fillAvatars(); const s = $('#msheet'); s.hidden = false; requestAnimationFrame(() => s.classList.add('open'));
