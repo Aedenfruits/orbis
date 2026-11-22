@@ -1,10 +1,11 @@
-const C = 'orbis-v12'; let pending = false;
+const C = 'orbis-v13'; let pending = false;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-s-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { let had = false; for (const k of await caches.keys()) if (k !== C) { had = true; await caches.delete(k); } await self.clients.claim();
   /* an older version was running: reload open windows once so they show the newest ORBIS */
   if (had) for (const w of await self.clients.matchAll({ type: 'window' })) { try { await w.navigate(w.url); } catch { } } })()); });
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return; const u = new URL(r.url);
+  if (u.origin === location.origin && u.pathname.startsWith('/test')) return; /* the TEST copy is never cached */
   if (u.origin === location.origin) {
     if (u.pathname.endsWith('.webmanifest') || /\/(icon|apple-touch)/.test(u.pathname)) { e.respondWith(fetch(r, { cache: 'no-cache' }).catch(() => caches.match(r))); return; }
     if (r.mode === 'navigate' || u.pathname === '/' || u.pathname.endsWith('.html')) {
