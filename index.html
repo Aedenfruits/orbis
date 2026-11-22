@@ -277,6 +277,10 @@ tr.click{cursor:pointer}tr.click:hover td{background:#f6f8fc}
 .lcd{font-size:12px;font-weight:700;color:var(--muted)}.lc.now .lcd{color:var(--navy)}.lch{font-size:10px;color:#b26a00;font-weight:600;line-height:1.2}
 .lcp{font-size:11px;font-weight:600;padding:2px 6px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-block;max-width:100%}.lcp.approved{background:var(--navy);color:#fff}.lcp.pending{border:1px dashed #8a94ad;color:#4a5571;background:#fff}
 @media(max-width:600px){.lc{min-height:58px;padding:3px}.lcp{font-size:9.5px;padding:1px 3px}.lch{font-size:9px}}
+.seg.sub{margin-top:-4px}.seg.sub button{font-size:12.5px;padding:6px 12px}
+.wpd{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f3fbf6}.wpd .oi{width:16px;height:16px;color:#1f9d55;flex:none}.wpd span{flex:1;min-width:0}
+.wpdet{margin-top:10px}.wpdet summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--navy);padding:4px 0}
+small.red{color:#d33}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -481,8 +485,8 @@ await launchFx();
 }
 function navList() {
 const n = [['punch', 'Punch', '⏱️'], ['news', 'News', '📢'], ['my', 'My attendance', '🗓️'], ['leave', 'Leave', '🏖️'], ['plan', 'Work plan', '📝'], ['tasks', 'Tasks', '✅'], ['policies', 'HR policies', '📘'], ['board', 'Leaderboard', '🏆'], ['people', 'Directory', '📇'], ['docs', isAdmin() ? 'Documents' : 'My documents', '📂'], ['pay', 'My payslips', '💰']];
-if (S.team.length || isAdmin()) n.push(['team', isAdmin() ? 'All staff' : 'My team', '👥']);
-if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['payroll', 'Payroll', '🧾'], ['employees', 'Employees', '🧑‍💼'], ['assets', 'Assets', '💻'], ['exits', 'Exits', '🚪'], ['pulse', 'Team pulse', '💗'], ['log', 'Activity log', '🕵️'], ['setup', 'Computers & settings', '⚙️']);
+if (S.team.length || isAdmin()) n.push(['team', isAdmin() ? 'Team desk' : 'My team', '👥']);
+if (isAdmin()) n.push(['register', 'Attendance register', '🗂️'], ['payroll', 'Payroll', '🧾'], ['employees', 'Manage staff', '🧑‍💼'], ['assets', 'Assets', '💻'], ['exits', 'Exits', '🚪'], ['pulse', 'Team pulse', '💗'], ['log', 'Activity log', '🕵️'], ['setup', 'Computers & settings', '⚙️']);
 return n;
 }
 function route() { const h = location.hash.slice(1) || 'punch'; const ok = navList().map(x => x[0]); S.view = ok.includes(h) ? h : 'punch'; render(); }
@@ -669,7 +673,7 @@ ${holCard()}
 function leaveAfter() {
 const upd = () => { const t = $('#a_type').value, f = $('#a_from').value, to = $('#a_to').value; document.querySelectorAll('.lb').forEach(c => c.classList.toggle('on', c.dataset.lt === t));
 if (!f || !to || to < f) { $('#a_after').innerHTML = ''; return; } const days = countDays(f, to); const lt = ltypes().find(x => x.k === t); const used = S.myLeaves.filter(l => l.type === t && ['approved', 'pending'].includes(l.status)).reduce((s, l) => s + Number(l.days), 0); const after = ltq(lt) - used - days;
-$('#a_after').innerHTML = `<div class="msg ${after < 0 ? 'bad' : ''}">${days} working day${days !== 1 ? 's' : ''} · after this: <b>${after} ${t} left</b>${after < 0 ? ' — more than your balance; the extra may be loss of pay' : ''}</div>`; };
+$('#a_after').innerHTML = `<div class="msg ${after < 0 ? 'bad' : ''}">${days} working day${days !== 1 ? 's' : ''} · after this: <b>${after} ${t} left</b>${after < 0 ? ' — more than your balance; the extra may be loss of pay' : ''}</div>${(() => { const pr = payRules(), mo = f.slice(0, 7), inMo = S.myLeaves.filter(l => ['approved', 'pending'].includes(l.status) && l.from_date.slice(0, 7) === mo).reduce((s2, l) => s2 + Number(l.days), 0), x = Math.max(0, inMo + days - pr.lpm) - Math.max(0, inMo - pr.lpm); return x > 0 ? `<div class="msg bad">Only ${pr.lpm} leave days a month are paid. You already have ${inMo} in ${monthName(mo)} — <b>${x} day${x > 1 ? 's' : ''} of this leave will be cut from salary.</b></div>` : ''; })()}`; };
 S.cert = null; ['a_type', 'a_from', 'a_to'].forEach(id => $('#' + id).addEventListener('change', upd)); upd(); certBlock();
 document.querySelectorAll('.lb').forEach(c => c.onclick = () => { $('#a_type').value = c.dataset.lt; upd(); });
 $('#a_send').onclick = async () => { const f = $('#a_from').value, to = $('#a_to').value; if (!f || !to || to < f) return toast('Check the dates', true); const days = countDays(f, to); if (!days) return toast('Those dates are all Sundays', true);
@@ -785,7 +789,7 @@ const vis = team.filter(e => S.me.access === 'md' || S.team.includes(e.id));
 body = `<div class="row"><b>${d === t ? 'Today' : fmtD(d)}</b><div class="hstack"><button class="btn sm" data-fast data-tday="-1">‹</button><button class="btn sm" data-fast data-tday="1" ${d >= t ? 'disabled' : ''}>›</button></div></div>
 ${vis.map(e => { const p = plans.find(x => x.employee_id === e.id); const it = (p?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); return `<div class="card"><div class="row"><div><b>${esc(e.name)}</b><div class="small muted">${esc(e.dept)}</div></div>${it.length ? planSum(it) : '<span class="chip warn">No plan</span>'}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, false)).join('')}</div>${revHTML(S.prv.find(r => r.employee_id === e.id), e.id, d)}` : ''}</div>`; }).join('') || '<div class="card muted">No team members</div>'}`;
 }
-return `<div class="stack"><div><span class="eyebrow">${isAdmin() ? (S.me.access === 'md' ? 'MD — all employees' : 'HR — all employees') : 'Reporting manager / department head'}</span><h2>${isAdmin() ? 'All staff' : 'My team'} <span class="pink">${team.length}</span></h2></div>${seg}${body}</div>`;
+return `<div class="stack"><div><span class="eyebrow">${isAdmin() ? (S.me.access === 'md' ? 'MD — all employees' : 'HR — all employees') : 'Reporting manager / department head'}</span><h2>${isAdmin() ? 'Team desk' : 'My team'} <span class="pink">${team.length}</span></h2></div>${seg}${body}</div>`;
 };
 document.addEventListener('click', async e => {
 const b = e.target.closest('[data-tm],[data-dl],[data-dx],[data-tday]'); if (!b) return;
@@ -821,7 +825,7 @@ const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); 
 VIEWS.employees = async () => {
 const heads = await q(sb.from('dept_heads').select('*')); S.heads = heads;
 const list = S.emps.filter(e => S.showLeft || e.active);
-return `<div class="stack"><div class="row"><div><span class="eyebrow">Employee master</span><h2>Employees <span class="pink">${S.emps.filter(e => e.active).length}</span></h2></div><div class="row" style="gap:8px"><button class="btn" data-idc="1">🪪 ID cards</button><button class="btn" data-imp="open">⬆ Import from Excel / Google Sheet</button><button class="btn pri" data-emp="new">+ Add employee</button></div></div>
+return `<div class="stack"><div class="row"><div><span class="eyebrow">Employee records</span><h2>Manage staff <span class="pink">${S.emps.filter(e => e.active).length}</span></h2></div><div class="row" style="gap:8px"><button class="btn" data-idc="1">🪪 ID cards</button><button class="btn" data-imp="open">⬆ Import from Excel / Google Sheet</button><button class="btn pri" data-emp="new">+ Add employee</button></div></div>
 <div class="card flush scroll"><table><thead><tr><th>Code</th><th>Name</th><th>Department</th><th>Office</th><th>Reports to</th><th>Access</th><th>Login</th><th></th></tr></thead><tbody>
 ${list.map(e => `<tr class="${e.active ? '' : 'muted'}"><td>${esc(e.code)}</td><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(e, 'sm')}<div><b>${esc(e.name)}</b><div class="small muted">${esc(e.desig)}</div></div></div></td><td>${esc(e.dept)}${heads.find(h => h.employee_id === e.id && h.dept === e.dept) ? ' <span class="chip">Head</span>' : ''}</td><td>${esc(e.office)}</td><td>${esc(empById(e.reports_to)?.name || '—')}</td><td>${e.access ? `<span class="chip good">${e.access.toUpperCase()}</span>` : 'Employee'}</td><td>${e.auth_uid ? '✓' : '<span class="chip warn">none</span>'}</td><td><button class="btn sm" data-emp="edit" data-id="${e.id}">Edit</button><button class="btn sm" data-photo="${e.id}" title="Photo">📷</button><button class="btn sm" data-priv="${e.id}" title="Private details (encrypted)">🔒</button></td></tr>`).join('')}</tbody></table></div>
 <label class="chk"><input type="checkbox" id="showLeft" ${S.showLeft ? 'checked' : ''}> Show staff who left</label>
@@ -883,6 +887,7 @@ ${brCfg().map((b, i) => `<label>${esc(b.name)} break (min)<input type="number" i
 <div class="grid2"><label>Departments (one per line)<textarea id="c_depts" rows="5">${esc((C().depts || []).join('\n'))}</textarea></label><label>Offices (one per line)<textarea id="c_offs" rows="5">${esc((C().offices || []).join('\n'))}</textarea></label></div>
 <button class="btn pri" id="cfgSave">Save rules</button></div></div>`;
 };
+const payRules = () => { const c = C(); return { lpm: Number(c.leavePerMonth ?? 2), lg: Number(c.lateGroup ?? 3), lc: Number(c.lateCut ?? 0.5) }; };
 async function saveSettings(patch) { const data = { ...C(), ...patch }; await q(sb.from('app_settings').update({ data }).eq('id', 1)); S.settings = data; }
 document.addEventListener('click', async e => {
 const b = e.target.closest('button'); if (!b || S.view !== 'setup') return;
@@ -1524,10 +1529,12 @@ else if (ds <= t) { r['Absent / LOP days']++; c = 'A'; }
 if (!sun && !hol && ds <= t) r['Working days']++;
 g[d] = c; }
 const elig = e.join_date && e.join_date > from ? last - Number(e.join_date.slice(8)) + 1 : last;
-r['Payable days'] = Math.max(0, elig - r['Absent / LOP days'] - 0.5 * r['Half days']);
+const pr = payRules(), lvTot = Object.keys(r).filter(k => k.endsWith(' (days)')).reduce((s2, k) => s2 + (Number(r[k]) || 0), 0);
+r['Leave taken (days)'] = lvTot; r['Extra leave cut (days)'] = Math.max(0, lvTot - pr.lpm); r['Late cut (days)'] = pr.lg ? Math.floor(r['Late days'] / pr.lg) * pr.lc : 0;
+r['Payable days'] = Math.max(0, elig - r['Absent / LOP days'] - 0.5 * r['Half days'] - r['Extra leave cut (days)'] - r['Late cut (days)']);
 sum.push(r); grid.push(g);
 }
-return { sum, grid, lv, half, lim, allow, last, emps };
+return { sum, grid, lv, half, lim: lateLim({}), allow, last, emps };
 }
 async function salarySummary(ym) {
 const X = await loadXLSX(); const { sum, grid, lv, half, lim, allow, last } = await salaryRows(ym);
@@ -1537,7 +1544,7 @@ const wg = X.utils.json_to_sheet(grid); wg['!cols'] = [{ wch: 10 }, { wch: 22 },
 const lvRows = lv.map(l => ({ Code: empById(l.employee_id)?.code, Name: empById(l.employee_id)?.name, Type: ltName(l.type), From: l.from_date, To: l.to_date, Days: Number(l.days), Reason: l.reason }));
 X.utils.book_append_sheet(wb, X.utils.json_to_sheet(lvRows.length ? lvRows : [{ Note: 'No approved leave this month' }]), 'Leave');
 X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([['How this summary is calculated'], [''], ['P = present, P·L = present but late, HD = half day (worked under ' + (half / 60) + ' h), ? = no check-out, A = absent (loss of pay), H = holiday, WO = Sunday, CL/SL/EL… = approved leave'],
-['Late = checked in after ' + lim + ' (shift start + grace).'], ['Absent / LOP = working day with no check-in and no approved leave.'], ['Payable days = calendar days (from joining) − LOP days − ½ × half days.'],
+['Late = checked in after the person\'s shift start + grace (General shift: ' + lim + ').'], ['Absent / LOP = working day with no check-in and no approved leave.'], ['Payable days = calendar days (from joining) − LOP days − ½ × half days − extra leave − late cut.'], ['Extra leave cut = leave days above ' + payRules().lpm + ' in the month (each extra day is unpaid).'], ['Late cut = every ' + payRules().lg + ' late days cuts ' + payRules().lc + ' day of salary.'],
 ['Break over limit = minutes beyond the daily ' + allow + '-minute allowance.'], ['Days after today are not counted.'], [''], ['Generated by ORBIS on ' + new Date().toLocaleString('en-IN', { timeZone: TZ })]]), 'Notes');
 X.writeFile(wb, `ORBIS-salary-summary-${ym}.xlsx`);
 }
@@ -1554,18 +1561,29 @@ const flat = rows.map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => 
 X.utils.book_append_sheet(wb, X.utils.json_to_sheet(flat.length ? flat : [{ empty: '' }]), t.slice(0, 31)); n += rows.length; }
 X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([['ORBIS backup'], ['Taken ' + new Date().toLocaleString('en-IN', { timeZone: TZ }) + ' by ' + S.me.name], [''], ['🔒 employee_private, emp_docs and doc_vault stay ENCRYPTED in this file — they can only be restored with the vault password.'],
 ['Document files (Aadhaar scans etc.) are not inside this file; they stay in the encrypted vault.'], ['Keep this file on the office PC and a second copy on a USB drive or Google Drive.']]), 'About');
-X.writeFile(wb, `ORBIS-backup-${todayStr()}.xlsx`); lsSet('backup', todayStr());
+X.writeFile(wb, `ORBIS-backup-${todayStr()}.xlsx`); lsSet('backup', todayStr()); try { await saveSettings({ lastBackup: todayStr(), lastBackupBy: S.me.name }); } catch { }
 if (!silent) toast(`💾 Backup saved (${n} records) — check your Downloads folder`); else toast('💾 Today\'s ORBIS backup saved to Downloads');
 }
-function autoBackup() { if (!isAdmin() || lsGet('autoBackup', 'on') !== 'on' || lsGet('backup', '') === todayStr()) return; setTimeout(() => makeBackup(true).catch(() => { }), 4000); }
+function autoBackup() { /* automatic download removed — ORBIS now shows a reminder and HR downloads manually */ }
+const bkEvery = () => { const v = C().backupEvery ?? 7; return Number(v); };
+const bkLast = () => { const a = C().lastBackup || '', b = lsGet('backup', ''); return a > b ? a : b; };
+function bkDue() { if (!S.me || !isAdmin() || KMODE() || !bkEvery() || lsGet('bkSnooze', '') === todayStr()) return 0; const l = bkLast(); if (!l) return 999; const d = Math.round((new Date(todayStr()) - new Date(l)) / 864e5); return d >= bkEvery() ? d : 0; }
 function backupCard() {
 const on = lsGet('autoBackup', 'on') === 'on', last = lsGet('backup', '');
 return `<div class="card"><h3>💾 Daily backup to this computer</h3><p class="small muted">Saves a full Excel copy of ORBIS to this computer's Downloads folder. Keep the files on the office PC and copy them to a USB drive or Google Drive every month.</p>
-<label class="chk"><input type="checkbox" id="bkAuto" ${on ? 'checked' : ''}> Automatically back up once a day when HR / MD opens ORBIS on this computer</label>
-<p class="small">Last backup on this computer: <b>${last ? fmtD(last) : 'never'}</b></p><button class="btn pri" id="bkNow">💾 Back up now</button></div>`;
+<label>Remind HR / MD to download a backup<select id="bkEvery"><option value="1" ${bkEvery() === 1 ? 'selected' : ''}>Every day</option><option value="7" ${bkEvery() === 7 ? 'selected' : ''}>Every week</option><option value="30" ${bkEvery() === 30 ? 'selected' : ''}>Every month</option><option value="0" ${!bkEvery() ? 'selected' : ''}>Never remind</option></select></label>
+<p class="small muted">Nothing downloads automatically — ORBIS shows a reminder on the home screen and you download it yourself.</p>
+<p class="small">Last backup: <b>${bkLast() ? fmtD(bkLast()) : 'never'}</b>${C().lastBackupBy ? ` by ${esc(C().lastBackupBy)}` : ''}</p><button class="btn pri" id="bkNow">💾 Back up now</button></div>`;
 }
 document.addEventListener('click', async e => { const b = e.target.closest('#bkNow'); if (!b) return; b.disabled = true; b.textContent = 'Backing up…'; try { await makeBackup(false); render(); } catch (er) { toast(errMsg(er), true); b.disabled = false; b.textContent = '💾 Back up now'; } });
-document.addEventListener('change', e => { if (e.target.id === 'bkAuto') { lsSet('autoBackup', e.target.checked ? 'on' : 'off'); toast(e.target.checked ? 'Daily backup on' : 'Daily backup off'); } });
+document.addEventListener('change', async e => { if (e.target.id === 'bkEvery') { try { await saveSettings({ backupEvery: Number(e.target.value) }); toast(Number(e.target.value) ? 'Backup reminder saved' : 'Backup reminder off'); } catch (er) { toast(errMsg(er), true); } } });
+const _renderBk = render;
+render = async function () { await _renderBk(); try { const d = S.view === 'punch' ? bkDue() : 0; if (d && !$('#bkCard'))
+$('#main')?.insertAdjacentHTML('afterbegin', `<div class="card phnudge" id="bkCard"><span class="ava ib" style="--ib:#fff4e0">${ico('download')}</span><div class="grow"><b>Backup due</b><div class="small muted">${d === 999 ? 'No backup taken yet.' : `Last one ${d} day${d > 1 ? 's' : ''} ago.`} Full Excel copy of ORBIS.</div></div><button class="btn pri sm" id="bkGo">Download</button><button class="btn sm" id="bkLater">Later</button></div>`); } catch { } };
+document.addEventListener('click', async e => {
+if (e.target.closest('#bkLater')) { lsSet('bkSnooze', todayStr()); $('#bkCard')?.remove(); toast('I\'ll remind you tomorrow'); }
+const b = e.target.closest('#bkGo'); if (!b) return; b.disabled = true; b.textContent = 'Preparing…';
+try { await makeBackup(false); $('#bkCard')?.remove(); } catch (er) { toast(errMsg(er), true); b.disabled = false; b.textContent = 'Download'; } });
 const mmdd = ds => ds ? ds.slice(5, 10) : '';
 function celebrations(daysAhead = 14) {
 const out = [], t = todayStr();
@@ -1631,8 +1649,8 @@ const act = new Set(S.emps.filter(e => e.active).map(e => e.id));
 const kids = id => S.emps.filter(e => e.active && e.reports_to === id);
 const node = (e, depth) => depth > 8 ? '' : `<li><div class="onode">${avatarHTML(e, 'sm')}<div><b>${esc(e.name)}${isStar(e) ? ' ⭐' : ''}</b><small>${esc(e.desig || e.dept || '')}</small></div></div>${kids(e.id).length ? `<ul>${kids(e.id).map(k => node(k, depth + 1)).join('')}</ul>` : ''}</li>`;
 const roots = S.emps.filter(e => e.active && (!e.reports_to || !act.has(e.reports_to)));
-return `<div class="stack"><div class="row"><div><span class="eyebrow">Our people</span><h2>👥 Directory <span class="pink">${S.emps.filter(e => e.active).length}</span></h2></div>
-<div class="seg"><button class="${mode === 'list' ? 'on' : ''}" data-dmode="list">People</button><button class="${mode === 'org' ? 'on' : ''}" data-dmode="org">Org chart</button></div></div>
+return `<div class="stack"><div class="row"><div><span class="eyebrow">Our people</span><h2>👥 Phonebook <span class="pink">${S.emps.filter(e => e.active).length}</span></h2></div>
+<div class="seg"><button class="${mode === 'list' ? 'on' : ''}" data-dmode="list">Contacts</button><button class="${mode === 'org' ? 'on' : ''}" data-dmode="org">Org chart</button></div></div>
 ${mode === 'list' ? `<div class="grid2"><input id="dirQ" placeholder="🔍 Search name, department, designation" value="${esc(S.dirQ || '')}"><select id="dirOff"><option value="">All offices</option>${(C().offices || []).map(o => `<option ${o === off ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>
 <div class="pgrid">${emps.map(card).join('') || '<p class="muted">Nobody matches.</p>'}</div>`
 : `<div class="card scroll"><ul class="org">${roots.map(r => node(r, 0)).join('')}</ul></div><p class="small muted">Built from "Reports to" in Employees. Ask HR to set it if someone is in the wrong place.</p>`}</div>`;
@@ -1712,7 +1730,7 @@ S.payDraft = { ym, rows: out }; return out;
 function slipData(x) {
 const { e, r, p } = x, c = payCfg(); const lv = ltypes().map(t => [t.k, r[t.name + ' (days)'] || 0]).filter(z => z[1]);
 return { code: e.code, name: e.name, desig: e.desig || '', dept: e.dept || '', office: e.office || '', doj: e.join_date || '', uan: p.uan || '', esino: p.esi || '', pan: p.pan || '', bank: p.bank || '', acct4: (p.acct || '').slice(-4),
-cal: r['Calendar days'], working: r['Working days'], present: r.Present, payable: r['Payable days'], lop: r['Absent / LOP days'], half: r['Half days'], leave: lv, basicPct: c.basicPct, ...payCalc(x.ctc, r, x.ex) };
+cal: r['Calendar days'], working: r['Working days'], present: r.Present, payable: r['Payable days'], lop: r['Absent / LOP days'], half: r['Half days'], leave: lv, late: r['Late days'] || 0, lateCut: r['Late cut (days)'] || 0, xlv: r['Extra leave cut (days)'] || 0, basicPct: c.basicPct, ...payCalc(x.ctc, r, x.ex) };
 }
 function payslipHTML(d, ym) {
 const co = idCfg(); const rows = Math.max(d.earn.length, d.ded.length);
@@ -1729,7 +1747,7 @@ table{width:100%;border-collapse:collapse}th{background:#1D2B53;color:#fff;text-
 @media print{body{background:#fff;padding:0}.pg{box-shadow:none}.pb{display:none}}</style></head><body><div class="pb"><button onclick="print()">🖨 Print / Save as PDF</button></div><div class="pg">
 <div class="hd">${LOGO}<div><h1>${esc(co.company)}</h1><small>${esc(co.address || co.website || '')}</small></div><div class="tt"><small>PAYSLIP</small><b>${esc(monthName(ym))}</b></div></div>
 <div class="info">${kv('Employee', d.name)}${kv('Employee code', d.code)}${kv('Designation', d.desig)}${kv('Department', d.dept)}${kv('Office', d.office)}${kv('Date of joining', d.doj && fmtD(d.doj))}${kv('PAN', d.pan)}${kv('UAN', d.uan)}${kv('ESI no.', d.esino)}${kv('Bank', d.bank && d.acct4 ? `${d.bank} ••${d.acct4}` : d.bank)}</div>
-<div class="att"><div><b>${d.cal}</b><small>Days in month</small></div><div><b>${d.present}</b><small>Present</small></div>${(d.leave || []).map(([k, n]) => `<div><b>${n}</b><small>${esc(k)} leave</small></div>`).join('')}<div><b>${d.lop}</b><small>LOP days</small></div><div><b>${d.payable}</b><small>Paid days</small></div></div>
+<div class="att"><div><b>${d.cal}</b><small>Days in month</small></div><div><b>${d.present}</b><small>Present</small></div>${(d.leave || []).map(([k, n]) => `<div><b>${n}</b><small>${esc(k)} leave</small></div>`).join('')}<div><b>${d.lop}</b><small>Absent (LOP)</small></div>${d.xlv ? `<div><b>${d.xlv}</b><small>Extra leave cut</small></div>` : ''}${d.lateCut ? `<div><b>${d.lateCut}</b><small>Late cut (${d.late} lates)</small></div>` : ''}<div><b>${d.payable}</b><small>Paid days</small></div></div>
 <table><thead><tr><th>Earnings</th><th class="n">Amount</th><th>Deductions</th><th class="n">Amount</th></tr></thead><tbody>${tr}</tbody><tfoot><tr><td>Total earnings</td><td class="n">${inr(d.gross)}</td><td>Total deductions</td><td class="n">${inr(d.totalDed)}</td></tr></tfoot></table>
 <div class="net"><span>Net pay</span><b>${inr(d.net)}</b></div><div class="w">Rupees ${esc(inWords(d.net))} only</div>
 <div class="ft">Monthly CTC ${inr(d.ctc)} · This is a computer-generated payslip from ORBIS and needs no signature.</div></div></body></html>`;
@@ -1746,7 +1764,7 @@ ${['bonus', 'tds', 'adv'].map(k => `<td><input class="numin" type="number" min="
 <div class="row" style="padding:12px 14px"><span class="small muted">Rows without a monthly salary are skipped. Add salary in Employees → 🔒 details.</span><div class="hstack"><button class="btn" data-pay="save">Save as draft</button><button class="btn pri" data-pay="pub">✓ Save & publish to staff</button></div></div></div>` : '';
 return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · accounts</span><h2>Payroll</h2></div><div class="hstack"><button class="btn sm" data-pm="-1">‹</button><b>${esc(monthName(ym))}</b><button class="btn sm" data-pm="1">›</button></div></div>
 ${slips.length ? `<div class="kpis"><div><b>${slips.length}</b><small>Payslips</small></div><div><b>${inr(tot('gross'))}</b><small>Gross</small></div><div><b>${inr(tot('totalDed'))}</b><small>Deductions</small></div><div><b>${inr(tot('net'))}</b><small>Net pay</small></div></div>` : ''}
-<div class="card"><div class="row"><div><h3>${slips.length ? 'Payslips for this month' : 'No payslips yet for this month'}</h3><p class="small muted">Uses the attendance register (paid days = days in month − LOP − ½ × half days) and the monthly salary saved in 🔒 private details.</p></div>
+<div class="card"><div class="row"><div><h3>${slips.length ? 'Payslips for this month' : 'No payslips yet for this month'}</h3><p class="small muted">Uses the attendance register (paid days = days in month − absent − ½ × half days − leave above ${payRules().lpm}/month − ${payRules().lc} day per ${payRules().lg} lates) and the monthly salary saved in 🔒 private details.</p></div>
 <div class="hstack wrap"><button class="btn pri" data-pay="prep">${slips.length ? '↻ Recalculate' : '⚙ Prepare payslips'}</button>${slips.length ? `<button class="btn" data-pay="bank">⬇ Bank transfer sheet</button><button class="btn" data-pay="reg">⬇ Payroll register</button>${slips.some(s => !s.published) ? '<button class="btn" data-pay="puball">Publish all</button>' : ''}` : ''}</div></div>
 ${slips.length ? `<div class="stack" style="gap:6px">${slips.slice().sort((a, b) => (a.data?.name || '').localeCompare(b.data?.name || '')).map(s => `<div class="li"><div><b>${esc(s.data?.name)}</b><small>${esc(s.data?.code)} · ${s.data?.payable} paid days · gross ${inr(s.data?.gross)} · deductions ${inr(s.data?.totalDed)}</small></div><div class="hstack"><b>${inr(s.data?.net)}</b>${s.published ? '<span class="chip good">Published</span>' : '<span class="chip warn">Draft</span>'}<button class="btn sm" data-slip="${s.id}">View</button></div></div>`).join('')}</div>` : ''}</div>
 ${draftTbl}
@@ -2777,7 +2795,7 @@ const [att, lv] = await Promise.all([q(sb.from('attendance').select('*').eq('day
 act = S.emps.filter(e => e.active), inn = act.filter(e => att.some(a => a.employee_id === e.id && a.in_at)), onl = act.filter(e => lv.some(l => l.employee_id === e.id));
 const late = inn.filter(e => hm(att.find(a => a.employee_id === e.id).in_at) > lateLim(e)), abs = act.filter(e => !inn.includes(e) && !onl.includes(e));
 const L = arr => arr.length ? arr.map(e => esc(e.name)).join(', ') : '—';
-return `Today: <b>${inn.length}</b> checked in, <b>${onl.length}</b> on leave, <b>${abs.length}</b> not in yet.<br>⏰ Late: ${L(late)}<br>🏖️ On leave: ${L(onl)}<br>❔ Not in: ${L(abs)}<br>${astGo('team', 'All staff')}`;
+return `Today: <b>${inn.length}</b> checked in, <b>${onl.length}</b> on leave, <b>${abs.length}</b> not in yet.<br>⏰ Late: ${L(late)}<br>🏖️ On leave: ${L(onl)}<br>❔ Not in: ${L(abs)}<br>${astGo('team', 'Team desk')}`;
 }
 if (astHas(s, 'pending', 'approval', 'approve', 'requests')) {
 const [lv, fx, xb] = await Promise.all([q(sb.from('leave_requests').select('id').eq('status', 'pending')), q(sb.from('punch_fixes').select('id').eq('status', 'pending')).catch(() => []), q(sb.from('extra_breaks').select('id').eq('status', 'pending')).catch(() => [])]);
@@ -2920,7 +2938,7 @@ ${mood}
 <div class="card flush"><div class="row" style="padding:14px 14px 0"><h3>Everyone at a glance</h3><button class="btn sm" id="insX">⬇ Excel</button></div><div class="scrollx"><table><thead><tr><th>Employee</th><th>Attendance</th><th>Late</th><th>Absent (no leave)</th><th>No check-out</th><th>Avg in</th><th>Work plans</th><th>Overdue tasks</th></tr></thead><tbody>
 ${P.sort((a, b) => b.score - a.score || a.pct - b.pct).map(p => `<tr><td><b>${esc(p.e.name)}</b><div class="small muted">${esc(p.e.code)}</div></td><td><span class="${p.pct < 85 ? 'pink' : ''}">${p.pct}%</span> <span class="small muted">${p.present}/${p.days}</span></td><td>${p.late || '—'}</td><td class="${p.absent ? 'pink' : ''}">${p.absent || '—'}</td><td>${p.noOut || '—'}</td><td>${p.avgIn != null ? `${pad(Math.floor(p.avgIn / 60))}:${pad(p.avgIn % 60)}` : '—'}</td><td>${p.present ? p.planPct + '%' : '—'}</td><td>${p.tkOver || '—'}</td></tr>`).join('')}</tbody></table></div></div></div>`;
 };
-document.addEventListener('click', e => { if (!e.target.closest('#insX')) return; xlsxOut((S.insP || []).map(p => ({ Code: p.e.code, Name: p.e.name, Department: p.e.dept, 'Working days': p.days, Present: p.present, 'Attendance %': p.pct, Late: p.late, 'Absent without leave': p.absent, 'No check-out': p.noOut, 'Breaks over limit': p.brOver, 'Leaves next to Sunday/holiday (90d)': p.bridge, 'Work plan %': p.planPct, 'Overdue tasks': p.tkOver, Notes: p.flags.join('; ') })), 'Insights', `ORBIS-insights-${todayStr()}.xlsx`).catch(er => toast(errMsg(er), true)); });
+document.addEventListener('click', e => { if (!e.target.closest('#insX')) return; xlsxOut((S.insP || []).map(p => ({ Code: p.e.code, Name: p.e.name, Department: p.e.dept, 'Working days': p.days, Present: p.present, 'Attendance %': p.pct, Late: p.late, 'Absent without leave': p.absent, 'No check-out': p.noOut, 'Breaks over limit': p.brOver, 'Leaves next to Sunday/holiday (90d)': p.bridge, ...(S.me.access === 'md' ? {} : { 'Work plan %': p.planPct }), 'Overdue tasks': p.tkOver, Notes: p.flags.join('; ') })), 'Insights', `ORBIS-insights-${todayStr()}.xlsx`).catch(er => toast(errMsg(er), true)); });
 const _navIns = navList; navList = function () { const n = _navIns(); if ((isAdmin() || (S.team || []).length) && !n.some(x => x[0] === 'insights')) { const i = n.findIndex(x => x[0] === 'team'); n.splice(i >= 0 ? i + 1 : n.length, 0, ['insights', 'Insights', '🧠']); } return n; };
 const _astAnsIns = astAnswer; astAnswer = async function (raw) { const s = raw.toLowerCase(); if ((isAdmin() || (S.team || []).length) && astHas(s, 'insight', 'pattern', 'trend', 'check-in', 'risk', 'leaving', 'problem', 'concern', 'who needs', 'summary', 'how is the team', 'team doing')) {
 try { const D = await insLoad(), st = D.att.map(a => a.day).sort()[0]; if (!st) return 'Not enough attendance data yet.'; const P = D.ids.map(empById).filter(Boolean).map(e => insPerson(e, D, [D.f30, e.join_date || '', st].sort().pop())).filter(p => p.days); const w = P.filter(p => p.score >= 2).sort((a, b) => b.score - a.score).slice(0, 4);
@@ -3313,7 +3331,7 @@ const _routeE = route; route = function () { const h = location.hash.slice(1); i
 const boardOn = () => C().leaderboardOff !== true;
 const _starE = starOfMonth; starOfMonth = async function () { return boardOn() ? _starE.apply(this, arguments) : null; };
 const _navE = navList; navList = function () { let n = _navE().filter(x => !['policies', 'org'].includes(x[0]) && (x[0] !== 'board' || boardOn()));
-n = n.map(x => x[0] === 'help' ? ['help', 'HR help', x[2]] : x[0] === 'people' ? ['people', 'People', x[2]] : x);
+n = n.map(x => x[0] === 'help' ? ['help', 'HR help', x[2]] : x[0] === 'people' ? ['people', 'Phonebook', x[2]] : x);
 const i = n.findIndex(x => x[0] === 'pay'); if (!n.some(x => x[0] === 'profile')) n.splice(i >= 0 ? i + 1 : n.length, 0, ['profile', 'My profile', '👤'], ['holidays', 'Holidays', '🎈']);
 if (isAdmin() && !n.some(x => x[0] === 'letters')) { const j = n.findIndex(x => x[0] === 'onboard'); n.splice(j >= 0 ? j + 1 : n.length, 0, ['letters', 'Letter requests', '📨']); }
 return n; };
@@ -3400,7 +3418,7 @@ if (tab === 'cal') body = await mgrCal(ids, team);
 if (tab === 'trev') body = await mgrRev(ids);
 if (tab === 'week') body = await mgrWeek(ids, team);
 } catch (er) { body = `<div class="card"><p class="msg bad">${esc(errMsg(er))}</p></div>`; }
-return `<div class="stack"><div><span class="eyebrow">${isAdmin() ? (S.me.access === 'md' ? 'MD — all employees' : 'HR — all employees') : 'Reporting manager / department head'}</span><h2>${isAdmin() ? 'All staff' : 'My team'} <span class="pink">${team.length}</span></h2></div>${seg}${body}</div>`;
+return `<div class="stack"><div><span class="eyebrow">${isAdmin() ? (S.me.access === 'md' ? 'MD — all employees' : 'HR — all employees') : 'Reporting manager / department head'}</span><h2>${isAdmin() ? 'Team desk' : 'My team'} <span class="pink">${team.length}</span></h2></div>${seg}${body}</div>`;
 };
 async function mgrInbox(ids) {
 const t = todayStr();
@@ -3486,7 +3504,7 @@ for (let d = mon; d <= to; d = addDays(d, 1)) { if (isWeekOff(d, e) || holOn(d, 
 const late = A.filter(a => hm(a.in_at) > lim).length, hrs = A.reduce((s, a) => s + (a.out_at ? mins(a.in_at, a.out_at) : 0), 0) / 60;
 const T = tk.filter(x => x.assigned_to === e.id), done = T.filter(x => x.status === 'done' && x.done_at && ymd(x.done_at) >= mon && ymd(x.done_at) <= sun).length, od = T.filter(x => x.status !== 'done' && x.due && x.due < (to < t ? addDays(to, 1) : t)).length;
 const plans = new Set(pl.filter(p => p.employee_id === e.id && p.day >= mon && p.day <= to).map(p => p.day)).size;
-const flags = [late >= 2 ? `late ${late}×` : '', ab ? `${ab} day${ab > 1 ? 's' : ''} absent without leave` : '', od ? `${od} overdue task${od > 1 ? 's' : ''}` : '', wd - lvd > 0 && plans < Math.ceil((wd - lvd) / 2) ? 'few work plans' : ''].filter(Boolean);
+const flags = [late >= 2 ? `late ${late}×` : '', ab ? `${ab} day${ab > 1 ? 's' : ''} absent without leave` : '', od ? `${od} overdue task${od > 1 ? 's' : ''}` : '', S.me.access !== 'md' && wd - lvd > 0 && plans < Math.ceil((wd - lvd) / 2) ? 'few work plans' : ''].filter(Boolean);
 return { e, wd, p: A.length, late, lvd, ab, hrs, done, od, plans, flags };
 });
 const sum = k => rows.reduce((s, r) => s + r[k], 0), exp = rows.reduce((s, r) => s + r.wd - r.lvd, 0);
@@ -3495,7 +3513,7 @@ const att2 = rows.filter(r => r.flags.length);
 return `<div class="row"><b>${fmtD(mon).slice(0, -5)} – ${fmtD(sun)}${off === 0 ? ' · this week so far' : ''}</b><div class="hstack"><button class="btn sm" data-fast data-wk="-1">‹ Previous</button><button class="btn sm" data-fast data-wk="1" ${off >= 0 ? 'disabled' : ''}>Next ›</button></div></div>
 <div class="kpis"><div><b class="${pct >= 90 ? 'g' : pct >= 75 ? 'o' : 'r'}">${pct}%</b><small>Attendance</small></div><div><b class="${ot >= 90 ? 'g' : 'o'}">${ot}%</b><small>On time</small></div><div><b>${sum('lvd')}</b><small>Leave days</small></div><div><b class="g">${sum('done')}</b><small>Tasks done</small></div><div><b class="${sum('od') ? 'r' : ''}">${sum('od')}</b><small>Overdue tasks</small></div></div>
 <div class="card"><h3>Needs your attention</h3>${att2.length ? `<div class="stack" style="gap:6px">${att2.map(r => `<div class="li"><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><small>${r.flags.join(' · ')}</small></div></div></div>`).join('')}</div>` : '<p class="small muted">Nothing to worry about — the team had a good week.</p>'}</div>
-<div class="card flush"><table><thead><tr><th>Person</th><th>Present</th><th>Late</th><th>Leave</th><th>Hours</th><th>Plans</th><th>Tasks done</th><th>Overdue</th></tr></thead><tbody>${rows.map(r => `<tr><td><div class="row" style="gap:8px;justify-content:flex-start">${avatarHTML(r.e, 'xs')}<b>${esc(r.e.name)}</b></div></td><td>${r.p}/${r.wd - r.lvd}</td><td>${r.late ? `<span class="chip ${r.late >= 2 ? 'warn' : ''}">${r.late}</span>` : 0}</td><td>${r.lvd}</td><td>${r.hrs.toFixed(1)}</td><td>${r.plans}</td><td>${r.done}</td><td>${r.od ? `<span class="chip crit">${r.od}</span>` : 0}</td></tr>`).join('') || '<tr><td colspan=8 class="muted">No team members</td></tr>'}</tbody></table></div>
+<div class="card flush"><table><thead><tr><th>Person</th><th>Present</th><th>Late</th><th>Leave</th><th>Hours</th>${S.me.access === 'md' ? '' : '<th>Plans</th>'}<th>Tasks done</th><th>Overdue</th></tr></thead><tbody>${rows.map(r => `<tr><td><div class="row" style="gap:8px;justify-content:flex-start">${avatarHTML(r.e, 'xs')}<b>${esc(r.e.name)}</b></div></td><td>${r.p}/${r.wd - r.lvd}</td><td>${r.late ? `<span class="chip ${r.late >= 2 ? 'warn' : ''}">${r.late}</span>` : 0}</td><td>${r.lvd}</td><td>${r.hrs.toFixed(1)}</td>${S.me.access === 'md' ? '' : `<td>${r.plans}</td>`}<td>${r.done}</td><td>${r.od ? `<span class="chip crit">${r.od}</span>` : 0}</td></tr>`).join('') || '<tr><td colspan=8 class="muted">No team members</td></tr>'}</tbody></table></div>
 <p class="small muted">Every Monday morning ORBIS also sends you last week's summary as a notification.</p>`;
 }
 document.addEventListener('click', e => {
@@ -3528,5 +3546,75 @@ if (e.target.closest('#a2Hide')) { lsSet('a2hsHide', true); $('#a2Card')?.remove
 if (e.target.closest('.inst') && isIOS() && !isStandalone()) { e.stopImmediatePropagation(); iosA2HS(); }
 }, true);
 if (isIOS() && !isStandalone()) { S.canInstall = true; addEventListener('DOMContentLoaded', () => document.querySelectorAll('.inst').forEach(b => b.hidden = false)); }
+const _setupPR = VIEWS.setup; VIEWS.setup = async () => { const h = await _setupPR(), p = payRules();
+return h.replace(/<\/div>\s*$/, `<div class="card"><h3>Salary rules</h3><p class="small muted">Used when payroll is prepared. Absent days with no approved leave are always unpaid.</p>
+<div class="grid2"><label>Paid leave days per month<input type="number" id="pr_lpm" min="0" step="0.5" value="${p.lpm}"><small class="muted">Leave above this in a month is unpaid (1 day cut per extra day).</small></label>
+<label>Late days for one cut<input type="number" id="pr_lg" min="0" step="1" value="${p.lg}"><small class="muted">0 = no salary cut for late coming.</small></label>
+<label>Days cut each time<select id="pr_lc"><option value="0.5" ${p.lc === 0.5 ? 'selected' : ''}>½ day</option><option value="1" ${p.lc === 1 ? 'selected' : ''}>1 day</option></select></label></div>
+<p class="small" id="pr_txt"></p><button class="btn pri" id="prSave">Save salary rules</button></div></div>`); };
+const prTxt = () => { const lpm = $('#pr_lpm')?.value, lg = Number($('#pr_lg')?.value), lc = $('#pr_lc')?.value === '1' ? '1 day' : '½ day'; if ($('#pr_txt')) $('#pr_txt').textContent = `Example: ${Number(lpm) + 1} leave days in a month → 1 day cut. ${lg ? `${lg} late days → ${lc} cut, ${lg * 2} late days → ${lc === '1 day' ? '2 days' : '1 day'} cut.` : 'Late coming is not cut from salary.'}`; };
+document.addEventListener('input', e => { if (e.target.closest('#pr_lpm,#pr_lg,#pr_lc')) prTxt(); });
+document.addEventListener('change', e => { if (e.target.closest('#pr_lc')) prTxt(); });
+new MutationObserver(() => { if ($('#pr_txt') && !$('#pr_txt').textContent) prTxt(); }).observe(document.body, { childList: true, subtree: true });
+document.addEventListener('click', async e => { if (!e.target.closest('#prSave')) return;
+const lpm = Math.max(0, Number($('#pr_lpm').value) || 0), lg = Math.max(0, Math.round(Number($('#pr_lg').value) || 0)), lc = Number($('#pr_lc').value) || 0.5;
+try { await saveSettings({ leavePerMonth: lpm, lateGroup: lg, lateCut: lc }); toast('Salary rules saved'); } catch (er) { toast(errMsg(er), true); } });
+function wpTrack(rows, t) {
+const days = rows.slice().sort((a, b) => a.day.localeCompare(b.day)), carried = new Set();
+days.forEach(r => (r.items || []).forEach(i => { if (i.src) carried.add(i.src); }));
+const pend = [], done = [];
+days.forEach(r => (r.items || []).forEach(i => { if (!i.task) return; if (i.st === 'done') done.push({ ...i, day: r.day }); else if (!carried.has(i.id)) pend.push({ ...i, day: r.day, age: Math.round((new Date(t) - new Date(r.day)) / 864e5) }); }));
+return { pend: pend.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || a.day.localeCompare(b.day)), done: done.sort((a, b) => b.day.localeCompare(a.day)) };
+}
+const wpAge = n => n <= 0 ? 'today' : n === 1 ? 'since yesterday' : `${n} days pending`;
+const wpPendRow = (i, mine) => `<div class="wp st-${i.st || 'plan'} ${i.urgent ? 'urg' : ''}"><div class="wpt"><b>${fmtD(i.day).slice(0, -5)}</b><small class="${i.age >= 3 ? 'red' : ''}">${wpAge(i.age)}</small></div><div class="wpm"><div>${i.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(i.task)}</div><small>${WST[i.st || 'plan'][2]} ${WST[i.st || 'plan'][0]} · ${esc(i.from)}–${esc(i.to)}</small></div>
+${mine ? `<div class="hstack">${i.age > 0 ? `<button class="btn sm" data-wpmv="${i.id}" data-d="${i.day}">↪ Today</button>` : ''}<button class="btn sm good" data-wpdn="${i.id}" data-d="${i.day}">✓ Done</button></div>` : ''}</div>`;
+const wpDoneList = L => { const by = {}; L.forEach(i => (by[i.day] = by[i.day] || []).push(i)); return Object.entries(by).map(([d, x]) => `<div class="grp">${d === todayStr() ? 'Today' : fmtD(d)} <span class="chip good">${x.length}</span></div><div class="stack" style="gap:4px">${x.map(i => `<div class="wpd">${ico('ok')}<span>${esc(i.task)}</span><small class="muted">${esc(i.from)}–${esc(i.to)}</small></div>`).join('')}</div>`).join(''); };
+const _planV2 = VIEWS.plan;
+VIEWS.plan = async () => {
+const t = todayStr(), tab = S.wpTab || 'today';
+const rows = (await q(sb.from('work_plans').select('employee_id,day,items').eq('employee_id', S.me.id).gte('day', addDays(t, -30))).catch(() => [])).filter(r => r.employee_id === S.me.id && r.day >= addDays(t, -30));
+const { pend, done } = wpTrack(rows, t), wk = addDays(t, -6), dW = done.filter(i => i.day >= wk).length, old = pend.filter(i => i.age >= 3).length;
+const seg = `<div class="seg"><button class="${tab === 'today' ? 'on' : ''}" data-wpt="today">Today's plan</button><button class="${tab === 'pend' ? 'on' : ''}" data-wpt="pend">Pending ${pend.length ? `<span class="sbadge">${pend.length}</span>` : ''}</button><button class="${tab === 'done' ? 'on' : ''}" data-wpt="done">Completed</button></div>`;
+const kp = `<div class="kpis"><div><b class="${pend.length ? 'o' : 'g'}">${pend.length}</b><small>Pending</small></div><div><b class="${old ? 'r' : ''}">${old}</b><small>Pending 3+ days</small></div><div><b class="g">${done.filter(i => i.day === t).length}</b><small>Done today</small></div><div><b class="g">${dW}</b><small>Done this week</small></div></div>`;
+if (tab === 'today') { const h = await _planV2(); return h.replace(/(<span class="eyebrow">Daily work plan<\/span>[\s\S]*?<\/p><\/div>)/, `$1${seg}${kp}`).replace('Seen only by you, your department head / managers and the MD.', 'Seen only by you and your department head / reporting manager.'); }
+const head = `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</span><h2>${tab === 'pend' ? 'Pending work' : 'Completed work'}</h2><p class="small muted">Last 30 days · seen only by you and your department head / reporting manager.</p></div>${seg}${kp}`;
+if (tab === 'pend') return `${head}<div class="card"><div class="row"><h3>Not finished yet</h3><span class="small muted">Oldest first · urgent on top</span></div>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(i => wpPendRow(i, true)).join('')}</div>` : `<div class="allclear"><span class="ib" style="--ib:#e8f7ee">${ico('ok')}</span><b>Nothing pending</b><span class="small muted">Every planned work is complete.</span></div>`}</div></div>`;
+return `${head}<div class="card"><h3>Completed in the last 30 days <span class="chip good">${done.length}</span></h3>${done.length ? wpDoneList(done) : '<p class="small muted">Nothing marked done yet. Change a task to ✅ Done when it is finished.</p>'}</div></div>`;
+};
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-wpt],[data-wpmv],[data-wpdn],[data-wpp]'); if (!b) return;
+if (b.dataset.wpt) { S.wpTab = b.dataset.wpt; return render(); }
+if (b.dataset.wpp) { S.tmPlanV = b.dataset.wpp; return render(); }
+const t = todayStr(), day = b.dataset.d;
+try {
+const src = await getPlan(S.me.id, day), it = src.find(x => x.id === (b.dataset.wpmv || b.dataset.wpdn)); if (!it) return render();
+if (b.dataset.wpdn) { await savePlan(day, src.map(x => x.id === it.id ? { ...x, st: 'done' } : x)); toast('Marked done ✓'); }
+if (b.dataset.wpmv) { const today = day === t ? src : await getPlan(S.me.id, t); if (today.some(z => z.src === it.id)) return toast('Already in today\'s plan');
+const last = today.length ? today[today.length - 1].to : '09:00';
+await savePlan(t, [...today, { id: Math.random().toString(36).slice(2, 10), from: last, to: addMinHM(last, Math.max(30, toMin(it.to) - toMin(it.from)) || 60), task: it.task, st: 'plan', urgent: !!it.urgent, carry: true, src: it.id, ...(it.taskId ? { taskId: it.taskId } : {}) }]); toast('Moved to today'); }
+render();
+} catch (er) { toast(errMsg(er), true); }
+});
+const _teamWP = VIEWS.team;
+VIEWS.team = async () => {
+if (S.me.access === 'md' && S.tmTab === 'plans') S.tmTab = 'today';
+let h = await _teamWP();
+if (S.me.access !== 'staff') return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
+if (S.tmTab !== 'plans') return h;
+const v = S.tmPlanV || 'day', sub = `<div class="seg sub"><button class="${v === 'day' ? 'on' : ''}" data-wpp="day">Day view</button><button class="${v === 'pend' ? 'on' : ''}" data-wpp="pend">Pending &amp; completed</button></div>`;
+if (v === 'day') return h.replace(/(<div class="seg">[\s\S]*?<\/div>)/, `$1${sub}`);
+const t = todayStr(), team = S.emps.filter(e => (S.team || []).includes(e.id) && e.active), ids = team.map(e => e.id);
+const rows0 = ids.length ? await q(sb.from('work_plans').select('employee_id,day,items').in('employee_id', ids).gte('day', addDays(t, -30))).catch(() => []) : []; const rows = rows0.filter(r => ids.includes(r.employee_id));
+const wk = addDays(t, -6);
+const per = team.map(e => { const r = wpTrack(rows.filter(x => x.employee_id === e.id), t); return { e, ...r, dW: r.done.filter(i => i.day >= wk).length, old: r.pend.filter(i => i.age >= 3).length }; }).sort((a, b) => b.old - a.old || b.pend.length - a.pend.length);
+const tot = k => per.reduce((s, p) => s + (Array.isArray(p[k]) ? p[k].length : p[k]), 0);
+const body = `<div class="kpis"><div><b class="o">${tot('pend')}</b><small>Pending</small></div><div><b class="r">${tot('old')}</b><small>Pending 3+ days</small></div><div><b class="g">${tot('dW')}</b><small>Done this week</small></div></div>
+${per.map(p => `<div class="card"><div class="row"><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(p.e, 'sm')}<div><b>${esc(p.e.name)}</b><div class="small muted">${esc(p.e.desig || p.e.dept || '')}</div></div></div><div class="hstack"><span class="chip ${p.pend.length ? 'warn' : 'good'}">${p.pend.length} pending</span>${p.old ? `<span class="chip crit">${p.old} for 3+ days</span>` : ''}<span class="chip good">${p.dW} done this week</span></div></div>
+${p.pend.length ? `<div class="stack" style="gap:6px;margin-top:8px">${p.pend.slice(0, 6).map(i => wpPendRow(i, false)).join('')}${p.pend.length > 6 ? `<p class="small muted">+ ${p.pend.length - 6} more</p>` : ''}</div>` : ''}
+${p.done.length ? `<details class="wpdet"><summary>Completed — last 30 days (${p.done.length})</summary>${wpDoneList(p.done.slice(0, 40))}</details>` : ''}</div>`).join('') || '<div class="card muted">No team members.</div>'}`;
+return h.replace(/(<div class="seg">[\s\S]*?<\/div>)[\s\S]*<\/div>\s*$/, `$1${sub}${body}</div>`);
+};
+const _navWP = navList; navList = function () { const n = _navWP.apply(this, arguments); return S.me?.access === 'md' ? n.filter(x => x[0] !== 'plan') : n; };
 boot();
 </script></body></html>
