@@ -476,6 +476,8 @@ return `<header class="top"><div class="alg">${LOGO}</div><div class="brand"><b>
 <nav class="side">${nav}</nav><main id="main">${body}</main><nav class="bottom">${nav}</nav>`;
 }
 const VIEWS = {};
+document.addEventListener('click', e => { const b = e.target.closest('button,.btn'); if (!b || b.closest('.seg') || b.hasAttribute('data-fast')) return; const n = Date.now(), last = Number(b.dataset.tapT || 0);
+if (n - last < 700) { e.stopImmediatePropagation(); e.preventDefault(); return; } b.dataset.tapT = n; }, true);
 async function render() {
 document.body.className = 'app';
 const v = VIEWS[S.view] || VIEWS.punch;
@@ -661,7 +663,14 @@ await q(sb.from('leave_requests').insert(row)); S.cert = null; toast('Leave requ
 document.addEventListener('click', async e => { const b = e.target.closest('[data-lcancel]'); if (!b) return; try { await rpc('cancel_leave', { p_id: b.dataset.lcancel }); toast('Request cancelled'); render(); } catch (er) { toast(errMsg(er), true); } });
 const WST = { plan: ['Planned', '', '🗓'], on: ['Ongoing', 'warn', '🔄'], done: ['Done', 'good', '✅'], not: ['Not done', 'crit', '❌'] };
 async function getPlan(emp, day) { const r = await q(sb.from('work_plans').select('*').eq('employee_id', emp).eq('day', day).maybeSingle()); return (r?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); }
-async function savePlan(day, items) { await q(sb.from('work_plans').upsert({ employee_id: S.me.id, day, items, updated_at: new Date().toISOString() })); }
+const planQ = { n: 0, p: {} };
+async function savePlan(day, items) {
+if (day === todayStr()) S.planT = items; else if (day === addDays(todayStr(), -1)) S.planY = items;
+planQ.n++; const prev = planQ.p[day] || Promise.resolve();
+const job = prev.catch(() => { }).then(() => q(sb.from('work_plans').upsert({ employee_id: S.me.id, day, items, updated_at: new Date().toISOString() })));
+planQ.p[day] = job; try { await job; } finally { planQ.n--; }
+}
+const planIdle = () => !planQ.n;
 function planRow(it, ed, day) { const [t, c, ic] = WST[it.st || 'plan']; return `<div class="wp st-${it.st || 'plan'} ${it.urgent ? 'urg' : ''}"><div class="wpt"><b>${esc(it.from)}</b><small>${esc(it.to)}</small></div><div class="wpm"><div>${it.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(it.task)}</div>${it.note ? `<small>📝 ${esc(it.note)}</small>` : ''}${it.carry ? '<small>↪ carried from yesterday</small>' : ''}</div>
 ${ed ? `<select data-wst="${it.id}" data-d="${day}">${Object.entries(WST).map(([k, v]) => `<option value="${k}" ${(it.st || 'plan') === k ? 'selected' : ''}>${v[2]} ${v[0]}</option>`).join('')}</select><button class="btn sm" data-wdel="${it.id}" data-d="${day}">✕</button>` : `<span class="chip ${c}">${ic} ${t}</span>`}</div>`; }
 const planSum = it => { const m = it.reduce((s, i) => s + Math.max(0, toMin(i.to) - toMin(i.from)), 0); return `<span class="small muted">${it.length} tasks · ${hmm(m)} · ✅ ${it.filter(x => x.st === 'done').length} · 🔄 ${it.filter(x => x.st === 'on').length} · ❌ ${it.filter(x => x.st === 'not').length}</span>`; };
@@ -688,7 +697,7 @@ if (b.id === 'wp_carry') { const items = [...S.planT]; S.planY.filter(x => x.st 
 });
 document.addEventListener('change', async e => { const s = e.target.closest('[data-wst]'); if (!s) return; const day = s.dataset.d; const items = (day === todayStr() ? S.planT : S.planY).map(x => x.id === s.dataset.wst ? { ...x, st: s.value } : x);
 if (s.value === 'not') { const n = prompt('Why was it not done? (optional)'); if (n) items.find(x => x.id === s.dataset.wst).note = n.slice(0, 200); }
-try { await savePlan(day, items); render(); } catch (er) { toast(errMsg(er), true); } });
+try { await savePlan(day, items); if (planIdle()) render(); } catch (er) { toast(errMsg(er), true); render(); } });
 const POLCAT = ['Leave', 'Attendance & breaks', 'Code of conduct', 'Payroll & salary', 'Safety & hygiene', 'IT & devices', 'Other'];
 const POL_SEED = [
 { title: 'Attendance & punching policy', category: 'Attendance & breaks', body: '1. Punch in and punch out only on an office computer (your own laptop/desktop or the common PC).\n2. Punching works only on the office network.\n3. Punching for another person is not allowed and will be treated as misconduct.\n4. If you could not punch, inform your reporting manager and HR the same day.\n5. Late arrival is counted after the grace time set by HR.' },
@@ -754,7 +763,7 @@ if (tab === 'plans') {
 const d = S.tmDay || t;
 const plans = await q(sb.from('work_plans').select('*').eq('day', d)); S.prv = await q(sb.from('plan_reviews').select('*').eq('day', d)).catch(() => []);
 const vis = team.filter(e => S.me.access === 'md' || S.team.includes(e.id));
-body = `<div class="row"><b>${d === t ? 'Today' : fmtD(d)}</b><div class="hstack"><button class="btn sm" data-tday="-1">‹</button><button class="btn sm" data-tday="1" ${d >= t ? 'disabled' : ''}>›</button></div></div>
+body = `<div class="row"><b>${d === t ? 'Today' : fmtD(d)}</b><div class="hstack"><button class="btn sm" data-fast data-tday="-1">‹</button><button class="btn sm" data-fast data-tday="1" ${d >= t ? 'disabled' : ''}>›</button></div></div>
 ${vis.map(e => { const p = plans.find(x => x.employee_id === e.id); const it = (p?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); return `<div class="card"><div class="row"><div><b>${esc(e.name)}</b><div class="small muted">${esc(e.dept)}</div></div>${it.length ? planSum(it) : '<span class="chip warn">No plan</span>'}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, false)).join('')}</div>${revHTML(S.prv.find(r => r.employee_id === e.id), e.id, d)}` : ''}</div>`; }).join('') || '<div class="card muted">No team members</div>'}`;
 }
 return `<div class="stack"><div><span class="eyebrow">${isAdmin() ? (S.me.access === 'md' ? 'MD — all employees' : 'HR — all employees') : 'Reporting manager / department head'}</span><h2>${isAdmin() ? 'All staff' : 'My team'} <span class="pink">${team.length}</span></h2></div>${seg}${body}</div>`;
@@ -1518,7 +1527,7 @@ try { await salarySummary(S.regMonth || todayStr().slice(0, 7)); toast('Salary s
 async function fetchAll(table, order) { const out = []; for (let i = 0; ; i += 1000) { let qy = sb.from(table).select('*').range(i, i + 999); if (order) qy = qy.order(order); const r = await q(qy); out.push(...r); if (r.length < 1000) break; } return out; }
 async function makeBackup(silent) {
 const X = await loadXLSX(); const wb = X.utils.book_new(); const T = [['employees', 'code'], ['attendance', 'day'], ['breaks', 'day'], ['leave_requests', 'created_at'], ['extra_breaks', 'created_at'], ['punch_fixes', 'created_at'], ['holidays', 'day'],
-['policies', 'created_at'], ['dept_heads', null], ['app_settings', null], ['employee_private', null], ['emp_docs', 'uploaded_at'], ['doc_vault', null], ['work_plans', 'day'], ['devices', 'created_at'], ['announcements', 'created_at'], ['tasks', 'created_at'], ['plan_reviews', 'day'], ['payslips', 'month'], ['leave_adjust', null], ['assets', 'tag'], ['exits', 'created_at'], ['pulse', 'week'], ['tax_decl', 'fy'], ['appraisals', 'created_at'], ['activity_log', 'at']];
+['policies', 'updated_at'], ['dept_heads', null], ['app_settings', null], ['employee_private', null], ['emp_docs', 'uploaded_at'], ['doc_vault', null], ['work_plans', 'day'], ['devices', 'created_at'], ['announcements', 'created_at'], ['tasks', 'created_at'], ['plan_reviews', 'day'], ['payslips', 'month'], ['leave_adjust', null], ['assets', 'tag'], ['exits', 'created_at'], ['pulse', 'week'], ['tax_decl', 'fy'], ['appraisals', 'created_at'], ['advances', 'created_at'], ['onboarding', 'employee_id'], ['letter_requests', 'created_at'], ['policy_acks', null], ['polls', 'created_at'], ['poll_votes', 'created_at'], ['tickets', 'created_at'], ['ticket_msgs', 'created_at'], ['wishes', 'created_at'], ['activity_log', 'at']];
 let n = 0;
 for (const [t, o] of T) { let rows; try { rows = await fetchAll(t, o); } catch { continue; }
 if (t === 'devices') rows = rows.map(({ token, ...r }) => r);
@@ -1851,7 +1860,7 @@ const b = await _rb3(); const t = todayStr();
 try { const tk = await q(sb.from('tasks').select('id,title,due,status').eq('assigned_to', S.me.id).neq('status', 'done')); b.tasks = tk.length;
 tk.filter(x => x.due && x.due <= t).forEach(x => notify('task' + x.id + t, x.due < t ? 'Task overdue' : 'Task due today', x.title)); } catch { }
 try { const p = await q(sb.from('payslips').select('month').eq('employee_id', S.me.id).eq('published', true).gt('month', lsGet('paySeen') || '')); b.pay = p.length; if (p.length) notify('pay' + p[0].month, 'Payslip ready', 'Open My payslips'); } catch { }
-try { const r = await q(sb.from('plan_reviews').select('created_at').eq('employee_id', S.me.id).gt('created_at', lsGet('revSeen') || '1970')); b.plan = r.length; } catch { }
+try { const r = await q(sb.from('plan_reviews').select('created_at').eq('employee_id', S.me.id).gt('created_at', lsGet('revSeen') || '1970-01-01T00:00:00Z')); b.plan = r.length; } catch { }
 S.badge = b; paintBadges(); return b;
 };
 const p4Missing = () => p3Missing().replace('Phase 3', 'Phase 4');
@@ -2568,7 +2577,7 @@ try { toast('Reading file…'); S.bio = await bioParse(e.target.files[0], !!$('#
 });
 document.addEventListener('click', async e => {
 if (e.target.closest('#bioClear')) { S.bio = null; return render(); }
-if (e.target.closest('#bioTpl')) { const t = todayStr(); return xlsxOut([{ 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 09:02` }, { 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 13:30` }, { 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 18:05` }], 'Punches', 'ORBIS-biometric-sample.xlsx'); }
+if (e.target.closest('#bioTpl')) { const t = todayStr(); try { await xlsxOut([{ 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 09:02` }, { 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 13:30` }, { 'Emp Code': S.emps[0]?.code || 'ADN71', 'Date Time': `${t.slice(8)}/${t.slice(5, 7)}/${t.slice(0, 4)} 18:05` }], 'Punches', 'ORBIS-biometric-sample.xlsx'); } catch (er) { toast(errMsg(er), true); } return; }
 const go = e.target.closest('#bioGo'); if (!go || !S.bio?.rows) return;
 const rows = S.bio.rows.filter(r => r.st !== 'same'); go.disabled = true;
 try {
@@ -3342,7 +3351,7 @@ const rj = t.closest('[data-ltrej]'); if (rj) { const n = prompt('Reason (option
 const _rbE = refreshBadges; refreshBadges = async function () { const b = (await _rbE.apply(this, arguments)) || S.badge || {}; try { if (isAdmin()) { b.letters = (await q(sb.from('letter_requests').select('id').eq('status', 'pending'))).length; S.badge = b; paintBadges(); } } catch { } return b; };
 VIEWS.holidays = async () => { await loadHolidays(); const y = Number(S.holYear || todayStr().slice(0, 4)), t = todayStr(), L = (S.holidays || []).filter(h => h.day.startsWith(String(y)) && (!h.office || h.office === S.me.office || isAdmin()));
 const next = L.find(h => h.day >= t), months = [...Array(12)].map((_, i) => [i + 1, L.filter(h => Number(h.day.slice(5, 7)) === i + 1)]).filter(m => m[1].length);
-return `<div class="stack narrow"><div class="row"><div><span class="eyebrow">Calendar</span><h2>Holidays ${y}</h2></div><div class="hstack"><button class="btn sm" data-hy="-1">‹</button><button class="btn sm" data-hy="1">›</button></div></div>
+return `<div class="stack narrow"><div class="row"><div><span class="eyebrow">Calendar</span><h2>Holidays ${y}</h2></div><div class="hstack"><button class="btn sm" data-fast data-hy="-1">‹</button><button class="btn sm" data-fast data-hy="1">›</button></div></div>
 ${next ? `<div class="card holnext"><small>NEXT HOLIDAY</small><b>${esc(next.name)}</b><div>${DOWN[dowOf(next.day)]}, ${fmtD(next.day)} · ${(() => { const n = Math.round((new Date(next.day) - new Date(t)) / 864e5); return n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`; })()}</div></div>` : ''}
 ${months.length ? months.map(([m, hs]) => `<div class="card"><h3>${new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'long' })}</h3>${hs.map(h => `<div class="li hol ${h.day < t ? 'past' : ''}"><div class="hd"><b>${Number(h.day.slice(8))}</b><small>${DOW3[dowOf(h.day)]}</small></div><div class="grow"><b>${esc(h.name)}</b>${h.office ? `<small>${esc(h.office)} only</small>` : ''}</div>${isWeekOff(h.day) ? '<span class="chip">Weekly off</span>' : ''}</div>`).join('')}</div>`).join('') : `<div class="card muted">No holidays added for ${y} yet.${isAdmin() ? ' Add them in Computers & settings → Holidays.' : ''}</div>`}
 <p class="small muted">${L.length} holiday${L.length !== 1 ? 's' : ''} in ${y}.</p></div>`; };
@@ -3429,7 +3438,7 @@ cells += `<div class="lc ${ds === t ? 'now' : ''} ${wd === 0 ? 'sun' : ''} ${hol
 }
 const mName = new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 const up = (await q(sb.from('leave_requests').select('*').in('status', ['approved', 'pending']).gte('to_date', t).lte('from_date', addDays(t, 30)).order('from_date'))).filter(l => ids.includes(l.employee_id));
-return `<div class="card"><div class="row"><h3>${mName}</h3><div class="hstack"><button class="btn sm" data-lcm="-1">‹</button><button class="btn sm" data-lcm="0">This month</button><button class="btn sm" data-lcm="1">›</button></div></div>
+return `<div class="card"><div class="row"><h3>${mName}</h3><div class="hstack"><button class="btn sm" data-fast data-lcm="-1">‹</button><button class="btn sm" data-fast data-lcm="0">This month</button><button class="btn sm" data-fast data-lcm="1">›</button></div></div>
 <div class="lcal">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => `<div class="lcw">${d}</div>`).join('')}${cells}</div>
 <div class="row small" style="justify-content:flex-start;gap:14px;margin-top:10px"><span><span class="lcp approved">Name</span> approved</span><span><span class="lcp pending">Name</span> waiting for approval</span><span><span class="chip warn">⚠</span> two or more from the same department off</span></div></div>
 <div class="card"><h3>Next 30 days</h3>${up.length ? `<div class="stack" style="gap:6px">${up.map(l => `<div class="li"><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(empById(l.employee_id) || {}, 'sm')}<div><b>${esc(empById(l.employee_id)?.name)}</b><small>${esc(ltName(l.type))} · ${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''} · ${l.days} day${l.days > 1 ? 's' : ''}</small></div></div>${stChip(l.status)}</div>`).join('')}</div>` : '<p class="muted small">No one in your team is on leave in the next 30 days.</p>'}</div>`;
@@ -3464,7 +3473,7 @@ return { e, wd, p: A.length, late, lvd, ab, hrs, done, od, plans, flags };
 const sum = k => rows.reduce((s, r) => s + r[k], 0), exp = rows.reduce((s, r) => s + r.wd - r.lvd, 0);
 const pct = exp ? Math.min(100, Math.round(sum('p') / exp * 100)) : 0, ot = sum('p') ? Math.round((sum('p') - sum('late')) / sum('p') * 100) : 0;
 const att2 = rows.filter(r => r.flags.length);
-return `<div class="row"><b>${fmtD(mon).slice(0, -5)} – ${fmtD(sun)}${off === 0 ? ' · this week so far' : ''}</b><div class="hstack"><button class="btn sm" data-wk="-1">‹ Previous</button><button class="btn sm" data-wk="1" ${off >= 0 ? 'disabled' : ''}>Next ›</button></div></div>
+return `<div class="row"><b>${fmtD(mon).slice(0, -5)} – ${fmtD(sun)}${off === 0 ? ' · this week so far' : ''}</b><div class="hstack"><button class="btn sm" data-fast data-wk="-1">‹ Previous</button><button class="btn sm" data-fast data-wk="1" ${off >= 0 ? 'disabled' : ''}>Next ›</button></div></div>
 <div class="kpis"><div><b class="${pct >= 90 ? 'g' : pct >= 75 ? 'o' : 'r'}">${pct}%</b><small>Attendance</small></div><div><b class="${ot >= 90 ? 'g' : 'o'}">${ot}%</b><small>On time</small></div><div><b>${sum('lvd')}</b><small>Leave days</small></div><div><b class="g">${sum('done')}</b><small>Tasks done</small></div><div><b class="${sum('od') ? 'r' : ''}">${sum('od')}</b><small>Overdue tasks</small></div></div>
 <div class="card"><h3>Needs your attention</h3>${att2.length ? `<div class="stack" style="gap:6px">${att2.map(r => `<div class="li"><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><small>${r.flags.join(' · ')}</small></div></div></div>`).join('')}</div>` : '<p class="small muted">Nothing to worry about — the team had a good week.</p>'}</div>
 <div class="card flush"><table><thead><tr><th>Person</th><th>Present</th><th>Late</th><th>Leave</th><th>Hours</th><th>Plans</th><th>Tasks done</th><th>Overdue</th></tr></thead><tbody>${rows.map(r => `<tr><td><div class="row" style="gap:8px;justify-content:flex-start">${avatarHTML(r.e, 'xs')}<b>${esc(r.e.name)}</b></div></td><td>${r.p}/${r.wd - r.lvd}</td><td>${r.late ? `<span class="chip ${r.late >= 2 ? 'warn' : ''}">${r.late}</span>` : 0}</td><td>${r.lvd}</td><td>${r.hrs.toFixed(1)}</td><td>${r.plans}</td><td>${r.done}</td><td>${r.od ? `<span class="chip crit">${r.od}</span>` : 0}</td></tr>`).join('') || '<tr><td colspan=8 class="muted">No team members</td></tr>'}</tbody></table></div>
