@@ -1617,20 +1617,26 @@ catch { S.ann = []; S.annReads = []; }
 return S.ann;
 }
 const annSeen = (a, id = S.me.id) => (S.annReads || []).some(r => r.ann_id === a.id && r.employee_id === id);
+function teamOfMgr(mid) { const out = new Set(), q2 = [mid]; while (q2.length) { const m = q2.shift(); S.emps.forEach(e => { if (e.reports_to === m && !out.has(e.id) && e.id !== mid) { out.add(e.id); q2.push(e.id); } }); } return out; }
+const annAudience = a => a.team_of ? S.emps.filter(e => e.active && e.auth_uid && (a.team_of === S.me.id && (S.team || []).length ? S.team.includes(e.id) : teamOfMgr(a.team_of).has(e.id))) : S.emps.filter(e => e.active && e.auth_uid && (!a.office || e.office === a.office));
+const annCanManage = a => isAdmin() || (a.team_of && a.team_of === S.me.id && a.created_by === S.me.id);
+const isMgr = () => !isAdmin() && (S.team || []).length > 0;
 VIEWS.news = async () => {
 await loadNews(); const star = await starOfMonth(); const cel = celebrations(); const today = cel.filter(c => c.i === 0), soon = cel.filter(c => c.i > 0);
 const list = [...S.ann].sort((a, b) => (b.pinned - a.pinned) || b.created_at.localeCompare(a.created_at));
-const audience = a => S.emps.filter(e => e.active && e.auth_uid && (!a.office || e.office === a.office));
+const audience = annAudience;
 return `<div class="stack narrow"><div><span class="eyebrow">Aeden today</span><h2>📢 News</h2></div>
 ${pushCard()}
 ${today.length ? `<div class="card celeb">${today.map(c => `<div class="row" style="justify-content:flex-start;gap:12px">${avatarHTML(c.e)}<div><b>${esc(c.txt)} today!</b><div class="small muted">${esc(c.e.desig || '')} · ${esc(c.e.dept || '')}</div></div></div>`).join('')}<div class="confetti">${'🎊🎉✨🎈🎂'.repeat(4)}</div></div>` : ''}
 ${star ? `<div class="card starc"><div class="row" style="justify-content:flex-start;gap:14px">${star.emp ? avatarHTML(star.emp) : ''}<div><span class="eyebrow">⭐ Star of ${esc(star.month)}</span><h3 style="margin:2px 0">${esc(star.name)}</h3><div class="small muted">${star.pct}% attendance score · ${star.ontime}/${star.days} days on time</div></div></div></div>` : ''}
 ${isAdmin() ? `<div class="card"><h3>Post an announcement</h3><label>Title<input id="an_t" placeholder="e.g. Office closed on Friday"></label><label>Message<textarea id="an_b" rows="3"></textarea></label>
 <div class="grid2"><label>Who sees it<select id="an_o"><option value="">Everyone</option>${(C().offices || []).map(o => `<option>${esc(o)}</option>`).join('')}</select></label><label class="chk" style="align-self:end"><input type="checkbox" id="an_p"> Pin to top</label></div><button class="btn pri" id="an_post">📢 Post</button></div>` : ''}
+${isMgr() ? `<div class="card"><h3>Post to my team</h3><p class="small muted">Only your team (${(S.team || []).length} people) will see this.</p><label>Title<input id="an_t" placeholder="e.g. Month-end closing on Saturday"></label><label>Message<textarea id="an_b" rows="3"></textarea></label>
+<label class="chk"><input type="checkbox" id="an_p"> Pin to top</label><button class="btn pri" id="an_post" data-team="1">📢 Post to my team</button></div>` : ''}
 ${list.length ? list.map(a => { const seen = annSeen(a), aud = audience(a), sc = aud.filter(e => annSeen(a, e.id)).length;
-return `<div class="card ann ${a.pinned ? 'pin' : ''} ${seen ? '' : 'unread'}"><div class="row"><div><b class="at">${a.pinned ? '📌 ' : ''}${esc(a.title)}</b><div class="small muted">${esc(empById(a.created_by)?.name || 'HR')} · ${fmtD(ymd(a.created_at))}${a.office ? ' · ' + esc(a.office) + ' only' : ''}</div></div>${seen ? '<span class="chip good">✓ Seen</span>' : `<button class="btn sm pri" data-anseen="${a.id}">Mark as seen</button>`}</div>
+return `<div class="card ann ${a.pinned ? 'pin' : ''} ${seen ? '' : 'unread'}"><div class="row"><div><b class="at">${a.pinned ? '📌 ' : ''}${esc(a.title)}</b><div class="small muted">${esc(empById(a.created_by)?.name || 'HR')} · ${fmtD(ymd(a.created_at))}${a.office ? ' · ' + esc(a.office) + ' only' : ''}${a.team_of ? ` · <span class="chip">👥 ${a.team_of === S.me.id ? 'My team' : esc((empById(a.team_of)?.name || '').split(' ')[0]) + "'s team"}</span>` : ''}</div></div>${seen ? '<span class="chip good">✓ Seen</span>' : `<button class="btn sm pri" data-anseen="${a.id}">Mark as seen</button>`}</div>
 ${a.body ? `<p style="white-space:pre-wrap;margin:8px 0 0">${esc(a.body)}</p>` : ''}
-${isAdmin() ? `<div class="row small" style="margin-top:8px"><a href="#" data-anwho="${a.id}">Seen by ${sc} of ${aud.length}</a><span class="hstack"><button class="btn sm" data-anpin="${a.id}" data-v="${a.pinned ? 0 : 1}">${a.pinned ? 'Unpin' : 'Pin'}</button><button class="btn sm" data-andel="${a.id}">Delete</button></span></div>` : ''}</div>`; }).join('')
+${annCanManage(a) ? `<div class="row small" style="margin-top:8px"><a href="#" data-anwho="${a.id}">Seen by ${sc} of ${aud.length}</a><span class="hstack"><button class="btn sm" data-anpin="${a.id}" data-v="${a.pinned ? 0 : 1}">${a.pinned ? 'Unpin' : 'Pin'}</button><button class="btn sm" data-andel="${a.id}">Delete</button></span></div>` : ''}</div>`; }).join('')
 : '<div class="card muted center">No announcements yet.</div>'}
 ${soon.length ? `<div class="card"><h3>Coming up</h3>${soon.map(c => `<div class="li"><div class="row" style="justify-content:flex-start;gap:10px">${avatarHTML(c.e, 'sm')}<div><b>${esc(c.txt)}</b><small>${DOW[dowOf(c.d)]} ${fmtD(c.d)}</small></div></div></div>`).join('')}</div>` : ''}
 ${holCard()}</div>`;
@@ -1640,11 +1646,11 @@ const b = e.target.closest('#an_post,[data-anseen],[data-anpin],[data-andel],[da
 try {
 if (b.id === 'notifOn') { await pushTurnOn(b); render(); }
 if (b.id === 'an_post') { const title = $('#an_t').value.trim(); if (!title) return toast('Write a title', true);
-await q(sb.from('announcements').insert({ title, body: $('#an_b').value.trim(), office: $('#an_o').value, pinned: $('#an_p').checked, created_by: S.me.id })); toast('📢 Posted'); render(); }
+const team = !!b.dataset.team; await q(sb.from('announcements').insert({ title, body: $('#an_b').value.trim(), office: team ? '' : $('#an_o').value, pinned: $('#an_p').checked, created_by: S.me.id, ...(team ? { team_of: S.me.id } : {}) })); toast(team ? '📢 Posted to your team' : '📢 Posted'); render(); }
 if (b.dataset.anseen) { await q(sb.from('announcement_reads').insert({ ann_id: b.dataset.anseen, employee_id: S.me.id })); await refreshBadges(); render(); }
 if (b.dataset.anpin) { await q(sb.from('announcements').update({ pinned: b.dataset.v === '1' }).eq('id', b.dataset.anpin)); render(); }
 if (b.dataset.andel) { if (!confirm('Delete this announcement?')) return; await q(sb.from('announcements').delete().eq('id', b.dataset.andel)); render(); }
-if (b.dataset.anwho) { const a = S.ann.find(x => x.id === b.dataset.anwho); const aud = S.emps.filter(x => x.active && x.auth_uid && (!a.office || x.office === a.office));
+if (b.dataset.anwho) { const a = S.ann.find(x => x.id === b.dataset.anwho); const aud = annAudience(a);
 dlg('Who has seen it', `<div class="grid2"><div><h4>✓ Seen</h4>${aud.filter(x => annSeen(a, x.id)).map(x => `<div>${esc(x.name)}</div>`).join('') || '<p class="muted small">Nobody yet</p>'}</div><div><h4>Not yet</h4>${aud.filter(x => !annSeen(a, x.id)).map(x => `<div>${esc(x.name)}</div>`).join('') || '<p class="muted small">Everyone has seen it 🎉</p>'}</div></div>`, ''); }
 } catch (er) { toast(errMsg(er), true); }
 });
