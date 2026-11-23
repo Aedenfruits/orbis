@@ -281,6 +281,26 @@ tr.click{cursor:pointer}tr.click:hover td{background:#f6f8fc}
 .wpd{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#f3fbf6}.wpd .oi{width:16px;height:16px;color:#1f9d55;flex:none}.wpd span{flex:1;min-width:0}
 .wpdet{margin-top:10px}.wpdet summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--navy);padding:4px 0}
 small.red{color:#d33}
+.pb{border-radius:28px;padding:30px 34px 26px;background:linear-gradient(160deg,#1f2a55,#2e2257);color:#fff;box-shadow:0 30px 60px -24px rgba(29,43,83,.55);max-width:640px;width:100%;margin:0 auto}
+.pbh{display:flex;justify-content:space-between;align-items:center;gap:12px}.pbh .alg.w{height:30px;margin:0}.pbd{font-size:15px;color:rgba(255,255,255,.7);white-space:nowrap}
+.pbhi{margin:24px 0 2px;font-size:16px;color:rgba(255,255,255,.72)}
+.pbbig{font-size:clamp(48px,10vw,72px);font-weight:800;letter-spacing:-2px;line-height:1.05;font-variant-numeric:tabular-nums}.pbbig small{font-size:.46em;color:rgba(255,255,255,.5);margin-left:8px;letter-spacing:0}
+.pbt{position:relative;height:14px;border-radius:9px;background:rgba(255,255,255,.12);margin:28px 0 8px}
+.pbf{position:absolute;top:0;bottom:0;border-radius:9px;background:linear-gradient(90deg,#ff3d8b,#a855f7);transition:width .6s,left .6s}
+.pbdot{position:absolute;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(255,61,139,.35);transition:left .6s}
+.pb.done .pbdot{box-shadow:0 0 0 6px rgba(52,211,153,.35)}
+.pbl3{display:flex;justify-content:space-between;font-size:13px;color:rgba(255,255,255,.6)}
+.pbtl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0 20px}.pbtl>div{border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);padding:13px 16px}
+.pbtl small{display:block;font-size:13px;color:rgba(255,255,255,.62)}.pbtl b{font-size:20px;white-space:nowrap}.pbl{font-style:normal;font-size:12px;color:#fbbf24;font-weight:600}
+.pbb{display:flex;gap:12px}.pbb button{border:0;border-radius:18px;padding:18px;font:inherit;font-size:18px;font-weight:800;color:#fff;cursor:pointer;transition:transform .15s,filter .15s}
+.pbbr{flex:1;background:rgba(255,255,255,.1)}.pbgo{flex:1.4;background:linear-gradient(90deg,#e8246f,#ff5c9a);box-shadow:0 12px 26px -10px rgba(255,61,139,.7)}
+.pb.in .pbgo{flex:1;background:linear-gradient(90deg,#10b981,#34d399);box-shadow:0 12px 26px -10px rgba(16,185,129,.7)}
+.pbb button:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.07)}.pbb button:disabled{opacity:.45;cursor:not-allowed}
+.pbdone{border-radius:18px;background:rgba(52,211,153,.15);color:#6ee7b7;text-align:center;padding:16px;font-weight:700;font-size:17px}
+.punch>.pb{margin-top:10px}.punch>.devline{text-align:center}.pbb button{white-space:nowrap}.pb.done .pbbig small{display:none}
+.pboff{margin-top:12px;font-size:13px;color:rgba(255,255,255,.6);text-align:center}
+.pb .mobnote{margin:0}
+@media (max-width:520px){.pb{padding:22px 18px;border-radius:22px}.pbtl{gap:8px}.pbtl>div{padding:10px 11px}.pbtl b{font-size:16px}.pbb button{font-size:16px;padding:15px}.pbd{font-size:13px}}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -362,7 +382,7 @@ else if (it.k === 'bend') await rpc('break_end', { p_token: it.tok, p_at: it.at 
 lsSet('queue', [...queueAll().filter(it => it.emp && it.emp !== S.me.id), ...rest]);
 if (rest.length < qq.length) { toast('✓ Offline punches synced'); await loadToday(); render(); }
 }
-const isNetErr = e => /fetch|network|Failed to|NetworkError|Load failed/i.test(errMsg(e)) || !navigator.onLine;
+const isNetErr = e => !navigator.onLine || (!e?.code && /Failed to fetch|NetworkError|Load failed|fetch failed|Network request failed/i.test(errMsg(e)));
 addEventListener('online', flushQueue); setInterval(flushQueue, 30000);
 async function loadCore() {
 const uid = S.session.user.id;
@@ -618,7 +638,6 @@ const end = () => { if (!st) return; const p = st.dx / st.max; st = null; k.clas
 if (p > .85) { kn.style.transform = `translateX(${k.getBoundingClientRect().width - 84}px)`; k.style.setProperty('--p', '1'); stationAction('punch'); }
 else { k.classList.add('back'); kn.style.transform = ''; k.style.setProperty('--p', '0'); k.classList.remove('arm'); setTimeout(() => k.classList.remove('back'), 350); if (p < .05) { k.classList.add('hint'); setTimeout(() => k.classList.remove('hint'), 1300); } } };
 k.addEventListener('pointerup', end); k.addEventListener('pointercancel', end);
-k.addEventListener('keydown', e => { if (e.key === 'Enter' && !k.classList.contains('done')) stationAction('punch'); });
 }
 function celebrate(kind, at, offline) {
 const el = document.createElement('div'); el.className = 'cel';
@@ -3666,4 +3685,80 @@ const _bootSess = boot; boot = async function () { const r = await _bootSess.app
 setInterval(() => { if (document.visibilityState === 'visible') sessCheck(); }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sessCheck(); });
 boot();
+{
+const _sa = stationAction;
+const durTxt = ms => { const m = Math.max(0, Math.floor(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
+stationAction = async function (kind, arg) {
+const a = S.today;
+if (kind === 'punch' && a?.in_at && !a.out_at && !S.outOk) {
+const end = shiftOf()?.end || '18:00', n = ist(Date.now()), now = pad(n.getHours()) + ':' + pad(n.getMinutes());
+if (now < end) {
+const brk = (S.breaks || []).reduce((s, b) => s + (new Date(b.end_at || Date.now()) - new Date(b.start_at)), 0);
+const [eh, em] = end.split(':').map(Number);
+dlg('Check out now?', `<p style="font-size:16px;margin:0 0 8px">You have worked <b>${durTxt(Date.now() - new Date(a.in_at) - brk)}</b> today.</p><p class="muted" style="margin:0">Your shift ends at <b>${eh % 12 || 12}:${pad(em)} ${eh >= 12 ? 'PM' : 'AM'}</b>. Once you check out you can't check in again today.</p>`,
+`<button class="btn pri" id="outYes" data-fast>Yes, check out</button>`);
+$('#outYes').onclick = () => { closeDlg(); S.outOk = true; _sa('punch').finally(() => { S.outOk = false; }); };
+$('#dlg').addEventListener('close', async () => { if (S.view === 'punch' && !S.outOk) { $('#main').innerHTML = await VIEWS.punch(); after(); } }, { once: true });
+return;
+}
+}
+return _sa(kind, arg);
+};
+}
+const f12 = t => { const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}:${pad(m)} ${h >= 12 ? 'PM' : 'AM'}`; };
+const durHM = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(s / 3600)}h ${pad(Math.floor(s / 60) % 60)}m`; };
+function pbBrkMs() { return (S.breaks || []).reduce((s, b) => s + (new Date(b.end_at || Date.now()) - new Date(b.start_at)), 0); }
+function pbWorked() { const a = S.today; if (!a?.in_at) return 0; return (a.out_at ? new Date(a.out_at) : new Date()) - new Date(a.in_at) - pbBrkMs(); }
+function pbLine() {
+const a = S.today, sh = shiftOf(), s0 = toMin(sh.start || '09:00'), e0 = toMin(sh.end || '18:00');
+const now = toMin(hm(new Date())), iM = a?.in_at ? toMin(hm(a.in_at)) : null, oM = a?.out_at ? toMin(hm(a.out_at)) : null;
+const lo = Math.min(s0, iM ?? s0), hi = Math.max(e0, oM ?? (iM != null ? now : e0)), P = m => Math.max(0, Math.min(100, (m - lo) / (hi - lo) * 100));
+const mid = Math.round((lo + hi) / 2 / 60) * 60;
+return { fillL: iM != null ? P(iM) : 0, fillR: iM != null ? P(oM ?? now) : 0, dot: P(oM ?? now), labs: [lo, mid, hi].map(m => f12(`${pad(Math.floor(m / 60))}:${pad(m % 60)}`)), left: e0 - now };
+}
+VIEWS.punch = async () => {
+await loadToday();
+const a = S.today, ob = openBreak(), t = todayStr(), d = new Date();
+const state = !a ? 'in' : !a.out_at ? 'out' : 'done';
+const cfg = brCfg(), allow = cfg.reduce((s, b) => s + b.min, 0), used = breakUsedMin();
+const late = a?.in_at && hm(a.in_at) > lateLim(), sh = shiftOf(), dev = S.device, first = esc(S.me.name.split(' ')[0]);
+const devLine = dev ? `<span class="chip good">🖥️ Registered computer · ${esc(dev.name || '')}${dev.office ? ' · ' + esc(dev.office) : ''}</span>`
+: onMobile() ? `<span class="chip">📱 Phone · check in & out on an office computer</span>` : `<span class="chip crit">🖥️ This computer isn't registered for punching</span>${isAdmin() ? ' <a class="chip good" href="#setup">Register it →</a>' : '<div class="small" style="opacity:.75;margin-top:6px">Ask HR to register it, or use your own office computer.</div>'}`;
+const mob = !dev && onMobile() && state !== 'done', L = pbLine();
+const eve = ist(Date.now()).getHours(), gr = eve < 12 ? 'Good morning' : eve < 17 ? 'Good afternoon' : 'Good evening';
+const head = state === 'in' ? `${gr}, ${first} — ready to start?` : state === 'out' ? (ob ? `${first}, you're on a break — work time paused` : `Hi ${first} — you've been working`) : `Well done, ${first} — you worked`;
+const big = state === 'in' ? `<span id="pbBig" data-k="clock">${f12(hm(d))}</span>` : `<span id="pbBig" data-k="work">${durHM(pbWorked())}</span><small id="pbSec">${pad(Math.floor(pbWorked() / 1000) % 60)}s</small>`;
+const tiles = state === 'in'
+? [['Shift', `${f12(sh.start || '09:00').replace(':00', '')} – ${f12(sh.end || '18:00').replace(':00', '')}`], ['Late after', f12(lateLim())], ['Breaks', `${allow} min`]]
+: [['In', `${hm(a.in_at)}${late ? ' <em class="pbl">late</em>' : ''}`], ['Break', `${used} / ${allow} min`],
+state === 'done' ? ['Out', hm(a.out_at)] : ['Left', `<span id="pbLeft">${L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000)}</span>`]];
+const left = cfg.filter(b => !S.breaks.some(x => x.kind === b.k));
+const nodev = !dev ? 'data-nodev="1"' : '';
+const btns = mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Here you can see today's times, apply leave, check tasks, payslips and news.</span></div>`
+: state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${nodev}>Check In →</button></div>`
+: state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}<button class="pbgo" id="pbGo" ${nodev} ${ob ? 'disabled title="End your break first"' : ''}>Check Out →</button></div>`
+: `<div class="pbdone">✓ Done for today · see you tomorrow</div>`;
+afterFns.push(startTicker, () => { const g = $('#pbGo'); if (g) g.onclick = () => { if (g.dataset.nodev) return toast(noDevMsg(), true); stationAction('punch'); }; });
+return `<div class="punch">
+<div class="pb ${state}">
+<div class="pbh"><div class="alg w">${LOGO}</div><div class="pbd">${DOW[d.getDay()]}, ${fmtD(t)} · <span id="clk">${hm(d)}</span><small id="clks" hidden></small></div></div>
+<div class="pbhi">${head}</div>
+<div class="pbbig">${big}</div>
+<div class="pbt"><div class="pbf" style="left:${L.fillL}%;width:${Math.max(0, L.fillR - L.fillL)}%"></div>${state === 'in' ? '' : `<div class="pbdot" style="left:${L.dot}%"></div>`}</div>
+<div class="pbl3"><span>${L.labs[0]}</span><span>${L.labs[1]}</span><span>${L.labs[2]}</span></div>
+<div class="pbtl">${tiles.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join('')}</div>
+${btns}
+${a?.offline ? '<div class="pboff">⏳ includes a punch saved offline</div>' : ''}
+</div>
+${mob ? '' : `<div class="devline">${devLine}</div>`}
+${state === 'out' && (ob || S.brPick) ? breakPanel(ob, cfg) : ''}
+</div>`;
+};
+{ const _tk = startTicker; startTicker = function () { _tk(); clearInterval(S.pbT); S.pbT = setInterval(() => {
+const b = $('#pbBig'); if (!b) { clearInterval(S.pbT); return; }
+if (b.dataset.k === 'clock') b.textContent = f12(hm(new Date()));
+else { const w = pbWorked(); b.textContent = durHM(w); const s = $('#pbSec'); if (s) s.textContent = pad(Math.floor(w / 1000) % 60) + 's'; }
+const L = pbLine(), f = $('.pbf'), dt = $('.pbdot'); if (f) { f.style.left = L.fillL + '%'; f.style.width = Math.max(0, L.fillR - L.fillL) + '%'; } if (dt) dt.style.left = L.dot + '%';
+const lf = $('#pbLeft'); if (lf) lf.textContent = L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000);
+}, 1000); }; }
 </script></body></html>
