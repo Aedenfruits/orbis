@@ -397,6 +397,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .cropbar{display:flex;align-items:center;gap:8px;margin-top:10px;width:200px}.cropbar input{flex:1;padding:0}.cropbar span{font-weight:800;color:#64748b}
 .phcol{display:flex;flex-direction:column}
 .mav{display:inline-flex;line-height:0;width:max-content;height:max-content;align-self:center}.ava{line-height:1}.ava img{display:block;width:100%;height:100%;object-fit:cover}
+.pbdf{display:block;font-style:normal;font-size:12px;font-weight:700;margin-top:3px;white-space:nowrap}.pbdf.bad{color:#fbbf24}.pbdf.good{color:#6ee7b7}.pbdf.ok{color:#cbd5e1}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -3843,8 +3844,8 @@ const head = state === 'in' ? `${gr}, ${first} — worked today` : state === 'ou
 const big = state === 'in' ? `<span id="pbBig" data-k="none">0h 00m</span><small>not started</small>` : `<span id="pbBig" data-k="work">${durHM(pbWorked())}</span><small id="pbSec">${pad(Math.floor(pbWorked() / 1000) % 60)}s</small>`;
 const tiles = state === 'in'
 ? [['Shift', `${f12(sh.start || '09:00').replace(':00', '')} – ${f12(sh.end || '18:00').replace(':00', '')}`], ['Late after', f12(lateLim())], ['Breaks', `${allow} min`]]
-: [['In', `${hm(a.in_at)}${late ? ' <em class="pbl">late</em>' : ''}`], ['Break', `${used} / ${allow} min`],
-state === 'done' ? ['Out', hm(a.out_at)] : ['Left', `<span id="pbLeft">${L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000)}</span>`]];
+: [['In', `${hm(a.in_at)}${inDiff(a.in_at, sh)}`], ['Break', `${used} / ${allow} min`],
+state === 'done' ? ['Out', `${hm(a.out_at)}${outDiff(a.out_at, sh)}`] : ['Left', `<span id="pbLeft">${L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000)}</span>`]];
 const left = cfg.filter(b => !S.breaks.some(x => x.kind === b.k));
 const nodev = !dev && !PH ? 'data-nodev="1"' : '';
 const btns = PC ? (state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'} ${!dev ? 'data-nodevb="1"' : ''}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}</div><div class="pbnote">📱 Check out on your phone</div>`
@@ -4301,4 +4302,9 @@ $('#cropZ').oninput = e => zoomTo(Number(e.target.value)); $('#cropR').onclick =
 function cropOut() { const c2 = S.crop, k = 480 / c2.W, s = c2.base * c2.z, c = document.createElement('canvas'); c.width = 480; c.height = 600;
 const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.fillStyle = '#fff'; x.fillRect(0, 0, 480, 600); x.drawImage(c2.img, c2.x * k, c2.y * k, c2.iw * s * k, c2.ih * s * k);
 return new Promise((ok, no) => c.toBlob(b => b ? ok(b) : no(new Error('crop')), 'image/jpeg', 0.9)); }
+const _dmin = m => m >= 60 ? `${Math.floor(m / 60)}h ${pad(m % 60)}m` : `${m} min`;
+function inDiff(at, sh) { const d = toMin(hm(at)) - toMin(sh?.start || '09:00'), g = Number(sh?.grace) || 0;
+if (d > g) return `<em class="pbdf bad">${_dmin(d)} late</em>`; if (d > 0) return `<em class="pbdf ok">${d} min · in grace</em>`; if (d < 0) return `<em class="pbdf good">${_dmin(-d)} early</em>`; return '<em class="pbdf good">on time</em>'; }
+function outDiff(at, sh) { const d = toMin(hm(at)) - toMin(sh?.end || '18:00');
+if (d < 0) return `<em class="pbdf bad">${_dmin(-d)} early</em>`; if (d > 0) return `<em class="pbdf good">+${_dmin(d)} extra</em>`; return '<em class="pbdf good">on time</em>'; }
 </script></body></html>
