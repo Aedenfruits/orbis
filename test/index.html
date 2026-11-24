@@ -569,7 +569,7 @@ $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div>
 <button class="btn pri wide" type="submit">Sign in</button><div id="l_msg" class="msg">${msg ? esc(msg) : ''}</div>
 <p class="small muted">Forgot your password? Ask HR to reset it.</p></form>
 <p class="small muted center" id="fsWrap" style="display:none">First time setting up ORBIS? <a href="#" id="firstSetup">Create the first HR account</a></p></div>`;
-$('#loginF').onsubmit = async e => {
+$('#loginF').onsubmit = async e => { introUnlock();
 e.preventDefault(); const b = e.submitter; b.disabled = true; $('#l_msg').textContent = 'Signing in…';
 const em = codeToEmail($('#l_code').value), lp = $('#l_pw').value; let { error } = await sb.auth.signInWithPassword({ email: em, password: PW(lp) });
 b.disabled = false; if (error) { $('#l_msg').textContent = 'Wrong employee code or password.'; const cd = $('#loginF'); cd.classList.remove('shake'); void cd.offsetWidth; cd.classList.add('shake'); return; }
@@ -4597,13 +4597,14 @@ if (e.target.closest('#emTest')) { const b = e.target.closest('#emTest'); b.disa
 const INTRO_MUSIC = location.pathname.startsWith('/test') ? '/test/intro.mp3' : '';
 { const _spM = splash; splash = async function () {
 if (!INTRO_MUSIC) return _spM.apply(this, arguments);
-const au = new Audio(INTRO_MUSIC); au.volume = 0; au.loop = false; let fadeI;
+const au = S.introAu || new Audio(INTRO_MUSIC); S.introAu = null; au.volume = 0; au.loop = false; let fadeI;
 const fadeTo = (v, ms, then) => { clearInterval(fadeI); const st = au.volume, t0 = performance.now(); fadeI = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / ms); au.volume = Math.max(0, Math.min(1, st + (v - st) * k)); if (k >= 1) { clearInterval(fadeI); then && then(); } }, 40); };
 const play = () => au.play().then(() => { fadeTo(0.55, 1200); setBtn(true); }).catch(() => setBtn(false));
 const setBtn = on => { const b = document.getElementById('muBtn'); if (b) { b.textContent = on ? '🔊' : '🔈 Music'; b.dataset.on = on ? '1' : ''; } };
 const p = _spM.apply(this, arguments);
 setTimeout(() => { const box = document.querySelector('.authbox.splash'); if (!box) return; box.insertAdjacentHTML('beforeend', '<button id="muBtn" class="mubtn" type="button" title="Music on / off">🔈 Music</button>');
-document.getElementById('muBtn').onclick = ev => { ev.stopPropagation(); if (ev.currentTarget.dataset.on) { fadeTo(0, 400, () => au.pause()); setBtn(false); lsSet('musicOff', true); } else { lsSet('musicOff', false); play(); } }; if (!lsGet('musicOff', false)) play(); }, 30);
+document.getElementById('muBtn').onclick = ev => { ev.stopPropagation(); if (ev.currentTarget.dataset.on) { fadeTo(0, 400, () => au.pause()); setBtn(false); lsSet('musicOff', true); } else { lsSet('musicOff', false); play(); } }; if (!lsGet('musicOff', false)) { play(); box.addEventListener('pointerdown', ev => { if (au.paused && !ev.target.closest('.gobtn,#muBtn') && !lsGet('musicOff', false)) play(); }); } }, 30);
 try { await p; } finally { fadeTo(0, 1500, () => { au.pause(); au.src = ''; }); }
 }; }
+function introUnlock() { if (!INTRO_MUSIC || S.introAu || lsGet('musicOff', false)) return; try { const a = new Audio(INTRO_MUSIC); a.volume = 0; a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { }); S.introAu = a; } catch { } }
 </script></body></html>
