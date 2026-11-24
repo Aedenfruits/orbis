@@ -930,7 +930,7 @@ const b = e.target.closest('[data-tm],[data-dl],[data-dx],[data-tday]'); if (!b)
 try {
 if (b.dataset.tm) { S.tmTab = b.dataset.tm; render(); }
 if (b.dataset.tday) { S.tmDay = addDays(S.tmDay || todayStr(), Number(b.dataset.tday)); render(); }
-if (b.dataset.dl) { let note = null; if (b.dataset.dl === 'rejected') { note = await askReason('Reject leave', b.dataset.id, 'leave_requests'); if (!note) return; } await rpc('decide_leave', { p_id: b.dataset.id, p_status: b.dataset.dl, p_note: note }); toast(await chainToast('leave_requests', b.dataset.id, b.dataset.dl, 'Leave approved ✓')); render(); }
+if (b.dataset.dl) { let note = null; if (b.dataset.dl === 'rejected') { note = await askReason('Reject leave', b.dataset.id, 'leave_requests'); if (!note) return; } await rpc('decide_leave', { p_id: b.dataset.id, p_status: b.dataset.dl, p_note: note }); toast(await chainToast('leave_requests', b.dataset.id, b.dataset.dl, 'Leave approved ✓')); refreshBadges().then(() => S.view === 'team' && render()); render(); }
 if (b.dataset.dx) { let m = Number(b.dataset.m || 0); if (b.dataset.dx === 'approved') { const v = prompt('Approve how many minutes?', m); if (v === null) return; m = Number(v) || m; } await rpc('decide_extra', { p_id: b.dataset.id, p_status: b.dataset.dx, p_minutes: m }); toast('Extra break ' + b.dataset.dx); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
@@ -1648,7 +1648,7 @@ const b = e.target.closest('[data-fix],[data-fxcancel],[data-dfx]'); if (!b) ret
 try {
 if (b.dataset.fix !== undefined) fixDlg(b.dataset.fix);
 if (b.dataset.fxcancel) { await q(sb.from('punch_fixes').delete().eq('id', b.dataset.fxcancel)); toast('Request cancelled'); render(); }
-if (b.dataset.dfx) { let note = null; if (b.dataset.dfx === 'rejected') { note = await askReason('Reject request', b.dataset.id, 'punch_fixes'); if (!note) return; } await rpc('decide_fix', { p_id: b.dataset.id, p_status: b.dataset.dfx, p_note: note }); toast(await chainToast('punch_fixes', b.dataset.id, b.dataset.dfx, '✓ Approved — attendance updated')); render(); }
+if (b.dataset.dfx) { let note = null; if (b.dataset.dfx === 'rejected') { note = await askReason('Reject request', b.dataset.id, 'punch_fixes'); if (!note) return; } await rpc('decide_fix', { p_id: b.dataset.id, p_status: b.dataset.dfx, p_note: note }); toast(await chainToast('punch_fixes', b.dataset.id, b.dataset.dfx, '✓ Approved — attendance updated')); refreshBadges().then(() => S.view === 'team' && render()); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
 async function salaryRows(ym) {
