@@ -1816,8 +1816,8 @@ async function refreshBadges() {
 const b = {};
 try { await loadNews(); b.news = S.ann.filter(a => !annSeen(a)).length; } catch { }
 try { const ids = isAdmin() ? S.emps.filter(e => e.id !== S.me.id).map(e => e.id) : S.team;
-if (ids.length) { const [lv, fx, xb] = await Promise.all([q(sb.from('leave_requests').select('employee_id').eq('status', 'pending')), q(sb.from('punch_fixes').select('employee_id').eq('status', 'pending')).catch(() => []), q(sb.from('extra_breaks').select('employee_id').eq('status', 'pending')).catch(() => [])]);
-b.team = [...lv, ...fx, ...xb].filter(x => ids.includes(x.employee_id)).length; } } catch { }
+if (ids.length) { const [lv, fx, xb] = await Promise.all([q(sb.from('leave_requests').select('employee_id,status,chain,step').eq('status', 'pending')), q(sb.from('punch_fixes').select('employee_id,status,chain,step').eq('status', 'pending')).catch(() => []), q(sb.from('extra_breaks').select('employee_id').eq('status', 'pending')).catch(() => [])]);
+b.team = [...lv, ...fx].filter(x => ids.includes(x.employee_id) && chainMine(x)).length + xb.filter(x => ids.includes(x.employee_id)).length; } } catch { }
 S.badge = b; paintBadges(); return b;
 }
 function paintBadges() { document.querySelectorAll('nav a').forEach(a => { const k = a.getAttribute('href').slice(1), n = (S.badge || {})[k]; let em = a.querySelector('em.nb'); if (n) { if (!em) { em = document.createElement('em'); em.className = 'nb'; a.appendChild(em); } em.textContent = n; } else if (em) em.remove(); }); }
