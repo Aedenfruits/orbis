@@ -376,6 +376,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .happ{border:1px dashed #cfd3e2;border-radius:99px;padding:1px 8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:#9aa0b5}.happ.on{border:1px solid #16a34a;background:#dcfce7;color:#15803d}
 .hcard2{align-items:flex-start;max-width:210px;min-width:170px}.hcard2.appr{border-color:#86efac}.hcard2.dim{opacity:.3}.hcard2.path{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18)}.hcard2.pstart{background:#eff6ff}
 @media (max-width:700px){.hpr{grid-template-columns:1fr;gap:4px}}
+.pumiss input,.pumiss select{border-color:#fda4af;background:#fff7f8}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -3464,7 +3465,7 @@ S.myLetters = reqs; const d = slip?.data || {}, row = (l, v) => `<div class="pfr
 return `<div class="stack narrow"><div class="card pfhead">${avatarHTML(e, 'lg')}<div><h2 style="margin:0">${esc(e.name)}</h2><div class="muted">${esc(e.desig || '')}${e.dept ? ' · ' + esc(e.dept) : ''}</div><div class="small">${esc(e.code)}${e.office ? ' · ' + esc(e.office) : ''}</div></div><button class="btn sm" data-photo="${e.id}">${ico('photo')} Photo</button></div>
 <div class="card"><h3>Work</h3><div class="pfg">${row('Employee code', esc(e.code))}${row('Joined', e.join_date ? fmtD(e.join_date) + (yrs ? ` · ${yrs} yr${yrs > 1 ? 's' : ''}` : '') : '')}${row('Reports to', esc(empById(e.reports_to)?.name || ''))}${row('Department', esc(e.dept || ''))}${row('Office', esc(e.office || ''))}${row('Shift', `${esc(sh.name)} · ${sh.start}–${sh.end}`)}${row('Weekly off', weekOffs(e).map(i => DOWN[i]).join(', '))}${row('Access', e.access === 'hr' ? 'HR' : e.access === 'md' ? 'MD' : (S.team || []).length ? 'Manager' : 'Employee')}</div></div>
 <div class="card"><h3>Pay & statutory</h3>${slip ? `<div class="pfg">${row('UAN (PF)', esc(d.uan || ''))}${row('ESI number', esc(d.esino || ''))}${row('PAN', esc(d.pan || ''))}${row('Bank account', d.acct4 ? '•••• ' + esc(d.acct4) + (d.bank ? ' · ' + esc(d.bank) : '') : '')}</div><p class="small muted">As on your ${esc(monthName(slip.month))} payslip.</p>` : '<p class="small muted">Shown after your first payslip is published.</p>'}</div>
-<div class="card"><div class="row"><h3>Something wrong?</h3></div><p class="small muted">Wrong name, phone, bank, address or emergency contact? Tell HR and they will update it.</p><button class="btn" id="pfFix">${ico('edit')} Ask HR to correct my details</button></div>
+${myDetailsCard()}
 <div class="card"><div class="row"><h3>Letters from HR</h3><button class="btn sm pri" id="ltReq">＋ Request a letter</button></div>
 ${reqs.length ? reqs.map(r => `<div class="li"><div><b>${esc(LTR[r.kind][0])}</b><small>${r.purpose ? esc(r.purpose) + ' · ' : ''}asked ${fmtD(ymd(r.created_at))}${r.note ? ' · ' + esc(r.note) : ''}</small></div>${r.status === 'issued' && r.data?.body ? `<button class="btn sm pri" data-ltopen="${r.id}">${ico('download')} Open</button>` : `<span class="chip ${r.status === 'rejected' ? 'bad' : 'warn'}">${r.status === 'rejected' ? 'Not issued' : 'Waiting for HR'}</span>`}</div>`).join('') : '<p class="small muted">Need a salary certificate for a bank loan, or an employment letter? Request it here — HR approves and you can download it on company letterhead.</p>'}</div></div>`;
 };
@@ -4093,4 +4094,83 @@ if (e.target.closest('#hPathX')) { e.preventDefault(); S.hierPath = null; render
 const hf = e.target.closest('#hHrFinal'); if (hf) { try { await saveSettings({ hrFinal: hf.checked }); toast(hf.checked ? 'HR gives the final approval' : 'The last manager\'s approval is final'); render(); } catch (er) { toast(errMsg(er), true); } return; }
 if (!S.hierSel) { const c = e.target.closest('[data-hid]'); if (c && !e.target.closest('button')) { S.hierPath = S.hierPath === c.dataset.hid ? null : c.dataset.hid; render(); } }
 });
+const PU_F = [['Personal', ['mobile', 'email', 'dob', 'gender', 'blood', 'marital', 'relname']], ['Address', ['caddr', 'paddr']], ['Emergency contact', ['ename', 'erel', 'ephone']], ['ID numbers', ['pan', 'aadhaar', 'uan', 'esi']], ['Salary bank account', ['bank', 'acct', 'ifsc']]];
+const PU_NEED = ['mobile', 'dob', 'blood', 'caddr', 'ename', 'ephone', 'pan', 'bank', 'acct', 'ifsc'];
+const puLbl = k => (IMP_COLS.find(c => c[0] === k) || [k, k])[1].replace(/ \((.*)\)$/, m => /last 4/.test(m) ? ' (last 4 digits)' : '');
+const puHint = k => (IMP_COLS.find(c => c[0] === k) || [])[4] || '';
+const PU_OPTS = { gender: ['Male', 'Female', 'Other'], marital: ['Single', 'Married', 'Divorced', 'Widowed'], blood: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] };
+function puMissing(p) { return PU_NEED.filter(k => !String(p?.[k] ?? '').trim()); }
+function myDetailsCard() {
+const m = S.me.info_missing || [];
+return `<div class="card"><div class="row"><h3>My details</h3><button class="btn sm pri" id="puOpen">${ico('edit')} ${m.length ? 'Complete my details' : 'Update my details'}</button></div>
+${m.length ? `<p class="msg" style="margin:8px 0">⚠️ HR needs these from you: ${m.map(k => `<b>${esc(puLbl(k))}</b>`).join(', ')}</p>` : '<p class="small muted">Changed phone, address, bank account or emergency contact? Update it here — HR checks and saves it.</p>'}
+<div id="puMine" class="small"></div></div>`;
+}
+async function puMineLoad() { const box = $('#puMine'); if (!box) return; try { const r = await q(sb.from('profile_updates').select('id,fields,status,note,created_at').eq('employee_id', S.me.id).order('created_at', { ascending: false }).limit(5));
+box.innerHTML = r.map(x => `<div class="li"><div><b>${x.fields.map(puLbl).join(', ')}</b><small>sent ${fmtD(ymd(x.created_at))}${x.note ? ' · ' + esc(x.note) : ''}</small></div>${x.status === 'pending' ? `<span class="chip warn">⏳ With HR</span>` : x.status === 'approved' ? '<span class="chip good">✓ Saved</span>' : '<span class="chip crit">Not accepted</span>'}</div>`).join(''); } catch { } }
+{ const _pfV = VIEWS.profile; VIEWS.profile = async () => { const h = await _pfV(); afterFns.push(puMineLoad); return h; }; }
+async function puEncrypt(obj) {
+const pub = await crypto.subtle.importKey('jwk', C().vaultPub, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']);
+const raw = rnd(32), k = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt']);
+const d = await seal(k, new TextEncoder().encode(JSON.stringify(obj))), w = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, pub, raw); raw.fill(0);
+return JSON.stringify({ v: 1, k: b64e(w), d: b64e(d) });
+}
+async function puPriv() {
+if (S.vpriv) return S.vpriv; if (!S.dek) throw new Error('Unlock the vault first (Documents → vault password)');
+const pk = await unseal(S.dek, b64d(C().vaultPrivS)); S.vpriv = await crypto.subtle.importKey('pkcs8', pk, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']); pk.fill(0); return S.vpriv;
+}
+async function puDecrypt(blob) { const o = JSON.parse(blob), priv = await puPriv(); const raw = new Uint8Array(await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, priv, b64d(o.k)));
+const k = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']); raw.fill(0); return JSON.parse(new TextDecoder().decode(await unseal(k, b64d(o.d)))); }
+async function ensureVaultKeys() {
+if (S.vkBusy || !S.dek || !isAdmin() || (C().vaultPub && C().vaultPrivS)) return; S.vkBusy = true;
+try { const kp = await crypto.subtle.generateKey({ name: 'RSA-OAEP', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' }, true, ['encrypt', 'decrypt']);
+const pub = await crypto.subtle.exportKey('jwk', kp.publicKey), pk = new Uint8Array(await crypto.subtle.exportKey('pkcs8', kp.privateKey));
+const vaultPrivS = b64e(await seal(S.dek, pk)); pk.fill(0); await saveSettings({ vaultPub: { kty: pub.kty, n: pub.n, e: pub.e, alg: pub.alg, ext: true }, vaultPrivS }); } catch (er) { console.warn('vault keys', er); } finally { S.vkBusy = false; }
+}
+{ const _rv = render; render = function () { const r = _rv.apply(this, arguments); if (S.dek && isAdmin() && !(C().vaultPub && C().vaultPrivS)) ensureVaultKeys(); if (!S.dek) S.vpriv = null; return r; }; }
+{ const _pp = privPut; privPut = async function (empId, obj) { const r = await _pp(empId, obj); try { await q(sb.from('employees').update({ info_missing: puMissing(obj) }).eq('id', empId)); const e = empById(empId); if (e) e.info_missing = puMissing(obj); } catch { } return r; }; }
+function puDlg() {
+if (!C().vaultPub) return dlg('My details', '<p>HR has not switched this on yet. Please ask HR to open ORBIS and unlock the document vault once.</p>', '');
+const m = new Set(S.me.info_missing || []);
+const inp = k => PU_OPTS[k] ? `<select data-pu="${k}"><option value="">—</option>${PU_OPTS[k].map(o => `<option>${o}</option>`).join('')}</select>`
+: `<input data-pu="${k}" ${k === 'dob' ? 'type="date"' : /mobile|ephone/.test(k) ? 'inputmode="tel" maxlength="10"' : k === 'aadhaar' ? 'inputmode="numeric" maxlength="4"' : k === 'acct' ? 'inputmode="numeric"' : k === 'email' ? 'type="email"' : ''} placeholder="${esc(puHint(k))}" autocomplete="off">`;
+dlg('My details', `<p class="small muted">Fill only what is missing or has changed — leave the rest empty. Your details are locked (encrypted) on this phone/computer before sending; only HR can open them.</p>
+${[...(m.size ? [['⚠️ Needed by HR', [...m]]] : []), ...PU_F.map(([g, ks]) => [g, ks.filter(k => !m.has(k))]).filter(x => x[1].length)].map(([g, ks]) => `<h4 style="margin:14px 0 6px">${g}</h4><div class="grid2">${ks.map(k => `<label class="${m.has(k) ? 'pumiss' : ''}">${esc(puLbl(k))}${m.has(k) ? ' <span class="chip crit" style="font-size:10px;padding:1px 6px">needed</span>' : ''}${inp(k)}</label>`).join('')}</div>`).join('')}`,
+`<button class="btn pri" id="puSend">Send to HR</button>`);
+$('#puSend').onclick = async () => {
+const v = {}; document.querySelectorAll('[data-pu]').forEach(i => { const x = i.value.trim(); if (x) v[i.dataset.pu] = i.dataset.pu === 'dob' ? x.split('-').reverse().join('-') : x; });
+if (!Object.keys(v).length) return toast('Fill at least one detail', true);
+if (v.pan) { v.pan = v.pan.toUpperCase(); if (!/^[A-Z]{5}\d{4}[A-Z]$/.test(v.pan)) return toast('PAN looks wrong — 5 letters, 4 numbers, 1 letter', true); }
+if (v.ifsc) { v.ifsc = v.ifsc.toUpperCase(); if (!/^[A-Z]{4}0[A-Z0-9]{6}$/.test(v.ifsc)) return toast('IFSC looks wrong — e.g. FDRL0001234', true); }
+for (const k of ['mobile', 'ephone']) if (v[k] && !/^\d{10}$/.test(v[k])) return toast(puLbl(k) + ' must be 10 digits', true);
+if (v.aadhaar && !/^\d{4}$/.test(v.aadhaar)) return toast('Aadhaar: only the last 4 digits', true);
+try { await q(sb.from('profile_updates').insert({ employee_id: S.me.id, blob: await puEncrypt(v), fields: Object.keys(v) })); closeDlg(); toast('📨 Sent to HR — you will see it here once saved'); render(); } catch (er) { toast(errMsg(er), true); }
+};
+}
+async function puHrCard() {
+let rs = []; try { rs = await q(sb.from('profile_updates').select('id,employee_id,fields,created_at').eq('status', 'pending').order('created_at')); } catch { return ''; }
+const miss = S.emps.filter(e => e.active && (e.info_missing || []).length);
+return `<div class="card" ${rs.length ? 'style="border:2px solid #ff3d8b"' : ''}><div class="row"><h3>🪪 Staff details</h3><div class="hstack"><button class="btn sm" id="puScan" title="Unlocks each record and lists what is missing — staff then see it in My profile">↻ Check missing details</button></div></div>
+${rs.length ? `<p class="small"><b>${rs.length} update${rs.length > 1 ? 's' : ''} from staff waiting:</b></p>${rs.map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '')}</b><small>${r.fields.map(puLbl).join(', ')} · ${ago(r.created_at)}</small></div><button class="btn sm pri" data-pureview="${r.id}">Review</button></div>`).join('')}` : '<p class="small muted">No updates waiting.</p>'}
+<p class="small muted" style="margin-top:10px">${miss.length ? `${miss.length} staff still have missing details — they see a "Complete my details" prompt.` : 'Staff fill missing or changed details themselves in My profile; you approve them here.'}</p></div>`;
+}
+{ const _emV = VIEWS.employees; VIEWS.employees = async () => { const [h, c] = await Promise.all([_emV(), puHrCard()]); const i = h.indexOf('<div class="card'); return i >= 0 ? h.slice(0, i) + c + h.slice(i) : c + h; }; }
+document.addEventListener('click', async e => {
+if (e.target.closest('#puOpen')) return puDlg();
+const rv = e.target.closest('[data-pureview]'); if (rv) {
+if (!S.dek) { toast('Unlock the vault first: Documents → enter the vault password', true); location.hash = 'docs'; return; }
+try { const r = (await q(sb.from('profile_updates').select('*').eq('id', rv.dataset.pureview)))[0]; const nv = await puDecrypt(r.blob), cur = await privGet(r.employee_id), emp = empById(r.employee_id);
+dlg(`Details from ${esc(emp?.name || '')}`, `<table><thead><tr><th>Detail</th><th>Now in ORBIS</th><th>New</th></tr></thead><tbody>${Object.keys(nv).map(k => `<tr><td>${esc(puLbl(k))}</td><td class="muted">${esc(cur[k] || '—')}</td><td><b>${esc(nv[k])}</b></td></tr>`).join('')}</tbody></table><p class="small muted">Approve saves the new values into ${esc(emp?.name.split(' ')[0] || '')}'s private details.</p>`,
+`<button class="btn good" id="puOk">Approve &amp; save</button><button class="btn bad" id="puNo">Reject</button>`);
+$('#puOk').onclick = async () => { try { await privPut(r.employee_id, { ...cur, ...nv }); await q(sb.from('profile_updates').update({ status: 'approved', decided_by: S.me.id, decided_at: new Date().toISOString(), blob: '{}' }).eq('id', r.id)); closeDlg(); toast('✓ Saved'); render(); } catch (er) { toast(errMsg(er), true); } };
+$('#puNo').onclick = async () => { const note = prompt('Reason (shown to the employee)') || null; try { await q(sb.from('profile_updates').update({ status: 'rejected', note, decided_by: S.me.id, decided_at: new Date().toISOString(), blob: '{}' }).eq('id', r.id)); closeDlg(); toast('Rejected'); render(); } catch (er) { toast(errMsg(er), true); } };
+} catch (er) { toast(errMsg(er), true); } return; }
+const sc = e.target.closest('#puScan'); if (sc) {
+if (!S.dek) { toast('Unlock the vault first: Documents → enter the vault password', true); location.hash = 'docs'; return; }
+sc.disabled = true; sc.textContent = 'Checking…'; let n = 0;
+for (const emp of S.emps.filter(x => x.active)) { try { const p = await privGet(emp.id), m = puMissing(p); if (JSON.stringify(m) !== JSON.stringify(emp.info_missing || [])) { await q(sb.from('employees').update({ info_missing: m }).eq('id', emp.id)); emp.info_missing = m; } if (m.length) n++; } catch { } }
+toast(`✓ Checked — ${n} staff have missing details`); render(); return; }
+});
+{ const _hv = VIEWS.punch; VIEWS.punch = async () => { const h = await _hv(); const m = S.me.info_missing || []; if (!m.length || !C().vaultPub) return h;
+return h.replace('<div class="home">', `<div class="home"><div class="card phnudge"><span class="ava ib">${ico('idcard')}</span><div class="grow"><b>Complete your details</b><div class="small muted">HR needs: ${m.slice(0, 4).map(puLbl).join(', ')}${m.length > 4 ? ` +${m.length - 4} more` : ''}</div></div><button class="btn sm pri" id="puOpen">Fill now</button></div>`); }; }
 </script></body></html>
