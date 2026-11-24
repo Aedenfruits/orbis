@@ -382,6 +382,8 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .hdhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:3px solid var(--c)}.hdhead b{font-size:17px;color:var(--c)}.hdhead span{color:#7a82a0;font-size:13px;flex:1}
 .hdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px}.hdbox{padding:16px;overflow:hidden}.hdbox .hierwrap{padding:4px 0 10px;overflow:auto}
 .hup.over{background:#ffe4ef;color:#e01664;box-shadow:0 0 0 3px rgba(224,22,100,.2)}body.hdragging .hup{outline:2px dashed #e01664;outline-offset:2px}
+.ht.dh{background:#0d9488;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dhgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}.dhgrid label{display:flex;flex-direction:column;gap:3px;margin:0}.dhgrid span{font-size:12px;font-weight:700;color:var(--c)}.dhgrid select{font-size:13px;padding:6px 8px}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -4019,7 +4021,8 @@ const hierKids = id => S.emps.filter(e => e.active && (e.reports_to || null) ===
 function hierUnder(id, target) { let t = S.emps.find(e => e.id === target), n = 0; while (t && n++ < 50) { if (t.id === id) return true; t = S.emps.find(e => e.id === t.reports_to); } return false; }
 VIEWS.hier = async () => {
 const roots = S.emps.filter(e => e.active && (!e.reports_to || !S.emps.some(m => m.id === e.reports_to && m.active)));
-const accTag = e => e.access === 'md' ? `<em class="ht md">${/ceo/i.test(e.desig || '') ? 'CEO' : 'MD'}</em>` : e.access === 'hr' ? '<em class="ht hr">HR</em>' : '';
+const hd = id => (S.heads || []).filter(x => x.employee_id === id).map(x => x.dept);
+const accTag = e => hd(e.id).length ? `<em class="ht dh" title="Head of ${esc(hd(e.id).join(', '))} — MD power for that department">HEAD · ${esc(hd(e.id).join(', '))}</em>` : e.access === 'md' ? `<em class="ht md">${/ceo/i.test(e.desig || '') ? 'CEO' : 'MD'}</em>` : e.access === 'hr' ? '<em class="ht hr">HR</em>' : '';
 let FS = null; const up = e => { const m = empById(e.reports_to); return m ? `<div class="hup" data-hid="${m.id}" title="Drop someone here to put them under ${esc(m.name)} too">↑ reports to <b>${esc(m.name)}</b>${m.dept && m.dept !== e.dept ? ` · ${esc(m.dept)}` : ''}</div>` : ''; };
 const node = (e, d, top) => { const k = d < 12 ? S.emps.filter(x => x.active && x.reports_to === e.id && (!FS || FS.has(x.id))) : [];
 const dim = false, onPath = S.hierPath && hierPathIds(S.hierPath).includes(e.id);
@@ -4037,6 +4040,7 @@ return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · str
 <div class="hstack"><div class="seg"><button class="${mode === 'tree' ? 'on' : ''}" data-hmode="tree">🌳 Company tree</button><button class="${mode === 'dept' ? 'on' : ''}" data-hmode="dept">🏢 All departments</button></div><button class="btn sm" data-hz="-1" title="Smaller">−</button><button class="btn sm" data-hz="1" title="Bigger">＋</button>${S.hierUndo ? '<button class="btn sm" id="hUndo">↶ Undo last move</button>' : ''}<a class="btn sm" href="#employees">Manage staff</a></div></div>
 ${sel ? `<div class="msg">Moving <b>${esc(sel.name)}</b> — tap the new manager, or <a href="#" data-hroot="">put at the top</a> · <a href="#" id="hCancel">cancel</a></div>` : ''}
 <div class="card hpanel"><div class="hpr"><b>Departments</b><div class="hdl">${hierDepts().map(d => `<button class="hdchip ${S.hierDept === d ? 'on' : ''}" data-hdf="${esc(d)}" style="--c:${deptColor(d)}">${esc(d)} <small>${S.emps.filter(e => e.active && e.dept === d).length}</small></button>`).join('')}<button class="hdchip add" id="hDeptAdd">＋ Add department</button>${S.hierDept ? `<button class="hdchip" data-hdf="">Show all</button>` : ''}</div></div>
+<div class="hpr"><b>Department heads</b><div><div class="small muted" style="margin-bottom:6px">MD power for one department: sees everyone in it and gives the <b>final</b> approval for their leave, corrections and on duty.</div><div class="dhgrid">${hierDepts().map(d => { const cur = (S.heads || []).find(x => x.dept === d)?.employee_id || ''; return `<label style="--c:${deptColor(d)}"><span>${esc(d)}</span><select data-dhsel="${esc(d)}"><option value="">— none —</option>${S.emps.filter(e => e.active).sort((a, b) => a.name.localeCompare(b.name)).map(e => `<option value="${e.id}" ${e.id === cur ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></label>`; }).join('')}</div></div></div>
 <div class="hpr"><b>Approvals</b><div class="small">Leave, attendance corrections and on-duty requests go <b>up the tree</b> to each <span class="happ on" style="position:static">✔ Approver</span> in turn${C().hrFinal !== false ? ', then <b>HR</b> gives the final approval' : ''}. <b>If an MD / CEO is in someone's path, the MD / CEO's approval is final</b> (no HR step). If nobody above is marked, the direct manager approves.
 <label class="chk" style="margin-top:6px"><input type="checkbox" id="hHrFinal" ${C().hrFinal !== false ? 'checked' : ''}> HR gives the final approval after the managers (when no MD / CEO is in the path)</label></div></div>
 ${S.hierPath && empById(S.hierPath) ? `<div class="hpr"><b>Path</b><div class="small">${esc(empById(S.hierPath).name)}'s requests go to: ${(() => { const p = hierPathIds(S.hierPath).filter(x => x !== S.hierPath); const mdIn = p.some(x => empById(x)?.access === 'md'); return [...p.map(x => `<b>${esc(empById(x).name)}</b>${empById(x)?.access === 'md' ? ' (final)' : ''}`), ...((C().hrFinal !== false && !mdIn) || !p.length ? ['<b>HR</b>'] : [])].join(' → '); })()} <a href="#" id="hPathX">clear</a></div></div>` : ''}</div>
@@ -4067,9 +4071,10 @@ if (e.target.closest('#hUndo') && S.hierUndo) { const u = S.hierUndo; S.hierUndo
 if (S.hierSel) { const r = e.target.closest('[data-hroot]'); if (r) { e.preventDefault(); hierMove(S.hierSel, null); return; } const c = e.target.closest('[data-hid]'); if (c) hierMove(S.hierSel, c.dataset.hid); }
 });
 function chainCur(r) { const ch = r.chain || [], s = r.step || 0; return s < ch.length ? ch[s] : null; }
-function chainMine(r) { if (r.status !== 'pending') return false; const ch = r.chain || []; if (!ch.length) return true; const c = chainCur(r); return c === S.me.id || isAdmin(); }
+function isDHeadOf(emp) { const d = empById(emp)?.dept; return !!d && emp !== S.me?.id && (S.heads || []).some(h => h.employee_id === S.me?.id && h.dept === d); }
+function chainMine(r) { if (r.status !== 'pending') return false; const ch = r.chain || []; if (!ch.length) return true; const c = chainCur(r); return c === S.me.id || isAdmin() || isDHeadOf(r.employee_id); }
 function chainLine(r) {
-const ch = r.chain || []; if (!ch.length) return ''; const s = r.step || 0, hrF = C().hrFinal !== false && !ch.some(id => empById(id)?.access === 'md'), done = r.status !== 'pending', rej = r.status === 'rejected';
+const ch = r.chain || []; if (!ch.length) return ''; const dh = (S.heads || []).find(x => x.dept === empById(r.employee_id)?.dept)?.employee_id, s = r.step || 0, hrF = C().hrFinal !== false && !ch.some(id => empById(id)?.access === 'md' || id === dh), done = r.status !== 'pending', rej = r.status === 'rejected';
 const steps = ch.map((id, i) => ({ n: (empById(id)?.name || '?').split(' ')[0], st: i < s ? 'ok' : (i === s && !done) ? 'now' : (done && !rej) ? 'ok' : 'todo' }));
 if (hrF) steps.push({ n: 'HR', st: done ? (rej ? 'todo' : 'ok') : s >= ch.length ? 'now' : 'todo' });
 if (rej) { const by = (r.trail || []).slice(-1)[0]?.by; const k = steps.findIndex(x => x.st === 'now' || x.st === 'todo'); if (k >= 0) steps[k] = { n: by ? (empById(by)?.name || 'HR').split(' ')[0] : steps[k].n, st: 'no' }; }
@@ -4078,7 +4083,7 @@ return `<div class="chainln">${steps.map(x => `<span class="cs ${x.st}">${x.st =
 function chainBtns(r, k) {
 const ln = chainLine(r);
 if (!chainMine(r)) { const c = chainCur(r); return `<div class="stack" style="gap:4px;align-items:flex-end"><span class="chip">⏳ Waiting for ${c ? esc((empById(c)?.name || '').split(' ')[0]) : 'HR'}</span>${ln}</div>`; }
-const c = chainCur(r), early = isAdmin() && (r.chain || []).length && c && c !== S.me.id;
+const c = chainCur(r), early = (isAdmin() || isDHeadOf(r.employee_id)) && (r.chain || []).length && c && c !== S.me.id;
 return `<div class="stack" style="gap:4px;align-items:flex-end"><div class="hstack"><button class="btn sm good" data-${k}="approved" data-id="${r.id}" ${early ? `title="${esc((empById(c)?.name || '').split(' ')[0])} has not approved yet — HR approval is final"` : ''}>${early ? 'Approve (final)' : 'Approve'}</button><button class="btn sm bad" data-${k}="rejected" data-id="${r.id}">Reject</button></div>${ln}</div>`;
 }
 async function chainToast(tbl, id, st, fin) {
@@ -4187,4 +4192,10 @@ toast(`✓ Checked — ${n} staff have missing details`); render(); return; }
 });
 { const _hv = VIEWS.punch; VIEWS.punch = async () => { const h = await _hv(); const m = S.me.info_missing || []; if (!m.length || !C().vaultPub) return h;
 return h.replace('<div class="home">', `<div class="home"><div class="card phnudge"><span class="ava ib">${ico('idcard')}</span><div class="grow"><b>Complete your details</b><div class="small muted">HR needs: ${m.slice(0, 4).map(puLbl).join(', ')}${m.length > 4 ? ` +${m.length - 4} more` : ''}</div></div><button class="btn sm pri" id="puOpen">Fill now</button></div>`); }; }
+async function loadHeads() { try { S.heads = await q(sb.from('dept_heads').select('*')); } catch { S.heads = S.heads || []; } }
+{ const _bH = boot; boot = async function () { const r = await _bH.apply(this, arguments); if (S.me) { await loadHeads(); } return r; }; }
+{ const _hv2 = VIEWS.hier; VIEWS.hier = async () => { await loadHeads(); return _hv2(); }; }
+document.addEventListener('change', async e => { const s = e.target.closest('[data-dhsel]'); if (!s) return; const d = s.dataset.dhsel;
+try { if (s.value) await q(sb.from('dept_heads').upsert({ dept: d, employee_id: s.value })); else await q(sb.from('dept_heads').delete().eq('dept', d));
+await loadHeads(); toast(s.value ? `✓ ${empById(s.value).name.split(' ')[0]} now heads ${d} (MD power for ${d})` : `${d} has no head now`); render(); } catch (er) { toast(errMsg(er), true); render(); } });
 </script></body></html>
