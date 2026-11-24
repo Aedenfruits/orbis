@@ -348,6 +348,7 @@ small.red{color:#d33}
 @media (max-width:420px){.htile{padding:12px 10px}.htile b{font-size:13px}}
 .home .punch.hhero{width:100%;align-items:stretch}.home .hhero .pb{max-width:none!important;width:100%;margin:0;box-sizing:border-box}
 .hlic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}.hlic .oi{width:18px;height:18px}.hlic.cake{background:#f3e8ff;color:#7e22ce}.hlic.party{background:#e0f2fe;color:#0369a1}.hlic.wave{background:#dcfce7;color:#15803d}.hlic.leave{background:#ffe4ef;color:#e01664}.hlic.truck{background:#dbeafe;color:#1d4ed8}
+@media (max-width:560px){.pbbig{font-size:52px}.pbhi{margin-top:16px;font-size:15px}.pbt{margin-top:20px}.pbtl{margin:18px 0 14px}.pbh .alg.w{height:24px}.pb .mobnote{padding:14px}.pb .mobnote span{font-size:14px}}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -3776,8 +3777,8 @@ const devLine = dev ? `<span class="chip good">🖥️ Registered computer · ${
 : onMobile() ? `<span class="chip">📱 Phone · check in & out on an office computer</span>` : `<span class="chip crit">🖥️ This computer isn't registered for punching</span>${isAdmin() ? ' <a class="chip good" href="#setup">Register it →</a>' : '<div class="small" style="opacity:.75;margin-top:6px">Ask HR to register it, or use your own office computer.</div>'}`;
 const mob = !dev && onMobile() && state !== 'done', L = pbLine();
 const eve = ist(Date.now()).getHours(), gr = eve < 12 ? 'Good morning' : eve < 17 ? 'Good afternoon' : 'Good evening';
-const head = state === 'in' ? `${gr}, ${first} — ready to start?` : state === 'out' ? (ob ? `${first}, you're on a break — work time paused` : `Hi ${first} — you've been working`) : `Well done, ${first} — you worked`;
-const big = state === 'in' ? `<span id="pbBig" data-k="clock">${f12(hm(d))}</span>` : `<span id="pbBig" data-k="work">${durHM(pbWorked())}</span><small id="pbSec">${pad(Math.floor(pbWorked() / 1000) % 60)}s</small>`;
+const head = state === 'in' ? `${gr}, ${first} — worked today` : state === 'out' ? (ob ? `${first}, you're on a break — work time paused` : `Hi ${first} — you've been working`) : `Well done, ${first} — you worked`;
+const big = state === 'in' ? `<span id="pbBig" data-k="none">0h 00m</span><small>not started</small>` : `<span id="pbBig" data-k="work">${durHM(pbWorked())}</span><small id="pbSec">${pad(Math.floor(pbWorked() / 1000) % 60)}s</small>`;
 const tiles = state === 'in'
 ? [['Shift', `${f12(sh.start || '09:00').replace(':00', '')} – ${f12(sh.end || '18:00').replace(':00', '')}`], ['Late after', f12(lateLim())], ['Breaks', `${allow} min`]]
 : [['In', `${hm(a.in_at)}${late ? ' <em class="pbl">late</em>' : ''}`], ['Break', `${used} / ${allow} min`],
