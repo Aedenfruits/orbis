@@ -663,7 +663,7 @@ if (S.busy) return; const tok = lsGet('device', null);
 if (!S.device || !tok) return toast(noDevMsg(), true);
 S.busy = true;
 try {
-if (kind === 'punch') { const gm = C().geo?.mode || 'off', g = gm !== 'off' && C().geo?.lat ? await getGeo(gm === 'block') : null; if (gm === 'block' && C().geo?.lat && !g) throw new Error(geoErr()); const r = await rpc('punch', { p_token: tok, ...(g ? { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc } : {}) }); celebrate(r.kind, r.at); }
+if (kind === 'punch') { const gm = C().geo?.mode || 'off'; let g = gm !== 'off' && C().geo?.lat ? await getGeo(gm === 'block') : null; if (gm === 'block' && C().geo?.lat && !g) throw new Error(geoErr()); let r; try { r = await rpc('punch', { p_token: tok, ...(g ? { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc } : {}) }); } catch (er) { if (g || !/Turn on location/i.test(errMsg(er))) throw er; try { const st = await q(sb.from('app_settings').select('data').eq('id', 1).single()); S.settings = st.data; } catch { } g = await getGeo(true); if (!g) throw new Error(geoErr()); r = await rpc('punch', { p_token: tok, p_lat: g.lat, p_lng: g.lng, p_acc: g.acc }); } celebrate(r.kind, r.at); }
 if (kind === 'bstart') { await rpc('break_start', { p_token: tok, p_kind: arg }); toast('☕ Break started — enjoy!'); }
 if (kind === 'bend') { await rpc('break_end', { p_token: tok }); toast('Welcome back! Work timer resumed.'); }
 } catch (e) {
