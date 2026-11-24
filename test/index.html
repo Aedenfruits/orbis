@@ -385,6 +385,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .ht.dh{background:#0d9488;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}.dhgrid label{display:flex;flex-direction:column;gap:3px;margin:0}.dhgrid span{font-size:12px;font-weight:700;color:var(--c)}.dhgrid select{font-size:13px;padding:6px 8px}
 .flgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}.fl{display:flex;align-items:center;gap:8px;border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:6px 8px}.fl span{font-size:12px;font-weight:700;color:var(--c);min-width:84px}.fl em{font-style:normal;font-size:12.5px;flex:1}
+.pbnote{margin-top:10px;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.1);color:#e2e8f0;font-size:13px;text-align:center}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -501,6 +502,8 @@ const INTRO = (() => { const el = document.getElementById('intro'); if (!el || !
 const left = Math.max(250, 1750 - (performance.now() - (window.__introT || 0)));
 return new Promise(r => setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 450); r(); }, left)); })();
 function onMobile() { const ua = navigator.userAgent || ''; return /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) || (matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 820); }
+const PF = () => C().punchFrom || 'computer';
+const phonePunch = () => PF() !== 'computer' && onMobile();
 function noDevMsg() { return onMobile() ? '📱 Check in and check out work on office computers, not on phones.' : isAdmin() ? 'This computer isn\'t registered for punching. Register it in Computers & settings.' : 'This computer isn\'t registered for punching. Ask HR to register it, or use your own office computer.'; }
 async function boot() {
 const { data } = await sb.auth.getSession(); S.session = data.session;
@@ -695,15 +698,18 @@ if (t.id === 'bEnd') stationAction('bend');
 if (t.id === 'xOpen') extraDlg();
 });
 async function stationAction(kind, arg) {
-if (S.busy) return; const tok = lsGet('device', null);
-if (!S.device || !tok) return toast(noDevMsg(), true);
+if (S.busy) return; const tok = lsGet('device', null), ph = kind === 'punch' && phonePunch();
+if (kind === 'punch' && PF() === 'phone' && !onMobile()) return toast('📱 Check in and check out on your phone. Use this computer for breaks.', true);
+if (!ph && (!S.device || !tok)) return toast(noDevMsg(), true);
 S.busy = true;
 try {
-if (kind === 'punch') { const gm = C().geo?.mode || 'off'; let g = gm !== 'off' && C().geo?.lat ? await getGeo(gm === 'block') : null; if (gm === 'block' && C().geo?.lat && !g) throw new Error(geoErr()); let r; try { r = await rpc('punch', { p_token: tok, ...(g ? { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc } : {}) }); } catch (er) { if (g || !/Turn on location/i.test(errMsg(er))) throw er; try { const st = await q(sb.from('app_settings').select('data').eq('id', 1).single()); S.settings = st.data; } catch { } g = await getGeo(true); if (!g) throw new Error(geoErr()); r = await rpc('punch', { p_token: tok, p_lat: g.lat, p_lng: g.lng, p_acc: g.acc }); } celebrate(r.kind, r.at); }
+if (ph) { const g = await getGeo(true); if (!g) throw new Error(geoErr()); const r = await rpc('punch_phone', { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc }); celebrate(r.kind, r.at); }
+else if (kind === 'punch') { const gm = C().geo?.mode || 'off'; let g = gm !== 'off' && C().geo?.lat ? await getGeo(gm === 'block') : null; if (gm === 'block' && C().geo?.lat && !g) throw new Error(geoErr()); let r; try { r = await rpc('punch', { p_token: tok, ...(g ? { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc } : {}) }); } catch (er) { if (g || !/Turn on location/i.test(errMsg(er))) throw er; try { const st = await q(sb.from('app_settings').select('data').eq('id', 1).single()); S.settings = st.data; } catch { } g = await getGeo(true); if (!g) throw new Error(geoErr()); r = await rpc('punch', { p_token: tok, p_lat: g.lat, p_lng: g.lng, p_acc: g.acc }); } celebrate(r.kind, r.at); }
 if (kind === 'bstart') { await rpc('break_start', { p_token: tok, p_kind: arg }); toast('☕ Break started — enjoy!'); }
 if (kind === 'bend') { await rpc('break_end', { p_token: tok }); toast('Welcome back! Work timer resumed.'); }
 } catch (e) {
-if (isNetErr(e)) {
+if (isNetErr(e) && ph) toast('No internet — check in / out on the phone needs internet. Try again.', true);
+else if (isNetErr(e)) {
 const at = new Date().toISOString();
 enqueue(kind === 'punch' ? { k: 'punch', tok, at } : kind === 'bstart' ? { k: 'bstart', tok, kind: arg, at } : { k: 'bend', tok, at });
 toast('No internet — saved on this computer. It will sync automatically.');
@@ -3811,7 +3817,8 @@ const cfg = brCfg(), allow = cfg.reduce((s, b) => s + b.min, 0), used = breakUse
 const late = a?.in_at && hm(a.in_at) > lateLim(), sh = shiftOf(), dev = S.device, first = esc(S.me.name.split(' ')[0]);
 const devLine = dev ? `<span class="chip good">🖥️ Registered computer · ${esc(dev.name || '')}${dev.office ? ' · ' + esc(dev.office) : ''}</span>`
 : onMobile() ? `<span class="chip">📱 Phone · check in & out on an office computer</span>` : `<span class="chip crit">🖥️ This computer isn't registered for punching</span>${isAdmin() ? ' <a class="chip good" href="#setup">Register it →</a>' : devReqHTML()}`;
-const mob = !dev && onMobile() && state !== 'done', L = pbLine();
+const PH = PF() !== 'computer' && onMobile(), PC = PF() === 'phone' && !onMobile();
+const mob = !PH && !dev && onMobile() && state !== 'done', L = pbLine();
 const eve = ist(Date.now()).getHours(), gr = eve < 12 ? 'Good morning' : eve < 17 ? 'Good afternoon' : 'Good evening';
 const head = state === 'in' ? `${gr}, ${first} — worked today` : state === 'out' ? (ob ? `${first}, you're on a break — work time paused` : `Hi ${first} — you've been working`) : `Well done, ${first} — you worked`;
 const big = state === 'in' ? `<span id="pbBig" data-k="none">0h 00m</span><small>not started</small>` : `<span id="pbBig" data-k="work">${durHM(pbWorked())}</span><small id="pbSec">${pad(Math.floor(pbWorked() / 1000) % 60)}s</small>`;
@@ -3820,8 +3827,12 @@ const tiles = state === 'in'
 : [['In', `${hm(a.in_at)}${late ? ' <em class="pbl">late</em>' : ''}`], ['Break', `${used} / ${allow} min`],
 state === 'done' ? ['Out', hm(a.out_at)] : ['Left', `<span id="pbLeft">${L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000)}</span>`]];
 const left = cfg.filter(b => !S.breaks.some(x => x.kind === b.k));
-const nodev = !dev ? 'data-nodev="1"' : '';
-const btns = mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Working outside today? Ask for on duty.</span><button class="pbbr" data-od="" style="margin-top:10px;width:100%">🚗 Request on duty</button></div>`
+const nodev = !dev && !PH ? 'data-nodev="1"' : '';
+const btns = PC ? (state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'} ${!dev ? 'data-nodevb="1"' : ''}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}</div><div class="pbnote">📱 Check out on your phone</div>`
+: state === 'in' ? `<div class="pbnote">📱 Check in on your phone. Breaks are on this computer.</div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>` : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`)
+: PH ? (state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo">Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
+: state === 'out' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${ob ? 'disabled title="End your break on the computer first"' : ''}>Check Out →</button></div><div class="pbnote">${ob ? '☕ On a break — end it on your computer before checking out' : '☕ Breaks: start and end them on your office computer'}</div>` : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`)
+: mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Working outside today? Ask for on duty.</span><button class="pbbr" data-od="" style="margin-top:10px;width:100%">🚗 Request on duty</button></div>`
 : state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${nodev}>Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
 : state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}<button class="pbgo" id="pbGo" ${nodev} ${ob ? 'disabled title="End your break first"' : ''}>Check Out →</button></div>`
 : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`;
@@ -3837,8 +3848,8 @@ return `<div class="punch">
 ${btns}
 ${a?.offline ? '<div class="pboff">⏳ includes a punch saved offline</div>' : ''}
 </div>
-${mob ? '' : `<div class="devline">${devLine}</div>`}
-${state === 'out' && (ob || S.brPick) ? breakPanel(ob, cfg) : ''}
+${mob ? '' : `<div class="devline">${PH ? `<span class="chip good">📱 Phone · check in & out here · office location is checked</span>` : devLine}</div>`}
+${state === 'out' && !PH && (ob || S.brPick) ? breakPanel(ob, cfg) : ''}
 </div>`;
 };
 { const _tk = startTicker; startTicker = function () { _tk(); clearInterval(S.pbT); S.pbT = setInterval(() => {
@@ -4003,6 +4014,7 @@ const geoTag = gj => { const d = geoDist(gj), r = Number(C().geo?.radius || 300)
 { const _setupG = VIEWS.setup; VIEWS.setup = async () => { const h = await _setupG(), g = C().geo || {};
 const card = `<div class="card"><h3>📍 Office location</h3><p class="small muted">Check where people are when they clock in. Works on phones and most laptops (needs Windows location ON). Desktop PCs without Wi-Fi may only know the city — use "Record only" if they get blocked.</p>
 <div class="grid3"><label>Location check<select id="geo_mode"><option value="off" ${!g.mode || g.mode === 'off' ? 'selected' : ''}>Off</option><option value="record" ${g.mode === 'record' ? 'selected' : ''}>Record only (show HR where they clocked)</option><option value="block" ${g.mode === 'block' ? 'selected' : ''}>Only allow at the office</option></select></label>
+<label>Check in / out from<select id="geo_pf"><option value="computer" ${PF() === 'computer' ? 'selected' : ''}>Office computer</option><option value="phone" ${PF() === 'phone' ? 'selected' : ''}>Phone only (breaks on computer)</option><option value="both" ${PF() === 'both' ? 'selected' : ''}>Phone or computer</option></select></label>
 <label>Allowed distance (metres)<input type="number" id="geo_r" min="50" max="5000" value="${g.radius || 300}"></label>
 <label>Office point<input id="geo_pt" readonly value="${g.lat ? g.lat.toFixed(5) + ', ' + g.lng.toFixed(5) : 'Not set'}"></label></div>
 <div class="hstack wrap"><button class="btn" id="geoHere">📍 Use my current location as the office</button>${g.lat ? `<a class="btn" href="https://maps.google.com/?q=${g.lat},${g.lng}" target="_blank" rel="noopener">See on map</a>` : ''}<button class="btn pri" id="geoSave">Save</button></div>
@@ -4014,7 +4026,8 @@ if (!g) return toast(geoErr(), true); S.geoNew = { lat: g.lat, lng: g.lng, acc: 
 $('#geo_pt').value = g.lat.toFixed(5) + ', ' + g.lng.toFixed(5); $('#geoMsg').innerHTML = `Found you · accuracy ±${g.acc} m ${g.acc > 200 ? '<b style="color:#e11d48">— not very exact. Try on your phone near a window.</b>' : '✓'} · press Save`; }
 if (e.target.closest('#geoSave')) { const cur = C().geo || {}, n = S.geoNew || {}; const mode = $('#geo_mode').value, radius = Math.max(50, Math.min(5000, Number($('#geo_r').value) || 300));
 const lat = n.lat ?? cur.lat, lng = n.lng ?? cur.lng; if (mode !== 'off' && lat == null) return toast('Set the office point first (📍 button)', true);
-try { await saveSettings({ geo: { mode, radius, lat, lng, acc: n.acc ?? cur.acc, by: n.lat ? S.me.name : cur.by } }); S.geoNew = null; toast('📍 Location settings saved'); render(); } catch (er) { toast(errMsg(er), true); } }
+const punchFrom = $('#geo_pf').value; if (punchFrom !== 'computer' && lat == null) return toast('Set the office point first — phones are checked by location', true);
+try { await saveSettings({ punchFrom, geo: { mode, radius, lat, lng, acc: n.acc ?? cur.acc, by: n.lat ? S.me.name : cur.by } }); S.geoNew = null; toast('📍 Location settings saved'); render(); } catch (er) { toast(errMsg(er), true); } }
 });
 if (ICP.org) ICP.hier = ICP.org;
 { const _navH = navList; navList = function () { const n = _navH(); if (isAdmin() && !n.some(x => x[0] === 'hier')) { const i = n.findIndex(x => x[0] === 'employees'); n.splice(i >= 0 ? i + 1 : n.length, 0, ['hier', 'Hierarchy', '🌳']); } return n; }; }
