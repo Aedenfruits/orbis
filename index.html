@@ -384,6 +384,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .hup.over{background:#ffe4ef;color:#e01664;box-shadow:0 0 0 3px rgba(224,22,100,.2)}body.hdragging .hup{outline:2px dashed #e01664;outline-offset:2px}
 .ht.dh{background:#0d9488;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}.dhgrid label{display:flex;flex-direction:column;gap:3px;margin:0}.dhgrid span{font-size:12px;font-weight:700;color:var(--c)}.dhgrid select{font-size:13px;padding:6px 8px}
+.flgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}.fl{display:flex;align-items:center;gap:8px;border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:6px 8px}.fl span{font-size:12px;font-weight:700;color:var(--c);min-width:84px}.fl em{font-style:normal;font-size:12.5px;flex:1}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -2260,7 +2261,7 @@ S.kIdleI = setInterval(() => { if (!KMODE()) return clearInterval(S.kIdleI); S.k
 if (S.kLeft <= 0) { clearInterval(S.kIdleI); toast('Signed out for the next person'); signOut(); } }, 1000);
 }
 ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if (KMODE()) S.kLeft = 60; }, true));
-const _signOut0 = signOut; signOut = async function () { clearInterval(S.kIdleI); closeDlg?.(); document.body.classList.remove('kmode'); S.hrLogin = false; return _signOut0(); };
+const _signOut0 = signOut; signOut = async function () { clearInterval(S.kIdleI); closeDlg(); document.body.classList.remove('kmode'); S.hrLogin = false; return _signOut0(); };
 maybeKioskLogout = function () { if (KMODE()) { S.kLeft = Math.min(S.kLeft || 60, 8); } };
 document.addEventListener('change', async e => { const s = e.target.closest('[data-devown]'); if (!s) return;
 try { await q(sb.from('devices').update({ owner: s.value || null }).eq('id', s.dataset.devown)); toast(s.value ? `🔒 Only ${empById(s.value)?.name} can punch on this computer` : 'Anyone can punch on this computer'); } catch (er) { toast(errMsg(er), true); } });
@@ -4041,6 +4042,7 @@ return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · str
 ${sel ? `<div class="msg">Moving <b>${esc(sel.name)}</b> — tap the new manager, or <a href="#" data-hroot="">put at the top</a> · <a href="#" id="hCancel">cancel</a></div>` : ''}
 <div class="card hpanel"><div class="hpr"><b>Departments</b><div class="hdl">${hierDepts().map(d => `<button class="hdchip ${S.hierDept === d ? 'on' : ''}" data-hdf="${esc(d)}" style="--c:${deptColor(d)}">${esc(d)} <small>${S.emps.filter(e => e.active && e.dept === d).length}</small></button>`).join('')}<button class="hdchip add" id="hDeptAdd">＋ Add department</button>${S.hierDept ? `<button class="hdchip" data-hdf="">Show all</button>` : ''}</div></div>
 <div class="hpr"><b>Department heads</b><div><div class="small muted" style="margin-bottom:6px">MD power for one department: sees everyone in it and gives the <b>final</b> approval for their leave, corrections and on duty.</div><div class="dhgrid">${hierDepts().map(d => { const cur = (S.heads || []).find(x => x.dept === d)?.employee_id || ''; return `<label style="--c:${deptColor(d)}"><span>${esc(d)}</span><select data-dhsel="${esc(d)}"><option value="">— none —</option>${S.emps.filter(e => e.active).sort((a, b) => a.name.localeCompare(b.name)).map(e => `<option value="${e.id}" ${e.id === cur ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select></label>`; }).join('')}</div></div></div>
+<div class="hpr"><b>Approval path</b><div><div class="small muted" style="margin-bottom:6px">Normally requests go <b>up the tree</b>. Set a fixed path for a department to skip the tree (e.g. Finance: Syam → HR). People senior to the path follow the tree.</div><div class="flgrid">${hierDepts().map(d => { const fl = ((C().flows || {})[d] || []).map(empById).filter(Boolean); return `<div class="fl" style="--c:${deptColor(d)}"><span>${esc(d)}</span><em>${fl.length ? fl.map(e => esc(e.name.split(' ')[0])).join(' → ') + (C().hrFinal !== false && !fl.some(e => e.access === 'md') ? ' → HR' : '') : 'Up the tree'}</em><button class="btn sm" data-flow="${esc(d)}">Edit</button></div>`; }).join('')}</div></div></div>
 <div class="hpr"><b>Approvals</b><div class="small">Leave, attendance corrections and on-duty requests go <b>up the tree</b> to each <span class="happ on" style="position:static">✔ Approver</span> in turn${C().hrFinal !== false ? ', then <b>HR</b> gives the final approval' : ''}. <b>If an MD / CEO is in someone's path, the MD / CEO's approval is final</b> (no HR step). If nobody above is marked, the direct manager approves.
 <label class="chk" style="margin-top:6px"><input type="checkbox" id="hHrFinal" ${C().hrFinal !== false ? 'checked' : ''}> HR gives the final approval after the managers (when no MD / CEO is in the path)</label></div></div>
 ${S.hierPath && empById(S.hierPath) ? `<div class="hpr"><b>Path</b><div class="small">${esc(empById(S.hierPath).name)}'s requests go to: ${(() => { const p = hierPathIds(S.hierPath).filter(x => x !== S.hierPath); const mdIn = p.some(x => empById(x)?.access === 'md'); return [...p.map(x => `<b>${esc(empById(x).name)}</b>${empById(x)?.access === 'md' ? ' (final)' : ''}`), ...((C().hrFinal !== false && !mdIn) || !p.length ? ['<b>HR</b>'] : [])].join(' → '); })()} <a href="#" id="hPathX">clear</a></div></div>` : ''}</div>
@@ -4198,4 +4200,13 @@ async function loadHeads() { try { S.heads = await q(sb.from('dept_heads').selec
 document.addEventListener('change', async e => { const s = e.target.closest('[data-dhsel]'); if (!s) return; const d = s.dataset.dhsel;
 try { if (s.value) await q(sb.from('dept_heads').upsert({ dept: d, employee_id: s.value })); else await q(sb.from('dept_heads').delete().eq('dept', d));
 await loadHeads(); toast(s.value ? `✓ ${empById(s.value).name.split(' ')[0]} now heads ${d} (MD power for ${d})` : `${d} has no head now`); render(); } catch (er) { toast(errMsg(er), true); render(); } });
+document.addEventListener('click', e => { const b = e.target.closest('[data-flow]'); if (!b) return; const d = b.dataset.flow, cur = (C().flows || {})[d] || [];
+const opts = v => `<option value="">— none —</option>` + S.emps.filter(x => x.active).sort((a, c) => a.name.localeCompare(c.name)).map(x => `<option value="${x.id}" ${x.id === v ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+dlg(`Approval path · ${esc(d)}`, `<p class="small muted">Leave, attendance corrections and on duty of <b>${esc(d)}</b> staff go to these people in order. Leave all empty to go up the tree.</p>
+${[0, 1, 2].map(i => `<label>Step ${i + 1}<select id="fl_${i}">${opts(cur[i])}</select></label>`).join('')}
+<p class="small muted">${C().hrFinal !== false ? 'Then <b>HR</b> gives the final approval (skipped if an MD is in the path).' : 'The last step is final.'}</p>`, `<button class="btn pri" id="fl_save">Save</button>`);
+$('#fl_save').onclick = async () => { const ids = [0, 1, 2].map(i => $('#fl_' + i).value).filter((v, i, a) => v && a.indexOf(v) === i);
+const flows = { ...(C().flows || {}) }; if (ids.length) flows[d] = ids; else delete flows[d];
+try { await saveSettings({ flows }); closeDlg(); toast(ids.length ? `✓ ${d}: ${ids.map(i => empById(i).name.split(' ')[0]).join(' → ')}` : `✓ ${d}: up the tree`); render(); } catch (er) { toast(errMsg(er), true); } };
+});
 </script></body></html>
