@@ -3568,6 +3568,7 @@ q(sb.from('punch_fixes').select('*').eq('status', 'pending').order('created_at')
 q(sb.from('extra_breaks').select('*').eq('status', 'pending').order('created_at')).catch(() => []),
 q(sb.from('leave_requests').select('*').in('status', ['approved', 'pending']).gte('to_date', t)).catch(() => []),
 q(sb.from('appraisals').select('*')).catch(() => [])]);
+const since = addDays(t, -90), [rjL, rjF] = await Promise.all([q(sb.from('leave_requests').select('*').eq('status', 'rejected').gte('decided_at', since)).catch(() => []), q(sb.from('punch_fixes').select('*').eq('status', 'rejected').gte('decided_at', since)).catch(() => [])]);
 const mine = r => ids.includes(r.employee_id);
 const pd = r => mine(r) && r.status === 'pending', L = lv.filter(r => pd(r) && chainMine(r)), F = fx.filter(r => pd(r) && chainMine(r)), X = xb.filter(pd);
 S.aprAll = apr; const R = apr.filter(a => aprTodo(a) && a.employee_id !== S.me.id && (ids.includes(a.employee_id) || a.manager_id === S.me.id));
@@ -3585,6 +3586,7 @@ ${chainBtns(l, 'dl')}</div>`; })() })),
 const n = items.length;
 return `<div class="kpis"><div><b class="${n ? 'r' : 'g'}">${n}</b><small>Waiting for you</small></div><div><b>${L.length}</b><small>Leave</small></div><div><b>${F.length}</b><small>Corrections</small></div><div><b>${X.length}</b><small>Extra breaks</small></div><div><b>${R.length}</b><small>Reviews</small></div></div>
 <div class="card"><div class="row"><h3>Waiting for your decision</h3><span class="small muted">Oldest first</span></div>${n ? `<div class="stack" style="gap:8px">${items.map(i => i.h).join('')}</div>` : `<div class="allclear"><span class="ib" style="--ib:#e8f7ee">${ico('ok')}</span><b>All clear</b><span class="small muted">Nothing is waiting for you.</span></div>`}</div>
+${rejBox([...rjL, ...rjF].filter(mine).sort((a, b) => String(b.decided_at).localeCompare(String(a.decided_at))), 'mix')}
 <div class="row small" style="justify-content:flex-start;gap:8px"><span class="muted">Past decisions:</span><button class="btn sm" data-tm="leave">Leave</button><button class="btn sm" data-tm="fixes">Corrections</button><button class="btn sm" data-tm="extra">Extra breaks</button></div>`;
 }
 async function mgrTasks(ids, team) {
@@ -4260,6 +4262,6 @@ const byP = {}; rj.forEach(r => { const k = r.decided_by || '?'; byP[k] = (byP[k
 const nm = id => id === '?' ? 'Unknown' : (empById(id)?.name || 'HR');
 return `<div class="card rejbox"><div class="row"><h3 style="margin:0">✕ Rejected <span class="rjn">${rj.length}</span></h3><span class="small muted">last 90 days</span></div>
 ${rj.length ? `<div class="rjby">${Object.entries(byP).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<span class="chip">${esc(nm(k).split(' ')[0])} · ${n}</span>`).join('')}</div>
-<div class="stack" style="gap:6px;margin-top:8px">${rj.slice(0, 10).map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '?')} · ${kind === 'leave' ? `${esc(ltName(r.type))} · ${fmtD(r.from_date)}${r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : ''}` : fmtD(r.day)}</b><small>Rejected by <strong>${esc(nm(r.decided_by || '?'))}</strong>${r.decided_at ? ' · ' + fmtD(r.decided_at.slice(0, 10)) : ''} · ${r.note ? '“' + esc(r.note) + '”' : '<i>no reason given</i>'}</small></div></div>`).join('')}</div>${rj.length > 10 ? `<div class="small muted" style="margin-top:6px">+${rj.length - 10} more</div>` : ''}` : '<p class="muted small" style="margin:6px 0 0">Nothing rejected 👍</p>'}</div>`;
+<div class="stack" style="gap:6px;margin-top:8px">${rj.slice(0, 10).map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '?')} · ${r.from_date ? `${esc(ltName(r.type))} · ${fmtD(r.from_date)}${r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : ''}` : (r.kind === 'od' ? '🚗 On duty · ' : 'Regularise · ') + fmtD(r.day)}</b><small>Rejected by <strong>${esc(nm(r.decided_by || '?'))}</strong>${r.decided_at ? ' · ' + fmtD(r.decided_at.slice(0, 10)) : ''} · ${r.note ? '“' + esc(r.note) + '”' : '<i>no reason given</i>'}</small></div></div>`).join('')}</div>${rj.length > 10 ? `<div class="small muted" style="margin-top:6px">+${rj.length - 10} more</div>` : ''}` : '<p class="muted small" style="margin:6px 0 0">Nothing rejected 👍</p>'}</div>`;
 }
 </script></body></html>
