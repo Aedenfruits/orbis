@@ -663,7 +663,7 @@ if (S.busy) return; const tok = lsGet('device', null);
 if (!S.device || !tok) return toast(noDevMsg(), true);
 S.busy = true;
 try {
-if (kind === 'punch') { const r = await rpc('punch', { p_token: tok }); celebrate(r.kind, r.at); }
+if (kind === 'punch') { const gm = C().geo?.mode || 'off', g = gm !== 'off' && C().geo?.lat ? await getGeo(gm === 'block') : null; if (gm === 'block' && C().geo?.lat && !g) throw new Error(geoErr()); const r = await rpc('punch', { p_token: tok, ...(g ? { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc } : {}) }); celebrate(r.kind, r.at); }
 if (kind === 'bstart') { await rpc('break_start', { p_token: tok, p_kind: arg }); toast('☕ Break started — enjoy!'); }
 if (kind === 'bend') { await rpc('break_end', { p_token: tok }); toast('Welcome back! Work timer resumed.'); }
 } catch (e) {
@@ -841,10 +841,10 @@ const rows = team.map(e => { const a = att.find(x => x.employee_id === e.id), ob
 let st, c; if (l) { st = '🏖️ On leave'; c = ''; } else if (ob) { const m = mins(ob.start_at); const lim = (brCfg().find(x => x.k === ob.kind) || {}).min || 15; st = `☕ On ${ob.kind} break · ${m} min${m > lim ? ' (over)' : ''}`; c = m > lim ? 'crit' : 'warn'; } else if (a?.note?.startsWith('On duty')) { st = '🚗 ' + esc(a.note.split(' · ').slice(0, 2).join(' · ')) + ` · ${hm(a.in_at)}–${hm(a.out_at)}`; c = 'good'; } else if (a?.out_at) { st = `Checked out ${hm(a.out_at)}`; c = ''; } else if (a?.in_at) { const late = hm(a.in_at) > lateLim(e), se = shiftOf(e).end || '18:00', nowHM = hm(new Date()); if (nowHM > addMinHM(se, 15)) { st = `⚠️ Not checked out · shift ended ${se} · in since ${hm(a.in_at)}`; c = 'crit'; } else { st = `✓ In since ${hm(a.in_at)}${late ? ' · late' : ''}`; c = late ? 'warn' : 'good'; } } else if (isWeekOff(t, e)) { st = 'Week off'; c = ''; } else { st = 'Not in yet'; c = 'crit'; }
 const allow = brCfg().reduce((s, b) => s + b.min, 0), used = brk.filter(x => x.employee_id === e.id).reduce((s, b) => s + mins(b.start_at, b.end_at), 0);
 const lb = used > allow; if (lb && !l) { st += ` · breaks ${used}/${allow} min`; if (c !== 'crit') c = 'crit'; }
-return { e, st, c, lb, no: /Not checked out/.test(st) }; }).sort((x, y) => (y.c === 'crit') - (x.c === 'crit'));
+return { e, st, c, lb, no: /Not checked out/.test(st), geo: a?.in_at && !a?.note?.startsWith('On duty') ? `<span class="small muted">${geoTag(a.in_geo) ? 'In' + geoTag(a.in_geo) : ''}${geoTag(a.out_geo) ? ' · Out' + geoTag(a.out_geo) : ''}</span>` : '' }; }).sort((x, y) => (y.c === 'crit') - (x.c === 'crit'));
 const cnt = r => rows.filter(r).length;
 body = `<div class="kpis"><div><b>${team.length}</b><small>People</small></div><div><b class="g">${cnt(r => /In since|break|Checked out|On duty|Not checked out/.test(r.st))}</b><small>Came in</small></div><div><b class="o">${cnt(r => /late/.test(r.st))}</b><small>Late</small></div><div><b class="r">${cnt(r => r.c === 'crit' && /Not in/.test(r.st))}</b><small>Not in yet</small></div><div><b>${cnt(r => /leave/.test(r.st))}</b><small>On leave</small></div><div><b class="r">${cnt(r => r.lb || /\(over\)/.test(r.st))}</b><small>Long break</small></div><div><b class="r">${cnt(r => r.no)}</b><small>Not checked out</small></div></div>
-<div class="card flush"><table><thead><tr><th>Employee</th><th>Department</th><th>Status now</th></tr></thead><tbody>${rows.map(r => `<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.desig)}</div></div></div></td><td>${esc(r.e.dept)}</td><td><span class="chip ${r.c}">${r.st}</span></td></tr>`).join('') || '<tr><td colspan=3 class="muted">No one yet</td></tr>'}</tbody></table></div>`;
+<div class="card flush"><table><thead><tr><th>Employee</th><th>Department</th><th>Status now</th></tr></thead><tbody>${rows.map(r => `<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.desig)}</div></div></div></td><td>${esc(r.e.dept)}</td><td><span class="chip ${r.c}">${r.st}</span>${r.geo ? '<div>' + r.geo.replace(/^<span class="small muted"> · /, '<span class="small muted">') + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan=3 class="muted">No one yet</td></tr>'}</tbody></table></div>`;
 }
 if (tab === 'leave') {
 const lv = (await q(sb.from('leave_requests').select('*').order('created_at', { ascending: false }).limit(200))).filter(l => ids.includes(l.employee_id));
@@ -3951,4 +3951,33 @@ ${rs.map(r => `<div class="li"><div><div><b style="display:inline">${esc(r.name)
 <div class="hstack">${r.kind === 'own' ? `<select data-drown="${r.id}" style="width:auto" title="Who may clock in on it"><option value="${r.employee_id}">Only ${esc(empById(r.employee_id)?.name.split(' ')[0] || 'them')}</option><option value="">Anyone</option></select>` : ''}<button class="btn sm pri" data-drdec="${r.id}" data-st="approved">Approve</button><button class="btn sm" data-drdec="${r.id}" data-st="rejected">Reject</button></div></div>`).join('')}</div>`;
 }
 { const _setupV = VIEWS.setup; VIEWS.setup = async () => { const [h, c] = await Promise.all([_setupV(), devReqCard()]); return c ? h.replace('<div class="card">', c + '<div class="card">') : h; }; }
+let geoLastErr = '';
+function geoErr() { return geoLastErr || 'Turn on location to clock in: click the 🔒 / location icon in the address bar → Location → Allow, then try again.'; }
+function getGeo(show) {
+return new Promise(res => {
+if (!navigator.geolocation) { geoLastErr = 'This browser cannot share location. Use Edge or Chrome.'; return res(null); }
+if (show) toast('📍 Checking your location…');
+navigator.geolocation.getCurrentPosition(p => { geoLastErr = ''; res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }); },
+er => { geoLastErr = er.code === 1 ? 'Location is blocked for ORBIS. Click the 🔒 / location icon in the address bar → Location → Allow, then try again.' : er.code === 3 ? 'Could not find your location in time. Check that Windows location is ON (Settings → Privacy → Location) and try again.' : 'Could not get your location. Turn on Windows location (Settings → Privacy → Location) and try again.'; res(null); },
+{ enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 });
+});
+}
+const geoDist = gj => gj && gj.dist != null ? Number(gj.dist) : null;
+const geoTag = gj => { const d = geoDist(gj), r = Number(C().geo?.radius || 300); if (d == null) return ''; const far = d - Math.min(Number(gj.acc) || 0, 1500) > r; return ` · <a href="https://maps.google.com/?q=${gj.lat},${gj.lng}" target="_blank" rel="noopener" style="color:${far ? '#e11d48' : 'inherit'}">📍 ${d < 1000 ? d + ' m' : (d / 1000).toFixed(1) + ' km'}${far ? ' away' : ''}</a>`; };
+{ const _setupG = VIEWS.setup; VIEWS.setup = async () => { const h = await _setupG(), g = C().geo || {};
+const card = `<div class="card"><h3>📍 Office location</h3><p class="small muted">Check where people are when they clock in. Works on phones and most laptops (needs Windows location ON). Desktop PCs without Wi-Fi may only know the city — use "Record only" if they get blocked.</p>
+<div class="grid3"><label>Location check<select id="geo_mode"><option value="off" ${!g.mode || g.mode === 'off' ? 'selected' : ''}>Off</option><option value="record" ${g.mode === 'record' ? 'selected' : ''}>Record only (show HR where they clocked)</option><option value="block" ${g.mode === 'block' ? 'selected' : ''}>Only allow at the office</option></select></label>
+<label>Allowed distance (metres)<input type="number" id="geo_r" min="50" max="5000" value="${g.radius || 300}"></label>
+<label>Office point<input id="geo_pt" readonly value="${g.lat ? g.lat.toFixed(5) + ', ' + g.lng.toFixed(5) : 'Not set'}"></label></div>
+<div class="hstack wrap"><button class="btn" id="geoHere">📍 Use my current location as the office</button>${g.lat ? `<a class="btn" href="https://maps.google.com/?q=${g.lat},${g.lng}" target="_blank" rel="noopener">See on map</a>` : ''}<button class="btn pri" id="geoSave">Save</button></div>
+<p class="small muted" id="geoMsg">${g.lat ? `Set by ${esc(g.by || 'HR')}${g.acc ? ` · accuracy ±${g.acc} m` : ''}` : 'Stand inside the office and press the button above (best on your phone).'}</p></div>`;
+return h.replace('<div class="card"><h3>Office internet</h3>', card + '<div class="card"><h3>Office internet</h3>'); }; }
+document.addEventListener('click', async e => {
+if (e.target.closest('#geoHere')) { const b = e.target.closest('#geoHere'); b.disabled = true; const g = await getGeo(true); b.disabled = false;
+if (!g) return toast(geoErr(), true); S.geoNew = { lat: g.lat, lng: g.lng, acc: g.acc };
+$('#geo_pt').value = g.lat.toFixed(5) + ', ' + g.lng.toFixed(5); $('#geoMsg').innerHTML = `Found you · accuracy ±${g.acc} m ${g.acc > 200 ? '<b style="color:#e11d48">— not very exact. Try on your phone near a window.</b>' : '✓'} · press Save`; }
+if (e.target.closest('#geoSave')) { const cur = C().geo || {}, n = S.geoNew || {}; const mode = $('#geo_mode').value, radius = Math.max(50, Math.min(5000, Number($('#geo_r').value) || 300));
+const lat = n.lat ?? cur.lat, lng = n.lng ?? cur.lng; if (mode !== 'off' && lat == null) return toast('Set the office point first (📍 button)', true);
+try { await saveSettings({ geo: { mode, radius, lat, lng, acc: n.acc ?? cur.acc, by: n.lat ? S.me.name : cur.by } }); S.geoNew = null; toast('📍 Location settings saved'); render(); } catch (er) { toast(errMsg(er), true); } }
+});
 </script></body></html>
