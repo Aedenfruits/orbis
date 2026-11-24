@@ -391,6 +391,11 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .regbtn{background:#fff1f2!important;color:#be123c!important;border-color:#fecdd3!important;white-space:nowrap}
 .rejbox .rjn{display:inline-block;min-width:26px;padding:1px 8px;border-radius:99px;background:#fee2e2;color:#b91c1c;font-size:14px;text-align:center}.rejbox .rjby{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .fpick{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.phbox.cropping{position:relative;display:block;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}.phbox.cropping .cropimg{position:absolute;left:0;top:0;max-width:none;object-fit:fill;pointer-events:none;transform-origin:0 0}
+.cropgrid{position:absolute;inset:0;pointer-events:none;background:linear-gradient(#fff6,#fff6) 33.3% 0/1px 100% no-repeat,linear-gradient(#fff6,#fff6) 66.6% 0/1px 100% no-repeat,linear-gradient(#fff6,#fff6) 0 33.3%/100% 1px no-repeat,linear-gradient(#fff6,#fff6) 0 66.6%/100% 1px no-repeat}
+.crophint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:#0009;color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;pointer-events:none}
+.cropbar{display:flex;align-items:center;gap:8px;margin-top:10px;width:200px}.cropbar input{flex:1;padding:0}.cropbar span{font-weight:800;color:#64748b}
+.phcol{display:flex;flex-direction:column}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1493,9 +1498,9 @@ dlg(self ? '📷 My photo' : `📷 Photo — ${esc(e.name)}`, `<div class="phwra
 ${onMobile() ? `<button class="btn" type="button" id="phSelfie">📸 Take a selfie</button>` : `<button class="btn" type="button" id="phCam">📸 Use this computer's camera</button>`}<button class="btn pri" type="button" id="phSnap" hidden>● Take photo</button>
 ${u ? '<button class="btn" type="button" id="phDel">Remove photo</button>' : ''}</div></div>`, `<button class="btn pri" id="phSave" disabled>Save photo</button>`);
 $('#dlg').addEventListener('close', stopCam, { once: true });
-const show = async blob => { S.photoNew = blob; $('#phBox').innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="">`; $('#phSave').disabled = false; };
+S.crop = null; const show = async blob => { S.crop = null; $('#cropBar')?.remove(); S.photoNew = blob; $('#phBox').innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="">`; $('#phSave').disabled = false; };
 const pick = async f => { if (!f) return; stopCam(); $('#phSnap').hidden = true;
-try { await show(await cropToJpeg(f)); } catch { toast('Could not read that photo. Take a screenshot of it and choose the screenshot.', true); } };
+try { startCrop(await blobImg(f)); $('#phSave').disabled = false; } catch { toast('Could not read that photo. Take a screenshot of it and choose the screenshot.', true); } };
 const open = sel => { let i = document.getElementById('phIn'); if (i) i.remove(); i = document.createElement('input'); i.type = 'file'; i.id = 'phIn'; i.accept = 'image/*'; if (sel) i.setAttribute('capture', 'user');
 i.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(i); i.addEventListener('change', () => pick(i.files && i.files[0])); i.click(); };
 $('#phPick').onclick = () => open(false); if ($('#phSelfie')) $('#phSelfie').onclick = () => open(true);
@@ -1503,7 +1508,7 @@ if ($('#phCam')) $('#phCam').onclick = async () => { try { camStream = await nav
 $('#phBox').innerHTML = '<video id="phVid" autoplay playsinline muted></video>'; $('#phVid').srcObject = camStream; $('#phSnap').hidden = false; }
 catch { toast('Camera not available. Use "Choose a photo" instead.', true); } };
 $('#phSnap').onclick = async () => { const v = $('#phVid'); if (!v) return; const b = await cropToJpeg(v); stopCam(); $('#phSnap').hidden = true; show(b); };
-$('#phSave').onclick = async () => { if (!S.photoNew) return; const b = $('#phSave'); b.disabled = true; b.textContent = 'Saving…';
+$('#phSave').onclick = async () => { if (S.crop) { try { S.photoNew = await cropOut(); } catch { return toast('Could not crop that photo', true); } } if (!S.photoNew) return; const b = $('#phSave'); b.disabled = true; b.textContent = 'Saving…';
 try { const { error } = await sb.storage.from(PHOTO_BUCKET).upload(e.id + '.jpg', S.photoNew, { upsert: true, contentType: 'image/jpeg' }); if (error) throw error;
 await rpc('set_photo', { p_emp: e.id, p_clear: false }); e.photo_at = new Date().toISOString(); closeDlg(); toast('✓ Photo saved'); render(); }
 catch (er) { b.disabled = false; b.textContent = 'Save photo'; toast(errMsg(er), true); } };
@@ -4270,4 +4275,29 @@ ${rj.length ? `<div class="rjby">${Object.entries(byP).sort((a, b) => b[1] - a[1
 <div class="stack" style="gap:6px;margin-top:8px">${rj.slice(0, 10).map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '?')} · ${r.from_date ? `${esc(ltName(r.type))} · ${fmtD(r.from_date)}${r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : ''}` : (r.kind === 'od' ? '🚗 On duty · ' : 'Regularise · ') + fmtD(r.day)}</b><small>Rejected by <strong>${esc(nm(r.decided_by || '?'))}</strong>${r.decided_at ? ' · ' + fmtD(r.decided_at.slice(0, 10)) : ''} · ${r.note ? '“' + esc(r.note) + '”' : '<i>no reason given</i>'}</small></div></div>`).join('')}</div>${rj.length > 10 ? `<div class="small muted" style="margin-top:6px">+${rj.length - 10} more</div>` : ''}` : '<p class="muted small" style="margin:6px 0 0">Nothing rejected 👍</p>'}</div>`;
 }
 function blobImg(f) { return new Promise((ok, no) => { const u = URL.createObjectURL(f), im = new Image(); im.onload = () => ok(im); im.onerror = () => { if (window.createImageBitmap) createImageBitmap(f).then(ok, no); else no(new Error('img')); }; im.src = u; }); }
+function startCrop(img) {
+const box = $('#phBox'); if (!box) return; const W = box.clientWidth, H = box.clientHeight, iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+const base = Math.max(W / iw, H / ih); const C2 = S.crop = { img, iw, ih, W, H, base, z: 1, x: 0, y: 0 };
+const el = img instanceof HTMLImageElement ? img : (() => { const c = document.createElement('canvas'); c.width = iw; c.height = ih; c.getContext('2d').drawImage(img, 0, 0); return c; })();
+if (!box.parentElement.classList.contains('phcol')) { const w = document.createElement('div'); w.className = 'phcol'; box.before(w); w.appendChild(box); }
+el.className = 'cropimg'; el.draggable = false; box.innerHTML = ''; box.classList.add('cropping'); box.appendChild(el);
+box.insertAdjacentHTML('beforeend', '<div class="cropgrid"></div><div class="crophint">Drag to move</div>');
+$('#cropBar')?.remove(); box.insertAdjacentHTML('afterend', `<div id="cropBar" class="cropbar"><span>−</span><input type="range" id="cropZ" min="1" max="4" step="0.01" value="1"><span>+</span><button class="btn sm" type="button" id="cropR">Reset</button></div>`);
+const clamp = () => { const s = C2.base * C2.z, w = C2.iw * s, h = C2.ih * s; C2.x = Math.min(0, Math.max(C2.W - w, C2.x)); C2.y = Math.min(0, Math.max(C2.H - h, C2.y)); };
+const draw = () => { clamp(); const s = C2.base * C2.z; el.style.width = C2.iw * s + 'px'; el.style.height = C2.ih * s + 'px'; el.style.transform = `translate(${C2.x}px,${C2.y}px)`; };
+const zoomTo = (z, cx = W / 2, cy = H / 2) => { z = Math.max(1, Math.min(4, z)); const k = z / C2.z; C2.x = cx - (cx - C2.x) * k; C2.y = cy - (cy - C2.y) * k; C2.z = z; $('#cropZ').value = z; draw(); };
+C2.x = (W - iw * base) / 2; C2.y = (H - ih * base) / 2.6; draw();
+const pts = new Map(); let last = null, pinch = null;
+box.onpointerdown = e => { box.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); box.querySelector('.crophint')?.remove();
+if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: C2.z }; } else last = { x: e.clientX, y: e.clientY }; };
+box.onpointermove = e => { if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()], r = box.getBoundingClientRect(); zoomTo(pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top); }
+else if (last) { C2.x += e.clientX - last.x; C2.y += e.clientY - last.y; last = { x: e.clientX, y: e.clientY }; draw(); } };
+box.onpointerup = box.onpointercancel = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; last = pts.size ? { ...[...pts.values()][0] } : null; };
+box.onwheel = e => { e.preventDefault(); const r = box.getBoundingClientRect(); zoomTo(C2.z * (e.deltaY < 0 ? 1.08 : 1 / 1.08), e.clientX - r.left, e.clientY - r.top); };
+$('#cropZ').oninput = e => zoomTo(Number(e.target.value)); $('#cropR').onclick = () => { C2.z = 1; $('#cropZ').value = 1; C2.x = (W - iw * base) / 2; C2.y = (H - ih * base) / 2.6; draw(); };
+}
+function cropOut() { const c2 = S.crop, k = 480 / c2.W, s = c2.base * c2.z, c = document.createElement('canvas'); c.width = 480; c.height = 600;
+const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.fillStyle = '#fff'; x.fillRect(0, 0, 480, 600); x.drawImage(c2.img, c2.x * k, c2.y * k, c2.iw * s * k, c2.ih * s * k);
+return new Promise((ok, no) => c.toBlob(b => b ? ok(b) : no(new Error('crop')), 'image/jpeg', 0.9)); }
 </script></body></html>
