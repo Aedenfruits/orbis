@@ -377,6 +377,10 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .hcard2{align-items:flex-start;max-width:210px;min-width:170px}.hcard2.appr{border-color:#86efac}.hcard2.dim{opacity:.3}.hcard2.path{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18)}.hcard2.pstart{background:#eff6ff}
 @media (max-width:700px){.hpr{grid-template-columns:1fr;gap:4px}}
 .pumiss input,.pumiss select{border-color:#fda4af;background:#fff7f8}
+.hup{font-size:11px;color:#7a82a0;margin-bottom:6px;background:#f6f7fb;border-radius:99px;padding:2px 10px;white-space:nowrap}.hup b{color:#1D2B53}
+.htree li:has(>.hup)::before,.htree li:has(>.hup)::after{top:0}
+.hdhead{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:3px solid var(--c)}.hdhead b{font-size:17px;color:var(--c)}.hdhead span{color:#7a82a0;font-size:13px;flex:1}
+.hdgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px}.hdbox{padding:16px;overflow:hidden}.hdbox .hierwrap{padding:4px 0 10px;overflow:auto}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -4015,20 +4019,28 @@ function hierUnder(id, target) { let t = S.emps.find(e => e.id === target), n = 
 VIEWS.hier = async () => {
 const roots = S.emps.filter(e => e.active && (!e.reports_to || !S.emps.some(m => m.id === e.reports_to && m.active)));
 const accTag = e => e.access === 'md' ? `<em class="ht md">${/ceo/i.test(e.desig || '') ? 'CEO' : 'MD'}</em>` : e.access === 'hr' ? '<em class="ht hr">HR</em>' : '';
-const node = (e, d) => { const k = d < 12 ? S.emps.filter(x => x.active && x.reports_to === e.id) : [];
-const dim = S.hierDept && e.dept !== S.hierDept, onPath = S.hierPath && hierPathIds(S.hierPath).includes(e.id);
-return `<li><div class="hcard2 ${S.hierSel === e.id ? 'sel' : ''} ${e.approver ? 'appr' : ''} ${dim ? 'dim' : ''} ${onPath ? 'path' : ''} ${S.hierPath === e.id ? 'pstart' : ''}" draggable="true" data-hid="${e.id}" title="Drag onto the new manager · click to see their approval path">${avatarHTML(e, 'sm')}<div class="hci"><b>${esc(e.name)}</b><small>${esc(e.desig || '')}${k.length ? `${e.desig ? ' · ' : ''}${k.length} report${k.length > 1 ? 's' : ''}` : ''}</small>
+let FS = null; const up = e => { const m = empById(e.reports_to); return m ? `<div class="hup">↑ reports to <b>${esc(m.name)}</b>${m.dept && m.dept !== e.dept ? ` · ${esc(m.dept)}` : ''}</div>` : ''; };
+const node = (e, d, top) => { const k = d < 12 ? S.emps.filter(x => x.active && x.reports_to === e.id && (!FS || FS.has(x.id))) : [];
+const dim = false, onPath = S.hierPath && hierPathIds(S.hierPath).includes(e.id);
+return `<li>${top && FS ? up(e) : ''}<div class="hcard2 ${S.hierSel === e.id ? 'sel' : ''} ${e.approver ? 'appr' : ''} ${dim ? 'dim' : ''} ${onPath ? 'path' : ''} ${S.hierPath === e.id ? 'pstart' : ''}" draggable="true" data-hid="${e.id}" title="Drag onto the new manager · click to see their approval path">${avatarHTML(e, 'sm')}<div class="hci"><b>${esc(e.name)}</b><small>${esc(e.desig || '')}${k.length ? `${e.desig ? ' · ' : ''}${k.length} report${k.length > 1 ? 's' : ''}` : ''}</small>
 <div class="hrow3"><button class="hdept" data-hdept="${e.id}" style="--c:${deptColor(e.dept)}" title="Change department">${esc(e.dept || '+ department')}</button><button class="happ ${e.approver ? 'on' : ''}" data-happ="${e.id}" title="${e.approver ? 'Approves requests from everyone under them — click to turn off' : 'Click to make an approver'}">${e.approver ? '✔ Approver' : '○ Approver'}</button></div></div>${accTag(e)}<button class="hmv" data-hmv="${e.id}" title="Move (tap here, then tap the new manager)">⇄</button></div>${k.length ? `<ul>${k.map(x => node(x, d + 1)).join('')}</ul>` : ''}</li>`; };
-const n = S.emps.filter(e => e.active).length, sel = S.hierSel && empById(S.hierSel);
+const n = S.emps.filter(e => e.active).length, sel = S.hierSel && empById(S.hierSel), mode = S.hierMode || 'tree';
+const deptTree = dpt => { FS = new Set(S.emps.filter(e => e.active && (e.dept || '') === dpt).map(e => e.id)); const rs = S.emps.filter(e => FS.has(e.id) && !FS.has(e.reports_to)); const out = rs.map(r => node(r, 0, 1)).join(''); FS = null; return out; };
+let body;
+if (!n) body = '<div class="card"><p class="muted">No employees yet. Add them in Manage staff.</p></div>';
+else if (mode === 'dept') { const ds = [...hierDepts(), ...(S.emps.some(e => e.active && !e.dept) ? [''] : [])].filter(d => S.emps.some(e => e.active && (e.dept || '') === d));
+body = `<div class="hdgrid">${ds.map(d => `<div class="card hdbox" style="--c:${deptColor(d)}"><div class="hdhead"><b>${esc(d || 'No department')}</b><span>${S.emps.filter(e => e.active && (e.dept || '') === d).length} people</span><button class="btn sm" data-hdf="${esc(d)}" data-hmode="tree">Open ›</button></div><div class="hierwrap"><ul class="htree" style="zoom:${(S.hierZ || 1) * .85}">${deptTree(d)}</ul></div></div>`).join('')}</div>`; }
+else if (S.hierDept) body = `<div class="card hierwrap"><div class="hdhead" style="--c:${deptColor(S.hierDept)}"><b>${esc(S.hierDept)}</b><span>${S.emps.filter(e => e.active && e.dept === S.hierDept).length} people · only this department</span><button class="btn sm" data-hdf="">✕ Show whole company</button></div><ul class="htree" style="zoom:${S.hierZ || 1}">${deptTree(S.hierDept)}</ul></div>`;
+else body = `<div class="card hierwrap"><ul class="htree" style="zoom:${S.hierZ || 1}">${roots.map(r => node(r, 0)).join('')}</ul></div>`;
 return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · structure</span><h2>Hierarchy</h2><p class="small muted" style="margin:0">Drag a person onto their new manager. Their whole team moves with them. Approvals, "My team", alerts and the org chart all follow this.</p></div>
-<div class="hstack"><button class="btn sm" data-hz="-1" title="Smaller">−</button><button class="btn sm" data-hz="1" title="Bigger">＋</button>${S.hierUndo ? '<button class="btn sm" id="hUndo">↶ Undo last move</button>' : ''}<a class="btn sm" href="#employees">Manage staff</a></div></div>
+<div class="hstack"><div class="seg"><button class="${mode === 'tree' ? 'on' : ''}" data-hmode="tree">🌳 Company tree</button><button class="${mode === 'dept' ? 'on' : ''}" data-hmode="dept">🏢 All departments</button></div><button class="btn sm" data-hz="-1" title="Smaller">−</button><button class="btn sm" data-hz="1" title="Bigger">＋</button>${S.hierUndo ? '<button class="btn sm" id="hUndo">↶ Undo last move</button>' : ''}<a class="btn sm" href="#employees">Manage staff</a></div></div>
 ${sel ? `<div class="msg">Moving <b>${esc(sel.name)}</b> — tap the new manager, or <a href="#" data-hroot="">put at the top</a> · <a href="#" id="hCancel">cancel</a></div>` : ''}
 <div class="card hpanel"><div class="hpr"><b>Departments</b><div class="hdl">${hierDepts().map(d => `<button class="hdchip ${S.hierDept === d ? 'on' : ''}" data-hdf="${esc(d)}" style="--c:${deptColor(d)}">${esc(d)} <small>${S.emps.filter(e => e.active && e.dept === d).length}</small></button>`).join('')}<button class="hdchip add" id="hDeptAdd">＋ Add department</button>${S.hierDept ? `<button class="hdchip" data-hdf="">Show all</button>` : ''}</div></div>
 <div class="hpr"><b>Approvals</b><div class="small">Leave, attendance corrections and on-duty requests go <b>up the tree</b> to each <span class="happ on" style="position:static">✔ Approver</span> in turn${C().hrFinal !== false ? ', then <b>HR</b> gives the final approval' : ''}. <b>If an MD / CEO is in someone's path, the MD / CEO's approval is final</b> (no HR step). If nobody above is marked, the direct manager approves.
 <label class="chk" style="margin-top:6px"><input type="checkbox" id="hHrFinal" ${C().hrFinal !== false ? 'checked' : ''}> HR gives the final approval after the managers (when no MD / CEO is in the path)</label></div></div>
 ${S.hierPath && empById(S.hierPath) ? `<div class="hpr"><b>Path</b><div class="small">${esc(empById(S.hierPath).name)}'s requests go to: ${(() => { const p = hierPathIds(S.hierPath).filter(x => x !== S.hierPath); const mdIn = p.some(x => empById(x)?.access === 'md'); return [...p.map(x => `<b>${esc(empById(x).name)}</b>${empById(x)?.access === 'md' ? ' (final)' : ''}`), ...((C().hrFinal !== false && !mdIn) || !p.length ? ['<b>HR</b>'] : [])].join(' → '); })()} <a href="#" id="hPathX">clear</a></div></div>` : ''}</div>
 <div class="hdrop" data-hroot="">⬆ Drop here to put someone at the <b>top</b> (no manager)</div>
-<div class="card hierwrap">${n ? `<ul class="htree" style="zoom:${S.hierZ || 1}">${roots.map(r => node(r, 0)).join('')}</ul>` : '<p class="muted">No employees yet. Add them in Manage staff.</p>'}</div>
+${body}
 <p class="small muted">Tip: on a phone, tap ⇄ on a person, then tap their new manager.</p></div>`;
 };
 async function hierMove(id, mgr) {
@@ -4088,7 +4100,8 @@ $('#hd_sel').onchange = () => { $('#hd_newl').hidden = $('#hd_sel').value !== '_
 $('#hd_ok').onclick = async () => { let d = $('#hd_sel').value; if (d === '__new') { d = $('#hd_new').value.trim(); if (!d) return toast('Type the department name', true); if (!(C().depts || []).includes(d)) await saveSettings({ depts: [...(C().depts || []), d] }); }
 try { await q(sb.from('employees').update({ dept: d }).eq('id', emp.id)); emp.dept = d; closeDlg(); toast(`✓ ${emp.name.split(' ')[0]} → ${d}`); render(); } catch (er) { toast(errMsg(er), true); } };
 return; }
-const df = e.target.closest('[data-hdf]'); if (df) { S.hierDept = df.dataset.hdf && S.hierDept !== df.dataset.hdf ? df.dataset.hdf : null; render(); return; }
+const df = e.target.closest('[data-hdf]'); if (df) { if (df.dataset.hmode) { S.hierMode = df.dataset.hmode; S.hierDept = df.dataset.hdf || null; render(); return; } S.hierMode = 'tree'; S.hierDept = df.dataset.hdf && S.hierDept !== df.dataset.hdf ? df.dataset.hdf : null; render(); scrollTo({ top: 0 }); return; }
+const md = e.target.closest('[data-hmode]'); if (md) { S.hierMode = md.dataset.hmode; if (md.dataset.hmode === 'dept') S.hierDept = null; render(); return; }
 if (e.target.closest('#hDeptAdd')) { const d = (prompt('New department name (e.g. Procurement)') || '').trim(); if (!d) return; if (hierDepts().includes(d)) return toast('That department already exists', true); try { await saveSettings({ depts: [...(C().depts || []), d] }); toast(`✓ Department "${d}" added — click a person's department tag to move them in`); render(); } catch (er) { toast(errMsg(er), true); } return; }
 if (e.target.closest('#hPathX')) { e.preventDefault(); S.hierPath = null; render(); return; }
 const hf = e.target.closest('#hHrFinal'); if (hf) { try { await saveSettings({ hrFinal: hf.checked }); toast(hf.checked ? 'HR gives the final approval' : 'The last manager\'s approval is final'); render(); } catch (er) { toast(errMsg(er), true); } return; }
