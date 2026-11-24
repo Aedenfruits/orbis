@@ -401,6 +401,8 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .docrow2{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:14px}.docrow2 .pi{font-size:22px}.dsr{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.dsl{margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .docprog{font-size:13px;color:#64748b;margin:4px 0 10px}.docprog b{font-size:18px;color:#1D2B53}.dsrev{border:1px solid #fde68a;background:#fffbeb}
 @media (max-width:760px){.docrow2{flex-wrap:wrap}.dsr{flex-direction:row;width:100%;justify-content:space-between;align-items:center}}
+.pbfx{display:block;margin:8px auto 0;background:#fff;color:#be123c;border:0;border-radius:99px;padding:6px 14px;font-weight:700;font-size:12.5px}
+.lbt .o{color:#d97706}.lbt .r{color:#e11d48}.lbdays{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -775,7 +777,7 @@ let present = 0, late = 0, worked = 0;
 const rows = []; for (let d = last; d >= 1; d--) {
 const ds = `${ym}-${pad(d)}`; if (ds > todayStr()) continue; const a = by[ds]; const bm = brk.filter(b => b.day === ds).reduce((s, b) => s + mins(b.start_at, b.end_at), 0);
 const w = a?.in_at && a?.out_at ? mins(a.in_at, a.out_at) - bm : 0; if (a?.in_at) { present++; worked += w; if (hm(a.in_at) > lateLim(S.me, ds)) late++; }
-rows.push(`<tr class="${isWeekOff(ds) ? 'wo' : ''}"><td>${DOW[dowOf(ds)]} ${fmtD(ds)}</td><td>${a?.in_at ? hm(a.in_at) : '—'}</td><td>${a?.out_at ? hm(a.out_at) : a?.in_at ? (ds < todayStr() ? `<button class="btn sm regbtn" data-fix="${ds}">⚠ Missed · Regularise</button>` : '<span class="chip warn">not yet</span>') : '—'}</td><td>${bm ? bm + ' min' : '—'}</td><td>${w ? hmm(w) : holOn(ds, S.me.office) && !a ? '🎉 ' + esc(holOn(ds, S.me.office).name) : '—'}</td><td><button class="btn sm" data-fix="${ds}" title="Request a correction">✏️</button></td></tr>`);
+rows.push(`<tr class="${isWeekOff(ds) ? 'wo' : ''}"><td>${DOW[dowOf(ds)]} ${fmtD(ds)}</td><td>${a?.in_at ? hm(a.in_at) : '—'}</td><td>${a?.out_at ? hm(a.out_at) : a?.in_at ? (ds < todayStr() ? `<button class="btn sm regbtn" data-fix="${ds}">⚠ Missed · Regularise</button>` : '<span class="chip warn">not yet</span>') : '—'}</td><td>${bm ? bm + ' min' : '—'}${brk.some(b => b.day === ds) ? ` <button class="btn sm" data-bfix="${ds}" title="Regularise break">✏️</button>` : ''}</td><td>${w ? hmm(w) : holOn(ds, S.me.office) && !a ? '🎉 ' + esc(holOn(ds, S.me.office).name) : '—'}</td><td><button class="btn sm" data-fix="${ds}" title="Request a correction">✏️</button></td></tr>`);
 }
 const missM = missCard(await missedOuts());
 return `<div class="stack">${missM}<div class="row"><div><span class="eyebrow">Me</span><h2>My attendance</h2></div><div class="hstack"><button class="btn sm" data-mm="-1">‹</button><b>${new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b><button class="btn sm" data-mm="1">›</button></div></div>
@@ -899,10 +901,12 @@ const rows = team.map(e => { const a = att.find(x => x.employee_id === e.id), ob
 let st, c; if (l) { st = '🏖️ On leave'; c = ''; } else if (ob) { const m = mins(ob.start_at); const lim = (brCfg().find(x => x.k === ob.kind) || {}).min || 15; st = `☕ On ${ob.kind} break · ${m} min${m > lim ? ' (over)' : ''}`; c = m > lim ? 'crit' : 'warn'; } else if (a?.note?.startsWith('On duty')) { st = '🚗 ' + esc(a.note.split(' · ').slice(0, 2).join(' · ')) + ` · ${hm(a.in_at)}–${hm(a.out_at)}`; c = 'good'; } else if (a?.out_at) { st = `Checked out ${hm(a.out_at)}`; c = ''; } else if (a?.in_at) { const late = hm(a.in_at) > lateLim(e), se = shiftOf(e).end || '18:00', nowHM = hm(new Date()); if (nowHM > addMinHM(se, 15)) { st = `⚠️ Not checked out · shift ended ${se} · in since ${hm(a.in_at)}`; c = 'crit'; } else { st = `✓ In since ${hm(a.in_at)}${late ? ' · late' : ''}`; c = late ? 'warn' : 'good'; } } else if (isWeekOff(t, e)) { st = 'Week off'; c = ''; } else { st = 'Not in yet'; c = 'crit'; }
 const allow = brCfg().reduce((s, b) => s + b.min, 0), used = brk.filter(x => x.employee_id === e.id).reduce((s, b) => s + mins(b.start_at, b.end_at), 0);
 const lb = used > allow; if (lb && !l) { st += ` · breaks ${used}/${allow} min`; if (c !== 'crit') c = 'crit'; }
-return { e, st, c, lb, no: /Not checked out/.test(st), geo: a?.in_at && !a?.note?.startsWith('On duty') ? `<span class="small muted">${geoTag(a.in_geo) ? 'In' + geoTag(a.in_geo) : ''}${geoTag(a.out_geo) ? ' · Out' + geoTag(a.out_geo) : ''}</span>` : '' }; }).sort((x, y) => (y.c === 'crit') - (x.c === 'crit'));
+const lateM = a?.in_at && !a?.note?.startsWith('On duty') ? toMin(hm(a.in_at)) - toMin(shiftOf(e, t).start || '09:00') : null, lateX = lateM != null && hm(a.in_at) > lateLim(e, t);
+return { e, st, c, lb, no: /Not checked out/.test(st), lateTd: lateX ? `<span class="chip warn">${_dmin(lateM)} late</span>` : a?.in_at ? '<span class="small muted">on time</span>' : '—',
+brkTd: used ? `${used} / ${allow} min${used > allow ? ` <span class="chip crit">+${_dmin(used - allow)} extra</span>` : ''}` : '—', geo: a?.in_at && !a?.note?.startsWith('On duty') ? `<span class="small muted">${geoTag(a.in_geo) ? 'In' + geoTag(a.in_geo) : ''}${geoTag(a.out_geo) ? ' · Out' + geoTag(a.out_geo) : ''}</span>` : '' }; }).sort((x, y) => (y.c === 'crit') - (x.c === 'crit'));
 const cnt = r => rows.filter(r).length;
 body = `<div class="kpis"><div><b>${team.length}</b><small>People</small></div><div><b class="g">${cnt(r => /In since|break|Checked out|On duty|Not checked out/.test(r.st))}</b><small>Came in</small></div><div><b class="o">${cnt(r => /late/.test(r.st))}</b><small>Late</small></div><div><b class="r">${cnt(r => r.c === 'crit' && /Not in/.test(r.st))}</b><small>Not in yet</small></div><div><b>${cnt(r => /leave/.test(r.st))}</b><small>On leave</small></div><div><b class="r">${cnt(r => r.lb || /\(over\)/.test(r.st))}</b><small>Long break</small></div><div><b class="r">${cnt(r => r.no)}</b><small>Not checked out</small></div></div>
-<div class="card flush"><table><thead><tr><th>Employee</th><th>Department</th><th>Status now</th></tr></thead><tbody>${rows.map(r => `<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.desig)}</div></div></div></td><td>${esc(r.e.dept)}</td><td><span class="chip ${r.c}">${r.st}</span>${r.geo ? '<div>' + r.geo.replace(/^<span class="small muted"> · /, '<span class="small muted">') + '</div>' : ''}</td></tr>`).join('') || '<tr><td colspan=3 class="muted">No one yet</td></tr>'}</tbody></table></div>`;
+<div class="card flush"><table><thead><tr><th>Employee</th><th>Department</th><th>Status now</th><th>Late by</th><th>Breaks today</th></tr></thead><tbody>${rows.map(r => `<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.desig)}</div></div></div></td><td>${esc(r.e.dept)}</td><td><span class="chip ${r.c}">${r.st}</span>${r.geo ? '<div>' + r.geo.replace(/^<span class="small muted"> · /, '<span class="small muted">') + '</div>' : ''}</td><td>${r.lateTd}</td><td class="small">${r.brkTd}</td></tr>`).join('') || '<tr><td colspan=5 class="muted">No one yet</td></tr>'}</tbody></table></div>`;
 }
 if (tab === 'leave') {
 const lv = (await q(sb.from('leave_requests').select('*').order('created_at', { ascending: false }).limit(200))).filter(l => ids.includes(l.employee_id));
@@ -1635,12 +1639,12 @@ async function myFixesCard(ym) {
 let fx = []; try { fx = await q(sb.from('punch_fixes').select('*').eq('employee_id', S.me.id).gte('day', ym + '-01').order('created_at', { ascending: false })); } catch { return ''; }
 if (!fx.length) return '';
 const st = { pending: ['⏳ Waiting', 'warn'], approved: ['✓ Approved', 'good'], rejected: ['✗ Rejected', 'crit'] };
-return `<div class="card"><h3>My corrections &amp; on-duty requests</h3><div class="stack" style="gap:6px">${fx.map(f => `<div class="li"><div><b>${f.kind === 'od' ? '🚗 On duty · ' : ''}${fmtD(f.day)} · ${f.in_time ? 'in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ', ' : ''}${f.out_time ? 'out ' + f.out_time.slice(0, 5) : ''}</b><small>${esc(f.reason)}${f.note ? ' · ' + esc(f.note) : ''}</small>${chainLine(f)}</div><div class="hstack"><span class="chip ${st[f.status][1]}">${st[f.status][0]}</span>${f.status === 'pending' ? `<button class="btn sm" data-fxcancel="${f.id}">Cancel</button>` : ''}</div></div>`).join('')}</div></div>`;
+return `<div class="card"><h3>My corrections &amp; on-duty requests</h3><div class="stack" style="gap:6px">${fx.map(f => `<div class="li"><div><b>${f.kind === 'od' ? '🚗 On duty · ' : f.kind === 'brk' ? '☕ Break fix · ' : ''}${fmtD(f.day)} · ${fxT(f)}</b><small>${esc(f.reason)}${f.note ? ' · ' + esc(f.note) : ''}</small>${chainLine(f)}</div><div class="hstack"><span class="chip ${st[f.status][1]}">${st[f.status][0]}</span>${f.status === 'pending' ? `<button class="btn sm" data-fxcancel="${f.id}">Cancel</button>` : ''}</div></div>`).join('')}</div></div>`;
 }
 async function teamFixes(ids) {
 let fx = []; try { fx = (await q(sb.from('punch_fixes').select('*').order('created_at', { ascending: false }).limit(200))).filter(f => ids.includes(f.employee_id)); } catch { return '<p class="msg bad">Corrections need the latest database update (Phase 1 SQL).</p>'; }
 const pend = fx.filter(f => f.status === 'pending'), done = fx.filter(f => f.status !== 'pending').slice(0, 15);
-const row = (f, act) => `<div class="li"><div><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty · ' : ''}${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${f.in_time ? 'Check-in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ' · ' : ''}${f.out_time ? 'Check-out ' + f.out_time.slice(0, 5) : ''} · ${esc(f.reason)}</small></div>${act ? `${chainBtns(f, 'dfx')}` : `<span class="chip ${f.status === 'approved' ? 'good' : 'crit'}">${f.status}</span>`}</div>`;
+const row = (f, act) => `<div class="li"><div><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty · ' : f.kind === 'brk' ? '☕ Break fix · ' : ''}${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${fxT(f)} · ${esc(f.reason)}</small></div>${act ? `${chainBtns(f, 'dfx')}` : `<span class="chip ${f.status === 'approved' ? 'good' : 'crit'}">${f.status}</span>`}</div>`;
 return rejBox(fx, 'fix') + `<div class="card"><h3>Corrections &amp; on-duty requests</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(f => row(f, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(f => row(f, 0)).join('')}</div></div>` : ''}`;
 }
 document.addEventListener('click', async e => {
@@ -3556,7 +3560,7 @@ VIEWS.team = async () => {
 const ids = teamIds(), team = S.emps.filter(e => ids.includes(e.id) && e.active);
 if (!S.tmTab) S.tmTab = (S.badge || {}).team ? 'inbox' : 'today';
 const tab = S.tmTab, pend = (S.badge || {}).team || 0;
-const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(S.me.access !== 'hr' ? [['plans', 'Work plans']] : []), ['ttasks', 'Tasks'], ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
+const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(S.me.access !== 'hr' ? [['plans', 'Work plans']] : []), ['ttasks', 'Tasks'], ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['lb', 'Late & breaks'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
 const on = ['leave', 'fixes', 'extra'].includes(tab) ? 'inbox' : tab;
 const seg = `<div class="seg">${tabs.map(([k, l]) => `<button class="${on === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
 if (['today', 'leave', 'fixes', 'extra', 'plans'].includes(tab)) {
@@ -3571,6 +3575,7 @@ if (tab === 'ttasks') body = await mgrTasks(ids, team);
 if (tab === 'cal') body = await mgrCal(ids, team);
 if (tab === 'trev') body = await mgrRev(ids);
 if (tab === 'week') body = await mgrWeek(ids, team);
+if (tab === 'lb') body = await mgrLate(ids, team);
 if (tab === 'roster') body = await rosterView(team);
 } catch (er) { body = `<div class="card"><p class="msg bad">${esc(errMsg(er))}</p></div>`; }
 return `<div class="stack"><div><span class="eyebrow">${isAdmin() ? (S.me.access === 'md' ? 'MD — all employees' : 'HR — all employees') : 'Reporting manager / department head'}</span><h2>${isAdmin() ? 'Team desk' : 'My team'} <span class="pink">${team.length}</span></h2></div>${seg}${body}</div>`;
@@ -3594,7 +3599,7 @@ const items = [
 ${c.length ? `<div class="certline"><span class="chip warn">⚠ Same team also off: ${c.map(o => `${fName(o.employee_id)} (${fmtD(o.from_date).slice(0, -5)}${o.to_date !== o.from_date ? '–' + fmtD(o.to_date).slice(0, -5) : ''}${o.status === 'pending' ? ', pending' : ''})`).join(', ')}</span></div>` : ''}
 ${l.cert_path ? `<div class="certline">${certChips(l.cert_check)} <button class="btn sm" data-cert="${l.id}">View ${l.cert_check?.kind === 'rx' ? 'prescription' : 'certificate'}</button></div>` : certNeeded(l.type, Number(l.days)) ? '<div class="certline"><span class="chip bad">No certificate / prescription</span></div>' : ''}</div>
 ${chainBtns(l, 'dl')}</div>`; })() })),
-...F.map(f => ({ at: f.created_at, h: `<div class="li ibx"><span class="ibk fx">${ico('my')}</span><div class="grow"><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty' : 'Punch correction'} · ${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${f.in_time ? 'Check-in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ' · ' : ''}${f.out_time ? 'Check-out ' + f.out_time.slice(0, 5) : ''} · ${esc(f.reason)} · asked ${ago(f.created_at)}</small></div>${chainBtns(f, 'dfx')}</div>` })),
+...F.map(f => ({ at: f.created_at, h: `<div class="li ibx"><span class="ibk fx">${ico('my')}</span><div class="grow"><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty' : f.kind === 'brk' ? '☕ Break regularise' : 'Punch correction'} · ${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${fxT(f)} · ${esc(f.reason)} · asked ${ago(f.created_at)}</small></div>${chainBtns(f, 'dfx')}</div>` })),
 ...X.map(x => ({ at: x.created_at, h: `<div class="li ibx"><span class="ibk xb">${ico('punch')}</span><div class="grow"><b>${esc(empById(x.employee_id)?.name)} · Extra break · ${x.minutes_req} min</b><small>${fmtD(x.day)} · ${esc(x.reason)} · asked ${ago(x.created_at)}</small></div><div class="hstack"><button class="btn sm good" data-dx="approved" data-id="${x.id}" data-m="${x.minutes_req}">Approve</button><button class="btn sm bad" data-dx="rejected" data-id="${x.id}">Reject</button></div></div>` })),
 ...R.map(a => ({ at: a.created_at, h: `<div class="li ibx"><span class="ibk rv">${ico('reviews')}</span><div class="grow"><b>${esc(empById(a.employee_id)?.name)} · Performance review</b><small>${esc(a.cycle)} · ${APR_ST[a.status][0]} — waiting for you</small></div><div class="hstack"><button class="btn sm pri" data-apr="${a.id}">${aprCan(a).goals ? 'Set goals' : 'Review'}</button></div></div>` }))
 ].sort((a, b) => String(a.at).localeCompare(String(b.at)));
@@ -3854,7 +3859,7 @@ const nodev = !dev && !PH ? 'data-nodev="1"' : '';
 const btns = PC ? (state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'} ${!dev ? 'data-nodevb="1"' : ''}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}</div><div class="pbnote">📱 Check out on your phone</div>`
 : state === 'in' ? `<div class="pbnote">📱 Check in on your phone. Breaks are on this computer.</div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>` : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`)
 : PH ? (state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo">Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
-: state === 'out' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${ob ? 'disabled title="End your break on the computer first"' : ''}>Check Out →</button></div><div class="pbnote">${ob ? '☕ On a break — end it on your computer before checking out' : '☕ Breaks: start and end them on your office computer'}</div>` : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`)
+: state === 'out' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${ob ? 'disabled title="End your break on the computer first"' : ''}>Check Out →</button></div><div class="pbnote">${ob ? `☕ On a break — end it on your computer before checking out<button class="pbfx" data-bfix="${todayStr()}">Forgot to end it? Regularise</button>` : '☕ Breaks: start and end them on your office computer'}</div>` : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`)
 : mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Working outside today? Ask for on duty.</span><button class="pbbr" data-od="" style="margin-top:10px;width:100%">🚗 Request on duty</button></div>`
 : state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${nodev}>Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
 : state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}<button class="pbgo" id="pbGo" ${nodev} ${ob ? 'disabled title="End your break first"' : ''}>Check Out →</button></div>`
@@ -4277,7 +4282,7 @@ const byP = {}; rj.forEach(r => { const k = r.decided_by || '?'; byP[k] = (byP[k
 const nm = id => id === '?' ? 'Unknown' : (empById(id)?.name || 'HR');
 return `<div class="card rejbox"><div class="row"><h3 style="margin:0">✕ Rejected <span class="rjn">${rj.length}</span></h3><span class="small muted">last 90 days</span></div>
 ${rj.length ? `<div class="rjby">${Object.entries(byP).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<span class="chip">${esc(nm(k).split(' ')[0])} · ${n}</span>`).join('')}</div>
-<div class="stack" style="gap:6px;margin-top:8px">${rj.slice(0, 10).map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '?')} · ${r.from_date ? `${esc(ltName(r.type))} · ${fmtD(r.from_date)}${r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : ''}` : (r.kind === 'od' ? '🚗 On duty · ' : 'Regularise · ') + fmtD(r.day)}</b><small>Rejected by <strong>${esc(nm(r.decided_by || '?'))}</strong>${r.decided_at ? ' · ' + fmtD(r.decided_at.slice(0, 10)) : ''} · ${r.note ? '“' + esc(r.note) + '”' : '<i>no reason given</i>'}</small></div></div>`).join('')}</div>${rj.length > 10 ? `<div class="small muted" style="margin-top:6px">+${rj.length - 10} more</div>` : ''}` : '<p class="muted small" style="margin:6px 0 0">Nothing rejected 👍</p>'}</div>`;
+<div class="stack" style="gap:6px;margin-top:8px">${rj.slice(0, 10).map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '?')} · ${r.from_date ? `${esc(ltName(r.type))} · ${fmtD(r.from_date)}${r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : ''}` : (r.kind === 'od' ? '🚗 On duty · ' : r.kind === 'brk' ? '☕ Break fix · ' : 'Regularise · ') + fmtD(r.day)}</b><small>Rejected by <strong>${esc(nm(r.decided_by || '?'))}</strong>${r.decided_at ? ' · ' + fmtD(r.decided_at.slice(0, 10)) : ''} · ${r.note ? '“' + esc(r.note) + '”' : '<i>no reason given</i>'}</small></div></div>`).join('')}</div>${rj.length > 10 ? `<div class="small muted" style="margin-top:6px">+${rj.length - 10} more</div>` : ''}` : '<p class="muted small" style="margin:6px 0 0">Nothing rejected 👍</p>'}</div>`;
 }
 function blobImg(f) { return new Promise((ok, no) => { const u = URL.createObjectURL(f), im = new Image(); im.onload = () => ok(im); im.onerror = () => { if (window.createImageBitmap) createImageBitmap(f).then(ok, no); else no(new Error('img')); }; im.src = u; }); }
 function startCrop(img) {
@@ -4380,5 +4385,54 @@ if (v.dataset.dsno) { if ($('#dlg').open) closeDlg(); const note = await askReas
 await q(sb.from('doc_submissions').update({ status: 'rejected', note, decided_by: S.me.id, decided_at: new Date().toISOString() }).eq('id', s.id));
 await sb.storage.from(DOC_BUCKET).remove([s.path]); toast('Rejected — the employee will see the reason'); render(); }
 } catch (er) { v.disabled = false; toast(errMsg(er), true); }
+});
+function fxT(f) { const a = f.in_time?.slice(0, 5), b = f.out_time?.slice(0, 5);
+if (f.kind === 'brk') return `Break ${a || '?'}–${b || '?'}`; return `${a ? 'Check-in ' + a : ''}${a && b ? ' · ' : ''}${b ? 'Check-out ' + b : ''}`; }
+async function brkFixDlg(day) {
+let bs = []; try { bs = await q(sb.from('breaks').select('*').eq('employee_id', S.me.id).eq('day', day).order('start_at')); } catch (er) { return toast(errMsg(er), true); }
+if (!bs.length) return toast('No break on that day to correct', true);
+const nm = k => (brCfg().find(x => x.k === k) || {}).name || k;
+const opt = b => `${nm(b.kind)} · ${hm(b.start_at)}–${b.end_at ? hm(b.end_at) : 'not ended'}`;
+const first = bs.find(b => !b.end_at) || bs[0];
+dlg('☕ Regularise break', `<p class="small muted">Forgot to end a break, or the time is wrong? Enter the correct times — it goes for approval.</p>
+<label>Break<select id="bf_b">${bs.map(b => `<option value="${b.id}" ${b.id === first.id ? 'selected' : ''}>${esc(opt(b))}</option>`).join('')}</select></label>
+<div class="grid2"><label>Break started<input type="time" id="bf_s"></label><label>Break ended<input type="time" id="bf_e"></label></div>
+<label>Reason<textarea id="bf_r" rows="2" maxlength="200" placeholder="e.g. Forgot to end lunch break — came back at 1:40"></textarea></label>`, `<button class="btn pri" id="bf_send">Send for approval</button>`);
+const fill = () => { const b = bs.find(x => x.id === $('#bf_b').value); $('#bf_s').value = hm(b.start_at); const lim = (brCfg().find(x => x.k === b.kind) || {}).min || 15; $('#bf_e').value = b.end_at ? hm(b.end_at) : addMinHM(hm(b.start_at), lim); if (!b.end_at && !$('#bf_r').value) $('#bf_r').value = 'Forgot to end the break'; };
+fill(); $('#bf_b').onchange = fill;
+$('#bf_send').onclick = async () => { const s = $('#bf_s').value, e = $('#bf_e').value, r = $('#bf_r').value.trim();
+if (!s || !e) return toast('Enter both times', true); if (e <= s) return toast('Break end must be after the start', true); if (!r) return toast('Please write a reason', true);
+try { await q(sb.from('punch_fixes').insert({ employee_id: S.me.id, day, kind: 'brk', break_id: $('#bf_b').value, in_time: s, out_time: e, reason: r })); closeDlg(); toast('✓ Break regularisation sent for approval'); render(); } catch (er) { toast(errMsg(er), true); } };
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-bfix]'); if (b) brkFixDlg(b.dataset.bfix || todayStr()); });
+async function mgrLate(ids, team) {
+const ym = S.lbYm || todayStr().slice(0, 7), [y, m] = ym.split('-').map(Number), last = new Date(y, m, 0).getDate(), from = ym + '-01', to = `${ym}-${pad(last)}`, t = todayStr();
+const [att, brk] = await Promise.all([q(sb.from('attendance').select('employee_id,day,in_at,out_at,note').gte('day', from).lte('day', to)), q(sb.from('breaks').select('employee_id,day,start_at,end_at').gte('day', from).lte('day', to))]);
+const allow = brCfg().reduce((s, b) => s + b.min, 0);
+const rows = team.map(e => {
+const A = att.filter(a => a.employee_id === e.id && a.in_at && !(a.note || '').startsWith('On duty')); let lateD = 0, lateM = 0, worst = null, brD = 0, brM = 0;
+const days = [];
+A.forEach(a => { const st = shiftOf(e, a.day).start || '09:00', d = toMin(hm(a.in_at)) - toMin(st); let ln = 0, bx = 0;
+if (hm(a.in_at) > lateLim(e, a.day)) { lateD++; lateM += d; ln = d; if (!worst || d > worst.d) worst = { d, day: a.day }; }
+const used = brk.filter(b => b.employee_id === e.id && b.day === a.day).reduce((s, b) => s + mins(b.start_at, b.end_at || (a.day === t ? undefined : (a.out_at || b.start_at))), 0);
+if (used > allow) { brD++; brM += used - allow; bx = used - allow; }
+if (ln || bx) days.push({ day: a.day, ln, bx, in: hm(a.in_at) }); });
+return { e, n: A.length, lateD, lateM, worst, brD, brM, days: days.sort((p, q2) => q2.day.localeCompare(p.day)) };
+}).sort((p, q2) => (q2.lateM + q2.brM) - (p.lateM + p.brM));
+const T = k => rows.reduce((s, r) => s + r[k], 0);
+const label = new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+return `<div class="row"><div class="hstack"><button class="btn sm" data-lbm="-1">‹</button><b>${label}</b><button class="btn sm" data-lbm="1" ${ym >= t.slice(0, 7) ? 'disabled' : ''}>›</button></div><span class="small muted">Late = after shift start + grace · Extra break = over ${allow} min a day</span></div>
+<div class="kpis"><div><b class="o">${T('lateD')}</b><small>Late days</small></div><div><b class="o">${_dmin(T('lateM'))}</b><small>Total late time</small></div><div><b class="r">${T('brD')}</b><small>Days over break</small></div><div><b class="r">${_dmin(T('brM'))}</b><small>Total extra break</small></div></div>
+<div class="card flush"><table class="lbt"><thead><tr><th>Employee</th><th>Days in</th><th>Late days</th><th>Total late</th><th>Worst</th><th>Break over</th><th>Extra break</th><th></th></tr></thead><tbody>
+${rows.map(r => `<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.dept || '')}</div></div></div></td><td>${r.n}</td>
+<td>${r.lateD ? `<b class="o">${r.lateD}</b>` : '0'}</td><td>${r.lateM ? `<span class="chip warn">${_dmin(r.lateM)}</span>` : '—'}</td><td class="small">${r.worst ? `${_dmin(r.worst.d)} · ${fmtD(r.worst.day).slice(0, -5)}` : '—'}</td>
+<td>${r.brD ? `<b class="r">${r.brD}</b> day${r.brD > 1 ? 's' : ''}` : '0'}</td><td>${r.brM ? `<span class="chip crit">+${_dmin(r.brM)}</span>` : '—'}</td>
+<td>${r.days.length ? `<button class="btn sm" data-lbx="${r.e.id}">Days</button>` : ''}</td></tr>
+<tr class="lbd" data-lbrow="${r.e.id}" hidden><td colspan="8"><div class="lbdays">${r.days.map(d => `<span class="chip">${DOW[dowOf(d.day)]} ${fmtD(d.day).slice(0, -5)} · in ${d.in}${d.ln ? ` · <b class="o">${_dmin(d.ln)} late</b>` : ''}${d.bx ? ` · <b class="r">+${_dmin(d.bx)} break</b>` : ''}</span>`).join('')}</div></td></tr>`).join('') || '<tr><td colspan=8 class="muted">No one</td></tr>'}
+</tbody></table></div>`;
+}
+document.addEventListener('click', e => {
+const mb = e.target.closest('[data-lbm]'); if (mb) { const [y, m] = (S.lbYm || todayStr().slice(0, 7)).split('-').map(Number), d = new Date(y, m - 1 + Number(mb.dataset.lbm), 1); S.lbYm = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; render(); return; }
+const x = e.target.closest('[data-lbx]'); if (x) { const r = document.querySelector(`[data-lbrow="${x.dataset.lbx}"]`); if (r) r.hidden = !r.hidden; }
 });
 </script></body></html>
