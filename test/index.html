@@ -403,6 +403,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 @media (max-width:760px){.docrow2{flex-wrap:wrap}.dsr{flex-direction:row;width:100%;justify-content:space-between;align-items:center}}
 .pbfx{display:block;margin:8px auto 0;background:#fff;color:#be123c;border:0;border-radius:99px;padding:6px 14px;font-weight:700;font-size:12.5px}
 .lbt .o{color:#d97706}.lbt .r{color:#e11d48}.lbdays{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
+.notax{background:#f0fdf4;border:1px solid #bbf7d0}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -2676,11 +2677,14 @@ const _payV = VIEWS.pay;
 VIEWS.pay = async () => {
 const h = await _payV(), fy = fyOf(todayStr().slice(0, 7)), dc = await taxDecl(S.me.id, fy), d = dc?.data || {}, rg = dc?.regime || 'new';
 const slips = (S.mySlips || []).filter(s => s.month >= fyStart(fy)), last = slips[0]?.data, P = payCfg();
-let cmp = ''; if (last?.ctc) { const proj = slips.reduce((s, z) => s + (z.data.gross || 0), 0) + last.ctc * Math.max(0, 12 - slips.length), bY = proj * P.basicPct / 100, hY = bY * P.hraPct / 100;
+let cmp = '', projY = null; if (last?.ctc) { projY = slips.reduce((s, z) => s + (z.data.gross || 0), 0) + last.ctc * Math.max(0, 12 - slips.length); const proj = slips.reduce((s, z) => s + (z.data.gross || 0), 0) + last.ctc * Math.max(0, 12 - slips.length), bY = proj * P.basicPct / 100, hY = bY * P.hraPct / 100;
 const tn = taxCalc(proj, 'new', d, hY, bY), to = taxCalc(proj, 'old', d, hY, bY), better = tn.total <= to.total ? 'new' : 'old';
 cmp = `<div class="grid2"><div class="lb ${rg === 'new' ? 'on' : ''}"><small>NEW REGIME</small><div class="lbn"><b>${inr(tn.total)}</b><span>tax / year</span></div></div><div class="lb ${rg === 'old' ? 'on' : ''}"><small>OLD REGIME</small><div class="lbn"><b>${inr(to.total)}</b><span>tax / year</span></div></div></div><div class="msg">Estimated on a yearly salary of ${inr(proj)}. The <b>${better} regime</b> looks better for you${tn.total === to.total ? ' (both equal)' : ` — about ${inr(Math.abs(tn.total - to.total))} less tax`}.</div>`; }
 const f = (k, l, hint) => `<label>${l}<input type="number" min="0" id="td_${k}" value="${esc(d[k] || '')}" placeholder="${hint}"></label>`;
-return h + `<div class="stack narrow" style="margin-top:14px"><div class="card"><div class="row"><h3>🧾 My tax declaration · FY ${fy}</h3>${dc ? `<span class="chip good">Saved</span>` : '<span class="chip warn">Not given</span>'}</div>
+const noTax = projY != null && taxCalc(projY, 'new', {}, 0, 0).total === 0;
+if (!dc && noTax) return h + `<div class="stack narrow" style="margin-top:14px"><div class="card notax"><b>🧾 Income tax · FY ${fy}</b><p class="small" style="margin:4px 0 0">✓ <b>No income tax for you this year</b> — your yearly salary (about ${inr(projY)}) is under ₹12.75 lakh, so there is nothing to fill.</p></div></div>`;
+if (!dc && projY == null && !S.tdOpen) return h + `<div class="stack narrow" style="margin-top:14px"><div class="card notax"><div class="row"><b>🧾 Income tax declaration · FY ${fy}</b><button class="btn sm" id="tdOpen">Fill if needed</button></div><p class="small muted" style="margin:4px 0 0">Only needed if your salary is <b>above ₹12.75 lakh a year</b>. Below that there is no income tax — you can skip this.</p></div></div>`;
+return h + `<div class="stack narrow" style="margin-top:14px"><div class="card"><div class="row"><h3>🧾 My tax declaration · FY ${fy}</h3>${dc ? `<span class="chip good">Saved</span>` : '<span class="chip">Optional</span>'}</div>
 <p class="small muted">Tell HR which tax regime you choose and your tax-saving investments. ORBIS uses it to work out the TDS on your payslip. Keep proofs ready — HR may ask for them.</p>${cmp}
 <label>Tax regime<select id="td_rg"><option value="new" ${rg === 'new' ? 'selected' : ''}>New regime (default, lower rates, few deductions)</option><option value="old" ${rg === 'old' ? 'selected' : ''}>Old regime (claim 80C, HRA, home loan…)</option></select></label>
 <div class="grid2">${f('c80', '80C — PF, LIC, PPF, ELSS, tuition (₹/year)', 'max 1,50,000')}${f('d80', '80D — health insurance (₹/year)', 'e.g. 25000')}${f('rent', 'House rent paid (₹/month)', 'for HRA')}${f('hl', 'Home loan interest (₹/year)', 'max 2,00,000')}${f('other', 'Other deductions (₹/year)', '80E, 80G…')}<label class="chk" style="align-self:end"><input type="checkbox" id="td_metro" ${d.metro ? 'checked' : ''}> I live in a metro city (Mumbai, Chennai…)</label></div>
@@ -3125,6 +3129,7 @@ const _payAdv = VIEWS.pay;
 VIEWS.pay = async () => {
 const h = await _payAdv(); let list = []; try { list = await advLoad(S.me.id); } catch { return h; }
 const open = list.filter(x => x.status === 'pending' || x.status === 'approved');
+if (onMobile() && !open.length) return h;
 return h + `<div class="stack narrow" style="margin-top:14px"><div class="card"><div class="row"><h3>💵 Salary advance</h3>${open.some(x => x.status === 'approved') ? `<span class="chip">Balance ${inr(open.reduce((s, x) => s + (x.status === 'approved' ? x.bal : 0), 0))}</span>` : ''}</div>
 ${list.length ? list.map(x => advRow(x)).join('') : '<p class="muted small">Need money before payday? Ask here. Once HR approves, it is paid to you and recovered from your salary in monthly instalments.</p>'}
 ${open.some(x => x.status === 'pending') ? '' : `<details class="advask"${list.length ? '' : ' open'}><summary class="btn sm">＋ Ask for an advance</summary>
@@ -4435,4 +4440,5 @@ document.addEventListener('click', e => {
 const mb = e.target.closest('[data-lbm]'); if (mb) { const [y, m] = (S.lbYm || todayStr().slice(0, 7)).split('-').map(Number), d = new Date(y, m - 1 + Number(mb.dataset.lbm), 1); S.lbYm = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; render(); return; }
 const x = e.target.closest('[data-lbx]'); if (x) { const r = document.querySelector(`[data-lbrow="${x.dataset.lbx}"]`); if (r) r.hidden = !r.hidden; }
 });
+document.addEventListener('click', e => { if (e.target.closest('#tdOpen')) { S.tdOpen = true; render(); } });
 </script></body></html>
