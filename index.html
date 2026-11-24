@@ -387,6 +387,8 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .flgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}.fl{display:flex;align-items:center;gap:8px;border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:6px 8px}.fl span{font-size:12px;font-weight:700;color:var(--c);min-width:84px}.fl em{font-style:normal;font-size:12.5px;flex:1}
 .pbnote{margin-top:10px;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.1);color:#e2e8f0;font-size:13px;text-align:center}
 @media (max-width:760px){#astb{right:14px;bottom:calc(86px + env(safe-area-inset-bottom));width:46px;height:46px;font-size:19px}#astp{bottom:calc(142px + env(safe-area-inset-bottom));height:min(520px,calc(100vh - 220px))}}
+.misscard{border:1px solid #fecaca;background:#fff7f7}.misscard .mch{display:flex;flex-direction:column;gap:2px;margin-bottom:6px;color:#b91c1c}.misscard .mch .small{color:#7f1d1d}
+.regbtn{background:#fff1f2!important;color:#be123c!important;border-color:#fecdd3!important;white-space:nowrap}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -761,9 +763,10 @@ let present = 0, late = 0, worked = 0;
 const rows = []; for (let d = last; d >= 1; d--) {
 const ds = `${ym}-${pad(d)}`; if (ds > todayStr()) continue; const a = by[ds]; const bm = brk.filter(b => b.day === ds).reduce((s, b) => s + mins(b.start_at, b.end_at), 0);
 const w = a?.in_at && a?.out_at ? mins(a.in_at, a.out_at) - bm : 0; if (a?.in_at) { present++; worked += w; if (hm(a.in_at) > lateLim(S.me, ds)) late++; }
-rows.push(`<tr class="${isWeekOff(ds) ? 'wo' : ''}"><td>${DOW[dowOf(ds)]} ${fmtD(ds)}</td><td>${a?.in_at ? hm(a.in_at) : '—'}</td><td>${a?.out_at ? hm(a.out_at) : a?.in_at ? '<span class="chip warn">no check-out</span>' : '—'}</td><td>${bm ? bm + ' min' : '—'}</td><td>${w ? hmm(w) : holOn(ds, S.me.office) && !a ? '🎉 ' + esc(holOn(ds, S.me.office).name) : '—'}</td><td><button class="btn sm" data-fix="${ds}" title="Request a correction">✏️</button></td></tr>`);
+rows.push(`<tr class="${isWeekOff(ds) ? 'wo' : ''}"><td>${DOW[dowOf(ds)]} ${fmtD(ds)}</td><td>${a?.in_at ? hm(a.in_at) : '—'}</td><td>${a?.out_at ? hm(a.out_at) : a?.in_at ? (ds < todayStr() ? `<button class="btn sm regbtn" data-fix="${ds}">⚠ Missed · Regularise</button>` : '<span class="chip warn">not yet</span>') : '—'}</td><td>${bm ? bm + ' min' : '—'}</td><td>${w ? hmm(w) : holOn(ds, S.me.office) && !a ? '🎉 ' + esc(holOn(ds, S.me.office).name) : '—'}</td><td><button class="btn sm" data-fix="${ds}" title="Request a correction">✏️</button></td></tr>`);
 }
-return `<div class="stack"><div class="row"><div><span class="eyebrow">Me</span><h2>My attendance</h2></div><div class="hstack"><button class="btn sm" data-mm="-1">‹</button><b>${new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b><button class="btn sm" data-mm="1">›</button></div></div>
+const missM = missCard(await missedOuts());
+return `<div class="stack">${missM}<div class="row"><div><span class="eyebrow">Me</span><h2>My attendance</h2></div><div class="hstack"><button class="btn sm" data-mm="-1">‹</button><b>${new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b><button class="btn sm" data-mm="1">›</button></div></div>
 <div class="kpis"><div><b>${present}</b><small>Days present</small></div><div><b>${late}</b><small>Late</small></div><div><b>${hmm(worked)}</b><small>Worked</small></div></div>
 <div class="card flush"><table><thead><tr><th>Date</th><th>In</th><th>Out</th><th>Break</th><th>Worked</th><th></th></tr></thead><tbody>${rows.join('') || '<tr><td colspan=6 class="muted">No days yet</td></tr>'}</tbody></table></div>
 <div class="row"><span class="small muted">Forgot to punch or wrong time? Tap ✏️ on that day.</span><span class="hstack"><button class="btn" data-od="">🚗 On duty</button><button class="btn" data-fix="">✏️ Request a correction</button></span></div>${fixCard}</div>`;
@@ -1602,14 +1605,15 @@ if (b.dataset.hdel) { await q(sb.from('holidays').delete().eq('day', b.dataset.h
 } catch (er) { toast(errMsg(er), true); }
 });
 function fixDlg(day) {
-const a = (S.myAtt || []).find(x => x.day === day);
-dlg('✏️ Request a correction', `<p class="small muted">Forgot to check in or out, or the time is wrong? Your manager approves the fix.</p>
+const a = (S.myAtt || []).find(x => x.day === day) || (S.missC?.v || []).find(x => x.day === day);
+const mo = a?.in_at && !a.out_at && day && day < todayStr();
+dlg(mo ? '⚠ Regularise missed check-out' : '✏️ Regularise attendance', `<p class="small muted">${mo ? `You checked in at <b>${hm(a.in_at)}</b> on <b>${fmtD(day)}</b> but did not check out. Enter the time you left — it goes for approval.` : 'Forgot to check in or out, or the time is wrong? It goes for approval.'}</p>
 <div class="grid2"><label>Date<input type="date" id="fx_day" value="${day || todayStr()}" max="${todayStr()}"></label><span></span>
-<label>Correct check-in time<input type="time" id="fx_in" value="${a?.in_at ? hm(a.in_at) : ''}"></label><label>Correct check-out time<input type="time" id="fx_out" value="${a?.out_at ? hm(a.out_at) : ''}"></label></div>
-<label>Reason<textarea id="fx_reason" rows="2" placeholder="e.g. Forgot to check out — left at 6:05 pm"></textarea></label>`, `<button class="btn pri" id="fx_send">Send to manager</button>`);
+<label>Correct check-in time<input type="time" id="fx_in" value="${a?.in_at ? hm(a.in_at) : ''}"></label><label>Correct check-out time<input type="time" id="fx_out" value="${a?.out_at ? hm(a.out_at) : mo ? (shiftOf(S.me, day)?.end || '') : ''}"></label></div>
+<label>Reason<textarea id="fx_reason" rows="2" placeholder="e.g. Forgot to check out — left at 6:05 pm">${mo ? 'Forgot to check out' : ''}</textarea></label>`, `<button class="btn pri" id="fx_send">Send for approval</button>`);
 $('#fx_send').onclick = async () => { const d = $('#fx_day').value, i = $('#fx_in').value, o = $('#fx_out').value, r = $('#fx_reason').value.trim();
 if (!d || d > todayStr()) return toast('Pick a past date', true); if (!i && !o) return toast('Enter the check-in or check-out time', true); if (i && o && o <= i) return toast('Check-out must be after check-in', true); if (!r) return toast('Please write a reason', true);
-try { await q(sb.from('punch_fixes').insert({ employee_id: S.me.id, day: d, in_time: i || null, out_time: o || null, reason: r })); closeDlg(); toast('Correction request sent'); render(); } catch (er) { toast(errMsg(er), true); } };
+try { await q(sb.from('punch_fixes').insert({ employee_id: S.me.id, day: d, in_time: i || null, out_time: o || null, reason: r })); closeDlg(); toast('✓ Regularisation sent for approval'); S.missC = null; render(); } catch (er) { toast(errMsg(er), true); } };
 }
 async function myFixesCard(ym) {
 let fx = []; try { fx = await q(sb.from('punch_fixes').select('*').eq('employee_id', S.me.id).gte('day', ym + '-01').order('created_at', { ascending: false })); } catch { return ''; }
@@ -3924,6 +3928,8 @@ return h; }; }
 VIEWS.punch = async () => {
 const hero = await _pvOld(), t = todayStr();
 const qa = [['leave', 'Leave', '#leave', 'c1'], ['truck', 'On duty', 'od', 'c2'], ['pay', 'Payslip', '#pay', 'c3'], ['plan', 'Work plan', '#plan', 'c4'], ['advances', 'Advance', '#advances', 'c5'], ['search', 'Find a colleague', 'find', 'c6']];
+if (onMobile()) qa.splice(4, 2, ['my', 'My attendance', '#my', 'c5'], ['edit', 'Regularise', 'fix', 'c6']);
+const miss = await missedOuts();
 const mon = monOf(t), sun = addDays(mon, 6); let off = [];
 try { off = await rpc('off_this_week', { p_from: mon, p_to: sun }); } catch { }
 const by = new Map(); for (const o of off || []) { const c = by.get(o.employee_id + o.kind); if (!c || o.from_date < c.from_date) by.set(o.employee_id + o.kind, o); }
@@ -3934,8 +3940,8 @@ S.emps.filter(e => e.active && e.join_date && e.join_date <= t && e.join_date >=
 [...by.values()].filter(o => empById(o.employee_id) && o.to_date >= t).forEach(o => rows.push({ e: empById(o.employee_id), d: o.from_date < t ? t : o.from_date, ic: o.kind === 'od' ? 'truck' : 'leave', txt: o.kind === 'od' ? 'On duty' : 'On leave', w: when(o.from_date, o.to_date) }));
 rows.sort((x, y) => x.d.localeCompare(y.d) || (x.act ? -1 : 1));
 const todayN = rows.filter(r => r.w === 'today').length;
-return `<div class="home">${hero.replace(/^<div class="punch">/, '<div class="punch hhero">')}
-<div class="htiles">${qa.map(([i, l, go, c]) => `<button class="htile ${c}" ${go === 'od' ? 'data-od=""' : go === 'find' ? 'data-hfind=""' : `data-hgo="${go}"`}><span>${ico(i)}</span><b>${l}</b></button>`).join('')}</div>
+return `<div class="home">${hero.replace(/^<div class="punch">/, '<div class="punch hhero">')}${missCard(miss)}
+<div class="htiles">${qa.map(([i, l, go, c]) => `<button class="htile ${c}" ${go === 'od' ? 'data-od=""' : go === 'fix' ? 'data-fix=""' : go === 'find' ? 'data-hfind=""' : `data-hgo="${go}"`}><span>${ico(i)}</span><b>${l}</b></button>`).join('')}</div>
 <div class="hcard"><div class="hhd"><div><h3>Today at Aeden</h3><span class="small muted">${todayN ? `${todayN} thing${todayN > 1 ? 's' : ''} today` : 'This week'} · leave, on duty, birthdays &amp; new faces</span></div></div>
 ${rows.length ? `<div class="hlist">${rows.slice(0, 8).map(r => `<div class="hli ${r.w === 'today' ? 'now' : ''}"><span class="hlic ${r.ic}">${ico(r.ic)}</span>${avatarHTML(r.e, 'sm')}<div class="grow"><b>${esc(r.e.name)}</b><small>${r.txt} · ${r.w}</small></div>${r.act || ''}</div>`).join('')}</div>${rows.length > 8 ? `<div class="small muted" style="margin-top:8px">+${rows.length - 8} more this week</div>` : ''}` : '<p class="small muted" style="margin:0">Everyone is in this week — no leave, birthdays or new joiners. 🎉</p>'}</div>
 </div>`;
@@ -4226,4 +4232,15 @@ try { await saveSettings({ flows }); closeDlg(); toast(ids.length ? `✓ ${per ?
 });
 function flowFixed(emp, ch) { const F = C().flows || {}; if ((F['@' + emp] || []).length) return true; const d = empById(emp)?.dept, fl = (F[d] || []).filter(id => id !== emp && empById(id)?.active !== false);
 return !!fl.length && fl.length === (ch || []).length && fl.every((id, i) => id === ch[i]); }
+async function missedOuts() {
+if (!S.me) return []; if (S.missC && S.missC.t > Date.now() - 60000) return S.missC.v; const from = addDays(todayStr(), -30);
+try { const [a, f] = await Promise.all([q(sb.from('attendance').select('day,in_at,out_at').eq('employee_id', S.me.id).gte('day', from).lt('day', todayStr()).is('out_at', null)),
+q(sb.from('punch_fixes').select('day,status').eq('employee_id', S.me.id).gte('day', from).neq('status', 'rejected'))]);
+const done = new Set(f.map(x => x.day)); const v = a.filter(x => x.in_at && !done.has(x.day)).sort((x, y) => y.day.localeCompare(x.day)); S.missC = { t: Date.now(), v }; return v; } catch { return []; }
+}
+function missCard(m) {
+if (!m?.length) return '';
+return `<div class="card misscard"><div class="mch">⚠ <b>Missed check-out${m.length > 1 ? 's' : ''}</b><span class="small">Regularise so the day isn't counted short.</span></div>${m.slice(0, 5).map(x => `<div class="li"><div><b>${DOW[dowOf(x.day)]} ${fmtD(x.day)}</b><small>Checked in ${hm(x.in_at)} · no check-out</small></div><button class="btn sm pri" data-fix="${x.day}">Regularise</button></div>`).join('')}</div>`;
+}
+{ const _nlP = navList; navList = function () { const n = _nlP.apply(this, arguments); return onMobile() ? n.filter(x => !['people', 'advances'].includes(x[0])) : n; }; }
 </script></body></html>
