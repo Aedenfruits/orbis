@@ -404,6 +404,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .pbfx{display:block;margin:8px auto 0;background:#fff;color:#be123c;border:0;border-radius:99px;padding:6px 14px;font-weight:700;font-size:12.5px}
 .lbt .o{color:#d97706}.lbt .r{color:#e11d48}.lbdays{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
 .notax{background:#f0fdf4;border:1px solid #bbf7d0}
+.paytbl .ptot td{background:#f1f5f9;font-weight:700}.paytbl th{white-space:nowrap}.paytbl .numin{width:84px}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1863,26 +1864,30 @@ dlg('🔒 Unlock the vault', '<p class="small muted">Salaries and bank details a
 const go = async () => { try { const raw = await vaultOpenRaw($('#nd_pw').value, false); S.dek = await importDek(raw); raw.fill(0); vaultTouch(); closeDlg(); after && after(); } catch (er) { toast(errMsg(er), true); } };
 $('#nd_un').onclick = go; $('#nd_pw').onkeydown = e => { if (e.key === 'Enter') go(); }; return false;
 }
-const payCfg = () => ({ basicPct: 50, hraPct: 40, pf: true, pfCap: 25000, esi: true, esiLimit: 21000, pt: 0, ...(C().pay || {}) });
+const payCfg = () => { const P = { basicPct: 50, hraG: 25, convPct: 15, pf: true, pfCap: 15000, esi: true, esiLimit: 21000, pt: 0, klwf: 0, ...(C().pay || {}) }; P.hraPct = P.basicPct ? P.hraG * 100 / P.basicPct : 0; return P; };
+function salSplit(m) { const P = payCfg(), b = Math.round(m * P.basicPct / 100), h = Math.round(m * P.hraG / 100), c = Math.round(m * P.convPct / 100); return [['Basic', b], ['House rent allowance', h], ['Conveyance allowance', c], ['Special allowance', m - b - h - c]]; }
 function payCalc(ctc, row, ex = {}) {
-const P = payCfg(), cal = row['Calendar days'] || 30, days = row['Payable days'] || 0;
-const gross = Math.round(ctc * days / cal), basic = Math.round(gross * P.basicPct / 100), hra = Math.round(basic * P.hraPct / 100), spec = gross - basic - hra;
-const bonus = Math.round(Number(ex.bonus) || 0), adv = Math.round(Number(ex.adv) || 0), tds = Math.round(Number(ex.tds) || 0);
-const pf = P.pf ? Math.round(Math.min(basic, P.pfCap) * 0.12) : 0;
-const esi = P.esi && ctc <= P.esiLimit ? Math.ceil((gross + bonus) * 0.0075) : 0;
-const pt = days > 0 ? Math.round(Number(P.pt) || 0) : 0;
-const earn = [['Basic', basic], ['House rent allowance', hra], ['Special allowance', spec]]; if (bonus) earn.push(['Bonus / incentive', bonus]);
-const ded = []; if (pf) ded.push(['Provident fund (12%)', pf]); if (esi) ded.push(['ESI (0.75%)', esi]); if (pt) ded.push(['Professional tax', pt]); if (tds) ded.push(['Income tax (TDS)', tds]); if (adv) ded.push(['Advance / other deduction', adv]);
-const tE = gross + bonus, tD = ded.reduce((s, x) => s + x[1], 0);
-return { ctc, gross: tE, earn, ded, totalDed: tD, net: tE - tD, bonus, adv, tds };
+const P = payCfg(), cal = row['Calendar days'] || 30, payable = row['Payable days'] || 0, n = v => Math.round(Number(v) || 0);
+const lop = Math.max(0, Math.round((cal - payable) * 10) / 10), full = Math.round(ctc), parts = salSplit(full), basic = parts[0][1];
+const lopAmt = Math.min(full, Math.round(full / 30 * lop)), netSal = full - lopAmt;
+const bonus = n(ex.bonus), adv = n(ex.adv), tds = n(ex.tds), other = n(ex.other), pt = payable > 0 ? n(ex.pt ?? P.pt) : 0, klwf = payable > 0 ? n(ex.klwf ?? P.klwf) : 0;
+const pfOn = P.pf && ex.pf !== false, pfLop = Math.round(basic / 30 * lop), pfBase = Math.max(0, Math.min(basic - pfLop, P.pfCap)), pf = pfOn ? Math.round(pfBase * 0.12) : 0;
+const esi = P.esi && full <= P.esiLimit ? Math.round((netSal + bonus) * 0.0075) : 0;
+const earn = parts.filter(z => z[1] > 0); if (bonus) earn.push(['Bonus / incentive', bonus]);
+const stat = []; if (pf) stat.push(['Provident fund (12%)', pf]); if (esi) stat.push(['ESI (0.75%)', esi]); if (adv) stat.push(['Advance / loan', adv]); if (tds) stat.push(['Income tax (TDS)', tds]); if (pt) stat.push(['Professional tax', pt]); if (other) stat.push(['Other deductions', other]); if (klwf) stat.push(['KLWF', klwf]);
+const ded = (lopAmt ? [[`Loss of pay (${lop} day${lop === 1 ? '' : 's'})`, lopAmt]] : []).concat(stat);
+const statDed = stat.reduce((s, x) => s + x[1], 0), payableAmt = netSal + bonus - statDed;
+return { ctc: full, gross: full + bonus, fullGross: full, lopDays: lop, lopAmt, netSal, earn, ded, statDed, totalDed: lopAmt + statDed, net: payableAmt, bonus, adv, tds, pt, other, klwf, pf, esi, pfOn, pfGross: basic, pfLop, pfBase, parts };
 }
 async function payPrepare(ym) {
 const { sum, emps } = await salaryRows(ym); const old = await q(sb.from('payslips').select('*').eq('month', ym));
+try { const pv = await q(sb.from('payslips').select('employee_id,data').eq('month', shiftMonth(ym, -1))); S.payPrev = Object.fromEntries(pv.map(x => [x.employee_id, x.data || {}])); } catch { S.payPrev = {}; }
 const out = [];
 for (let i = 0; i < emps.length; i++) {
 const e = emps[i], r = sum[i]; let p = {}; try { p = await privGet(e.id); } catch { }
 const ctc = Number(String(p.ctc || '').replace(/[^\d.]/g, '')) || 0; const o = old.find(x => x.employee_id === e.id);
-out.push({ e, r, p, ctc, ex: { bonus: o?.data?.bonus || 0, adv: o?.data?.adv || 0, tds: o?.data?.tds || 0 }, published: !!o?.published });
+const prev = S.payPrev?.[e.id], P0 = payCfg();
+out.push({ e, r, p, ctc, ex: { bonus: o?.data?.bonus || 0, adv: o?.data?.adv || 0, tds: o?.data?.tds || 0, other: o?.data?.other || 0, pt: o?.data?.pt ?? prev?.pt ?? P0.pt, klwf: o?.data?.klwf ?? prev?.klwf ?? P0.klwf, pf: o?.data?.pfOn ?? prev?.pfOn ?? !!String(p.uan || '').trim() }, published: !!o?.published });
 }
 S.payDraft = { ym, rows: out }; return out;
 }
@@ -1917,22 +1922,27 @@ const ym = S.payMonth || shiftMonth(todayStr().slice(0, 7), -1);
 let slips; try { slips = await q(sb.from('payslips').select('*').eq('month', ym)); } catch { return p3Missing(); }
 S.paySlips = slips; const P = payCfg(); const dr = S.payDraft && S.payDraft.ym === ym ? S.payDraft.rows : null;
 const tot = k => slips.reduce((s, x) => s + (Number(x.data?.[k]) || 0), 0);
-const draftTbl = dr ? `<div class="card flush"><div class="row" style="padding:12px 14px"><h3>Prepare ${esc(monthName(ym))}</h3><span class="small muted">Edit bonus, TDS or advance — net updates live.</span></div><div class="scrollx"><table class="paytbl"><thead><tr><th>Employee</th><th>Monthly CTC</th><th>Paid days</th><th>Gross</th><th>Bonus</th><th>TDS</th><th>Advance</th><th>Deductions</th><th>Net</th></tr></thead><tbody>
-${dr.map((x, i) => { const c = payCalc(x.ctc, x.r, x.ex); return `<tr class="${x.ctc ? '' : 'dim'}"><td><b>${esc(x.e.name)}</b><small class="muted"> ${esc(x.e.code)}</small></td><td>${x.ctc ? inr(x.ctc) : '<span class="chip warn">No salary</span>'}</td><td>${x.r['Payable days']} / ${x.r['Calendar days']}</td><td>${inr(c.gross - c.bonus)}</td>
-${['bonus', 'tds', 'adv'].map(k => `<td><input class="numin" type="number" min="0" data-px="${i}" data-k="${k}" value="${x.ex[k] || ''}" ${x.ctc ? '' : 'disabled'}></td>`).join('')}<td id="pd${i}">${inr(c.totalDed)}</td><td><b id="pn${i}">${inr(c.net)}</b></td></tr>`; }).join('')}</tbody></table></div>
+const draftTbl = dr ? `<div class="card flush"><div class="row" style="padding:12px 14px"><h3>Prepare ${esc(monthName(ym))}</h3><span class="small muted">Same columns as your salary sheet. LOP = gross ÷ 30 × LOP days. Edit the white boxes — each row updates live.</span></div><div class="scrollx"><table class="paytbl"><thead><tr><th>Employee</th><th>Gross</th><th>LOP days</th><th>LOP amount</th><th>Net salary</th><th>PF?</th><th>PF</th><th>ESI</th><th>Bonus</th><th>Advance / loan</th><th>TDS</th><th>PT</th><th>Other ded.</th><th>KLWF</th><th>Total deduction</th><th>Salary payable</th></tr></thead><tbody>
+${dr.map((x, i) => { const c = payCalc(x.ctc, x.r, x.ex), dis = x.ctc ? '' : 'disabled'; return `<tr class="${x.ctc ? '' : 'dim'}"><td><b>${esc(x.e.name)}</b><small class="muted"> ${esc(x.e.code)}</small><div class="small muted">${esc(x.e.dept || '')}</div></td><td>${x.ctc ? inr(c.fullGross) : '<span class="chip warn">No salary</span>'}</td><td>${c.lopDays || '0'}</td><td id="pl${i}">${c.lopAmt ? inr(c.lopAmt) : '—'}</td><td id="ps${i}">${inr(c.netSal)}</td>
+<td><input type="checkbox" data-pxpf="${i}" ${x.ex.pf !== false ? 'checked' : ''} ${dis} title="PF applies to this person"></td><td id="ppf${i}">${c.pf ? inr(c.pf) : '—'}</td><td id="pes${i}">${c.esi ? inr(c.esi) : '—'}</td>
+${['bonus', 'adv', 'tds', 'pt', 'other', 'klwf'].map(k => `<td><input class="numin" type="number" min="0" data-px="${i}" data-k="${k}" value="${x.ex[k] || ''}" ${dis}></td>`).join('')}<td id="pd${i}">${inr(c.statDed)}</td><td><b id="pn${i}">${inr(c.net)}</b></td></tr>`; }).join('')}
+${(() => { const T = dr.filter(x => x.ctc).map(x => payCalc(x.ctc, x.r, x.ex)), s = k => T.reduce((a, c) => a + (c[k] || 0), 0); return `<tr class="ptot"><td><b>Total</b></td><td>${inr(s('fullGross'))}</td><td></td><td>${inr(s('lopAmt'))}</td><td>${inr(s('netSal'))}</td><td></td><td>${inr(s('pf'))}</td><td>${inr(s('esi'))}</td><td>${inr(s('bonus'))}</td><td>${inr(s('adv'))}</td><td>${inr(s('tds'))}</td><td>${inr(s('pt'))}</td><td>${inr(s('other'))}</td><td>${inr(s('klwf'))}</td><td>${inr(s('statDed'))}</td><td><b>${inr(s('net'))}</b></td></tr>`; })()}</tbody></table></div>
 <div class="row" style="padding:12px 14px"><span class="small muted">Rows without a monthly salary are skipped. Add salary in Employees → 🔒 details.</span><div class="hstack"><button class="btn" data-pay="save">Save as draft</button><button class="btn pri" data-pay="pub">✓ Save & publish to staff</button></div></div></div>` : '';
 return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · accounts</span><h2>Payroll</h2></div><div class="hstack"><button class="btn sm" data-pm="-1">‹</button><b>${esc(monthName(ym))}</b><button class="btn sm" data-pm="1">›</button></div></div>
 ${slips.length ? `<div class="kpis"><div><b>${slips.length}</b><small>Payslips</small></div><div><b>${inr(tot('gross'))}</b><small>Gross</small></div><div><b>${inr(tot('totalDed'))}</b><small>Deductions</small></div><div><b>${inr(tot('net'))}</b><small>Net pay</small></div></div>` : ''}
 <div class="card"><div class="row"><div><h3>${slips.length ? 'Payslips for this month' : 'No payslips yet for this month'}</h3><p class="small muted">Uses the attendance register (paid days = days in month − absent − ½ × half days − leave above ${payRules().lpm}/month − ${payRules().lc} day per ${payRules().lg} lates) and the monthly salary saved in 🔒 private details.</p></div>
-<div class="hstack wrap"><button class="btn pri" data-pay="prep">${slips.length ? '↻ Recalculate' : '⚙ Prepare payslips'}</button>${slips.length ? `<button class="btn" data-pay="bank">⬇ Bank transfer sheet</button><button class="btn" data-pay="reg">⬇ Payroll register</button>${slips.some(s => !s.published) ? '<button class="btn" data-pay="puball">Publish all</button>' : ''}` : ''}</div></div>
+<div class="hstack wrap"><button class="btn pri" data-pay="prep">${slips.length ? '↻ Recalculate' : '⚙ Prepare payslips'}</button>${slips.length ? `<button class="btn" data-pay="bank">⬇ Bank transfer sheet</button><button class="btn" data-pay="reg">⬇ Salary sheet (Excel)</button>${slips.some(s => !s.published) ? '<button class="btn" data-pay="puball">Publish all</button>' : ''}` : ''}</div></div>
 ${slips.length ? `<div class="stack" style="gap:6px">${slips.slice().sort((a, b) => (a.data?.name || '').localeCompare(b.data?.name || '')).map(s => `<div class="li"><div><b>${esc(s.data?.name)}</b><small>${esc(s.data?.code)} · ${s.data?.payable} paid days · gross ${inr(s.data?.gross)} · deductions ${inr(s.data?.totalDed)}</small></div><div class="hstack"><b>${inr(s.data?.net)}</b>${s.published ? '<span class="chip good">Published</span>' : '<span class="chip warn">Draft</span>'}<button class="btn sm" data-slip="${s.id}">View</button></div></div>`).join('')}</div>` : ''}</div>
 ${draftTbl}
 <div class="card"><h3>Salary structure</h3><p class="small muted">How the monthly salary (CTC) is split on the payslip. Check these with your auditor.</p><div class="grid3">
-<label>Basic (% of gross)<input type="number" id="ps_b" value="${P.basicPct}"></label><label>HRA (% of basic)<input type="number" id="ps_h" value="${P.hraPct}"></label><label>Professional tax / month (₹)<input type="number" id="ps_pt" value="${P.pt}"></label>
-<label class="chk"><input type="checkbox" id="ps_pf" ${P.pf ? 'checked' : ''}> PF 12% of basic (basic capped at ₹${P.pfCap.toLocaleString('en-IN')})</label><label class="chk"><input type="checkbox" id="ps_esi" ${P.esi ? 'checked' : ''}> ESI 0.75% when salary ≤ ₹${P.esiLimit.toLocaleString('en-IN')}</label></div>
+<label>Basic (% of gross)<input type="number" id="ps_b" value="${P.basicPct}"></label><label>HRA (% of gross)<input type="number" id="ps_h" value="${P.hraG}"></label><label>Conveyance (% of gross)<input type="number" id="ps_cv" value="${P.convPct}"></label>
+<label>Special allowance<input readonly value="${Math.max(0, 100 - P.basicPct - P.hraG - P.convPct)}% (the rest)"></label><label>PF ceiling (₹)<input type="number" id="ps_pc" value="${P.pfCap}"></label><label>Professional tax / month (₹, default)<input type="number" id="ps_pt" value="${P.pt}"></label><label>KLWF / month (₹, default)<input type="number" id="ps_kl" value="${P.klwf}"></label>
+<label class="chk"><input type="checkbox" id="ps_pf" ${P.pf ? 'checked' : ''}> PF 12% of basic (after LOP, up to the PF ceiling) — tick per person in the table</label><label class="chk"><input type="checkbox" id="ps_esi" ${P.esi ? 'checked' : ''}> ESI 0.75% when salary ≤ ₹${P.esiLimit.toLocaleString('en-IN')}</label></div>
 <button class="btn" data-pay="cfg">Save structure</button></div></div>`;
 };
-document.addEventListener('input', e => { const i = e.target.closest('[data-px]'); if (!i || !S.payDraft) return; const x = S.payDraft.rows[i.dataset.px]; x.ex[i.dataset.k] = Number(i.value) || 0; const c = payCalc(x.ctc, x.r, x.ex); $('#pd' + i.dataset.px).textContent = inr(c.totalDed); $('#pn' + i.dataset.px).textContent = inr(c.net); });
+document.addEventListener('input', e => { const i = e.target.closest('[data-px]'); if (!i || !S.payDraft) return; const x = S.payDraft.rows[i.dataset.px]; x.ex[i.dataset.k] = Number(i.value) || 0; payRowUpd(i.dataset.px); });
+function payRowUpd(k) { const x = S.payDraft.rows[k], c = payCalc(x.ctc, x.r, x.ex); $('#pd' + k).textContent = inr(c.statDed); $('#pn' + k).textContent = inr(c.net); $('#ppf' + k).textContent = c.pf ? inr(c.pf) : '—'; $('#pes' + k).textContent = c.esi ? inr(c.esi) : '—'; }
+document.addEventListener('change', e => { const i = e.target.closest('[data-pxpf]'); if (!i || !S.payDraft) return; S.payDraft.rows[i.dataset.pxpf].ex.pf = i.checked; payRowUpd(i.dataset.pxpf); });
 document.addEventListener('click', async e => {
 const b = e.target.closest('[data-pay],[data-pm],[data-slip],[data-myslip]'); if (!b) return;
 if (b.dataset.pm) { S.payMonth = shiftMonth(S.payMonth || shiftMonth(todayStr().slice(0, 7), -1), Number(b.dataset.pm)); S.payDraft = null; return render(); }
@@ -1940,16 +1950,27 @@ if (b.dataset.slip) { const s = S.paySlips.find(x => x.id === b.dataset.slip); r
 if (b.dataset.myslip) { const s = S.mySlips.find(x => x.id === b.dataset.myslip); lsSet('paySeen', s.month > (lsGet('paySeen') || '') ? s.month : lsGet('paySeen')); refreshBadges(); return openSlip(s.data, s.month); }
 const a = b.dataset.pay, ym = S.payMonth || shiftMonth(todayStr().slice(0, 7), -1); const t0 = b.textContent;
 try {
-if (a === 'cfg') { await saveSettings({ pay: { ...payCfg(), basicPct: Number($('#ps_b').value) || 0, hraPct: Number($('#ps_h').value) || 0, pt: Number($('#ps_pt').value) || 0, pf: $('#ps_pf').checked, esi: $('#ps_esi').checked } }); toast('Salary structure saved'); return render(); }
+if (a === 'cfg') { await saveSettings({ pay: { ...payCfg(), basicPct: Number($('#ps_b').value) || 0, hraG: Number($('#ps_h').value) || 0, convPct: Number($('#ps_cv').value) || 0, pfCap: Number($('#ps_pc').value) || 15000, klwf: Number($('#ps_kl').value) || 0, pt: Number($('#ps_pt').value) || 0, pf: $('#ps_pf').checked, esi: $('#ps_esi').checked } }); toast('Salary structure saved'); return render(); }
 if (a === 'prep') { if (!(await needDek(() => b.click()))) return; b.disabled = true; b.textContent = 'Calculating…'; await payPrepare(ym); render(); setTimeout(() => document.querySelector('.paytbl')?.scrollIntoView({ behavior: 'smooth' }), 200); return; }
 if (a === 'save' || a === 'pub') { const rows = S.payDraft.rows.filter(x => x.ctc > 0); if (!rows.length) return toast('No one has a monthly salary saved', true);
 b.disabled = true; b.textContent = 'Saving…';
 await q(sb.from('payslips').upsert(rows.map(x => ({ employee_id: x.e.id, month: ym, data: slipData(x), published: a === 'pub' || x.published, created_by: S.me.id })), { onConflict: 'employee_id,month' }));
 S.payDraft = null; toast(a === 'pub' ? `✓ ${rows.length} payslips published — staff can see them under My payslips` : `Saved ${rows.length} draft payslips`); return render(); }
 if (a === 'puball') { await q(sb.from('payslips').update({ published: true }).eq('month', ym)); toast('All payslips published'); return render(); }
-if (a === 'reg') { const X = await loadXLSX(); const wb = X.utils.book_new();
-const rows = S.paySlips.map(s => { const d = s.data, o = { Code: d.code, Name: d.name, Department: d.dept, 'Monthly CTC': d.ctc, 'Days in month': d.cal, 'Paid days': d.payable, 'LOP days': d.lop }; d.earn.forEach(([k, v]) => o[k] = v); o['Gross'] = d.gross; d.ded.forEach(([k, v]) => o[k] = v); o['Total deductions'] = d.totalDed; o['Net pay'] = d.net; o.Status = s.published ? 'Published' : 'Draft'; return o; });
-X.utils.book_append_sheet(wb, X.utils.json_to_sheet(rows), 'Payroll ' + ym); X.writeFile(wb, `ORBIS-payroll-register-${ym}.xlsx`); return; }
+if (a === 'reg') { const withBank = !!S.dek; const X = await loadXLSX(); const rows = []; let sl = 0;
+const list = S.paySlips.slice().sort((p, q2) => (p.data?.dept || '').localeCompare(q2.data?.dept || '') || (p.data?.code || '').localeCompare(q2.data?.code || ''));
+for (const s of list) { const d = s.data, pt = Object.fromEntries((d.parts || salSplit(d.fullGross || d.ctc)).map(z => [z[0], z[1]])); let p = {}; if (withBank) { try { p = await privGet(s.employee_id); } catch { } }
+rows.push({ 'SL No.': ++sl, 'ID': d.code, 'NAME': d.name, 'DEPARTMENT': d.dept, 'JOINING DATE': d.doj ? fmtD(d.doj) : '', 'Bank': p.bank || d.bank || '', 'IFSC': p.ifsc || '', 'ACCOUNT NUMBER': p.acct || (d.acct4 ? '••' + d.acct4 : ''),
+'Basic': pt['Basic'] || 0, 'HRA': pt['House rent allowance'] || 0, 'Conveyance': pt['Conveyance allowance'] || 0, 'Special Allow': pt['Special allowance'] || 0, 'Gross': d.fullGross ?? d.ctc, 'LOP days': d.lopDays ?? d.lop ?? 0, 'Lop Amount': d.lopAmt || 0, 'Net Salary': d.netSal ?? d.gross,
+'Gross PF': d.pfOn ? (d.pfGross || 0) : 0, 'PF LOP': d.pfOn ? (d.pfLop || 0) : 0, 'PF Wage': d.pfOn ? Math.max(0, (d.pfGross || 0) - (d.pfLop || 0)) : 0, 'PF Ceiling': d.pfOn ? (d.pfBase || 0) : 0, 'PF': d.pf || 0, 'ESI': d.esi || 0, 'Advance / Loan': d.adv || 0, 'TDS': d.tds || 0, 'PT': d.pt || 0, 'Other deductions': d.other || 0, 'KLWF': d.klwf || 0,
+'Total Deduction': d.statDed ?? d.totalDed, 'Salary Payable': d.net, 'Remarks': d.bonus ? `Bonus ${d.bonus}` : '' }); }
+const ws = X.utils.json_to_sheet([]); X.utils.sheet_add_aoa(ws, [[`SALARY FOR THE MONTH ${monthName(ym).toUpperCase()}`], [idCfg().company || 'Aeden Fruits International Pvt Ltd'], []]);
+X.utils.sheet_add_json(ws, rows, { origin: 'A4' }); const tr = rows.length + 5, cols = Object.keys(rows[0] || {});
+const sumCols = ['Basic', 'HRA', 'Conveyance', 'Special Allow', 'Gross', 'Lop Amount', 'Net Salary', 'PF', 'ESI', 'Advance / Loan', 'TDS', 'PT', 'Other deductions', 'KLWF', 'Total Deduction', 'Salary Payable'];
+if (rows.length) { X.utils.sheet_add_aoa(ws, [cols.map(c => c === 'NAME' ? 'TOTAL' : sumCols.includes(c) ? rows.reduce((t, r) => t + (Number(r[c]) || 0), 0) : '')], { origin: 'A' + tr }); }
+ws['!cols'] = cols.map(c => ({ wch: c === 'NAME' ? 26 : c === 'ACCOUNT NUMBER' ? 20 : c === 'DEPARTMENT' ? 16 : 12 }));
+const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Salary ' + ym); X.writeFile(wb, `Salary-${ym}.xlsx`);
+toast(withBank ? '⬇ Salary sheet downloaded — it has account numbers, keep it safe' : '⬇ Salary sheet downloaded (unlock the vault first to include bank account numbers)'); return; }
 if (a === 'bank') { if (!(await needDek(() => b.click()))) return; const X = await loadXLSX(); const rows = [];
 for (const s of S.paySlips) { let p = {}; try { p = await privGet(s.employee_id); } catch { } rows.push({ 'Employee code': s.data.code, 'Beneficiary name': s.data.name, 'Bank': p.bank || '', 'Account number': p.acct || '', 'IFSC': p.ifsc || '', 'Amount': s.data.net, 'Narration': `Salary ${monthName(ym)}` }); }
 const ws = X.utils.json_to_sheet(rows); ws['!cols'] = [{ wch: 12 }, { wch: 26 }, { wch: 18 }, { wch: 20 }, { wch: 13 }, { wch: 12 }, { wch: 24 }]; const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Bank transfer');
@@ -2590,13 +2611,9 @@ const cess = Math.round(tax * 0.04); return { std, ded: Math.round(ded), taxable
 async function taxDecl(empId, fy) { try { return await q(sb.from('tax_decl').select('*').eq('employee_id', empId).eq('fy', fy).maybeSingle()); } catch { return null; } }
 const _payCalc0 = payCalc;
 payCalc = function (ctc, row, ex = {}) {
-const o = _payCalc0(ctc, row, ex), P = payCfg(), cal = row['Calendar days'] || 30;
-const basic = (o.earn.find(z => z[0] === 'Basic') || [0, 0])[1];
-const pfWage = P.pf ? Math.min(basic, P.pfCap) : 0, pf = Math.round(pfWage * 0.12), eps = Math.round(pfWage * 0.0833);
-const esiOn = P.esi && ctc <= P.esiLimit, esiWage = esiOn ? o.gross : 0, esiEE = esiOn && (o.gross - o.bonus) / cal > 176 ? Math.ceil(esiWage * 0.0075) : 0;
-const ded = o.ded.filter(z => !/^Provident fund|^ESI/.test(z[0])); if (pf) ded.unshift(['Provident fund (12%)', pf]); if (esiEE) ded.splice(pf ? 1 : 0, 0, ['ESI (0.75%)', esiEE]);
-const tD = ded.reduce((s, z) => s + z[1], 0);
-return { ...o, ded, totalDed: tD, net: o.gross - tD, pfWage, pf, eps, epfER: pf - eps, edli: Math.round(pfWage * 0.005), pfAdm: Math.round(pfWage * 0.005), esiWage, esi: esiEE, esiER: esiOn ? Math.ceil(esiWage * 0.0325) : 0, pt: (ded.find(z => z[0] === 'Professional tax') || [0, 0])[1], ncp: row['Absent / LOP days'] || 0 };
+const o = _payCalc0(ctc, row, ex), P = payCfg(), pfWage = o.pfOn ? o.pfBase : 0, eps = Math.round(Math.min(pfWage, 15000) * 0.0833);
+const esiWage = o.esi ? o.netSal + o.bonus : 0;
+return { ...o, pfWage, eps, epfER: o.pf - eps, edli: Math.round(pfWage * 0.005), pfAdm: Math.round(pfWage * 0.005), esiWage, esiER: o.esi ? Math.ceil(esiWage * 0.0325) : 0, ncp: o.lopDays };
 };
 const _payPrep0 = payPrepare;
 payPrepare = async function (ym) {
@@ -2606,7 +2623,7 @@ const decl = await q(sb.from('tax_decl').select('*').eq('fy', fy)).catch(() => [
 const P = payCfg(), saved = new Set((await q(sb.from('payslips').select('employee_id').eq('month', ym)).catch(() => [])).map(z => z.employee_id));
 for (const x of rows) {
 if (!x.ctc) continue; const mine = past.filter(s => s.employee_id === x.e.id), cur = payCalc(x.ctc, x.r, { ...x.ex, tds: 0 });
-const proj = mine.reduce((s, z) => s + (z.data?.gross || 0), 0) + cur.gross + x.ctc * Math.max(0, 11 - mine.length), done = mine.reduce((s, z) => s + (z.data?.tds || 0), 0);
+const proj = mine.reduce((s, z) => s + ((z.data?.gross || 0) - (z.data?.lopAmt || 0)), 0) + (cur.gross - cur.lopAmt) + x.ctc * Math.max(0, 11 - mine.length), done = mine.reduce((s, z) => s + (z.data?.tds || 0), 0);
 const dc = decl.find(z => z.employee_id === x.e.id), basicYr = proj * P.basicPct / 100, hraYr = basicYr * P.hraPct / 100;
 const t = taxCalc(proj, dc?.regime || 'new', dc?.data || {}, hraYr, basicYr); x.tdsSug = Math.max(0, Math.round((t.total - done) / remaining)); x.taxInfo = { proj, ...t, done, regime: dc?.regime || 'new' };
 if (!saved.has(x.e.id)) x.ex.tds = x.tdsSug;
@@ -2642,7 +2659,7 @@ if (tab === 'tds') { const months = fyMonths(fy);
 const [all, decl] = await Promise.all([q(sb.from('payslips').select('employee_id,month,data').gte('month', months[0]).lte('month', months[11])).catch(() => []), q(sb.from('tax_decl').select('*').eq('fy', fy)).catch(() => [])]);
 const ids = [...new Set(all.map(s => s.employee_id))]; const P = payCfg();
 S.stTax = ids.map(id => { const mine = all.filter(s => s.employee_id === id).sort((a, b) => a.month.localeCompare(b.month)), last = mine[mine.length - 1].data, paidM = mine.length, remain = Math.max(0, 12 - mine.length);
-const gross = mine.reduce((s, z) => s + (z.data.gross || 0), 0), proj = gross + (last.ctc || 0) * remain, done = mine.reduce((s, z) => s + (z.data.tds || 0), 0), dc = decl.find(z => z.employee_id === id);
+const gross = mine.reduce((s, z) => s + ((z.data.gross || 0) - (z.data.lopAmt || 0)), 0), proj = gross + (last.ctc || 0) * remain, done = mine.reduce((s, z) => s + (z.data.tds || 0), 0), dc = decl.find(z => z.employee_id === id);
 const t = taxCalc(proj, dc?.regime || 'new', dc?.data || {}, proj * P.basicPct / 100 * P.hraPct / 100, proj * P.basicPct / 100);
 return { id, name: last.name, code: last.code, pan: last.pan, regime: dc?.regime || 'new', declared: !!dc, months: paidM, gross, proj, done, ...t, bal: t.total - done }; }).sort((a, b) => b.total - a.total);
 body = `<div class="card flush"><div class="scrollx"><table><thead><tr><th>Employee</th><th>Regime</th><th>Paid so far</th><th>Projected year</th><th>Taxable</th><th>Tax for year</th><th>TDS deducted</th><th>Balance</th><th></th></tr></thead><tbody>
@@ -2677,7 +2694,7 @@ const _payV = VIEWS.pay;
 VIEWS.pay = async () => {
 const h = await _payV(), fy = fyOf(todayStr().slice(0, 7)), dc = await taxDecl(S.me.id, fy), d = dc?.data || {}, rg = dc?.regime || 'new';
 const slips = (S.mySlips || []).filter(s => s.month >= fyStart(fy)), last = slips[0]?.data, P = payCfg();
-let cmp = '', projY = null; if (last?.ctc) { projY = slips.reduce((s, z) => s + (z.data.gross || 0), 0) + last.ctc * Math.max(0, 12 - slips.length); const proj = slips.reduce((s, z) => s + (z.data.gross || 0), 0) + last.ctc * Math.max(0, 12 - slips.length), bY = proj * P.basicPct / 100, hY = bY * P.hraPct / 100;
+let cmp = '', projY = null; if (last?.ctc) { projY = slips.reduce((s, z) => s + ((z.data.gross || 0) - (z.data.lopAmt || 0)), 0) + last.ctc * Math.max(0, 12 - slips.length); const proj = slips.reduce((s, z) => s + ((z.data.gross || 0) - (z.data.lopAmt || 0)), 0) + last.ctc * Math.max(0, 12 - slips.length), bY = proj * P.basicPct / 100, hY = bY * P.hraPct / 100;
 const tn = taxCalc(proj, 'new', d, hY, bY), to = taxCalc(proj, 'old', d, hY, bY), better = tn.total <= to.total ? 'new' : 'old';
 cmp = `<div class="grid2"><div class="lb ${rg === 'new' ? 'on' : ''}"><small>NEW REGIME</small><div class="lbn"><b>${inr(tn.total)}</b><span>tax / year</span></div></div><div class="lb ${rg === 'old' ? 'on' : ''}"><small>OLD REGIME</small><div class="lbn"><b>${inr(to.total)}</b><span>tax / year</span></div></div></div><div class="msg">Estimated on a yearly salary of ${inr(proj)}. The <b>${better} regime</b> looks better for you${tn.total === to.total ? ' (both equal)' : ` — about ${inr(Math.abs(tn.total - to.total))} less tax`}.</div>`; }
 const f = (k, l, hint) => `<label>${l}<input type="number" min="0" id="td_${k}" value="${esc(d[k] || '')}" placeholder="${hint}"></label>`;
@@ -3290,8 +3307,8 @@ return `<div class="card onb"><div class="row"><div class="row" style="gap:12px;
 ${n === t ? `<button class="btn pri sm" data-onbdone="${e.id}">🎉 Mark joining complete</button>` : ''}</div>`; }).join('') : '<div class="card muted">No new joiners right now. Add the person in Employees (with a joining date) and they will appear here.</div>'}
 ${done.length ? `<details class="card"><summary><b>Completed (${done.length})</b></summary>${done.map(e => `<div class="li"><span>${esc(e.name)}</span><button class="btn sm" data-appt="${e.id}">📝 Appointment letter</button></div>`).join('')}</details>` : ''}</div>`;
 };
-function ltrPay(m) { const P = payCfg(), basic = Math.round(m * P.basicPct / 100), hra = Math.round(basic * P.hraPct / 100), sp = m - basic - hra;
-return `<table><thead><tr><th>Component</th><th class="n">Per month</th><th class="n">Per year</th></tr></thead><tbody>${[['Basic', basic], ['House rent allowance', hra], ['Special allowance', sp]].filter(z => z[1] > 0).map(([l, v]) => `<tr><td>${l}</td><td class="n">${inr(v)}</td><td class="n">${inr(v * 12)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Gross salary</td><td class="n">${inr(m)}</td><td class="n">${inr(m * 12)}</td></tr></tfoot></table><p class="small">Statutory deductions (PF, ESI, professional tax, income tax) apply as per law.</p>`; }
+function ltrPay(m) {
+return `<table><thead><tr><th>Component</th><th class="n">Per month</th><th class="n">Per year</th></tr></thead><tbody>${salSplit(m).filter(z => z[1] > 0).map(([l, v]) => `<tr><td>${l}</td><td class="n">${inr(v)}</td><td class="n">${inr(v * 12)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Gross salary</td><td class="n">${inr(m)}</td><td class="n">${inr(m * 12)}</td></tr></tfoot></table><p class="small">Statutory deductions (PF, ESI, professional tax, income tax) apply as per law.</p>`; }
 function ltrDlg(kind, e) {
 const sh = e ? shiftOf(e) : shiftsCfg()[0], v = (id, val) => `value="${esc(val ?? '')}"`;
 dlg(kind === 'offer' ? 'Offer letter' : `Appointment letter · ${esc(e.name)}`, `<div class="grid2">
@@ -3531,7 +3548,7 @@ const e = empById(r.employee_id) || {}, co = idCfg(), he = r.g === 'f' ? 'She' :
 const to = r.addressed_to ? `<p>To,<br><b>${esc(r.addressed_to)}</b></p>` : '<p><b>TO WHOMSOEVER IT MAY CONCERN</b></p>';
 const who = `<b>${esc(e.name)}</b> (Employee code ${esc(e.code)})`, role = `<b>${esc(e.desig || 'Staff')}</b>${e.dept ? ` in our ${esc(e.dept)} department` : ''}`;
 const P = payCfg(), basic = Math.round(sal * P.basicPct / 100), hra = Math.round(basic * P.hraPct / 100);
-const T = { salary: ['Salary certificate', `<p>This is to certify that ${who} is working with ${esc(co.company)} as ${role} since ${since}.</p><p>${he === 'She' ? 'Her' : 'His'} present monthly gross salary is <b>${inr(sal)}</b> (${inr(sal * 12)} per year), made up as follows:</p><table><tbody><tr><td>Basic</td><td class="n">${inr(basic)}</td></tr><tr><td>House rent allowance</td><td class="n">${inr(hra)}</td></tr><tr><td>Special allowance</td><td class="n">${inr(sal - basic - hra)}</td></tr></tbody><tfoot><tr><td>Gross salary per month</td><td class="n">${inr(sal)}</td></tr></tfoot></table>`],
+const T = { salary: ['Salary certificate', `<p>This is to certify that ${who} is working with ${esc(co.company)} as ${role} since ${since}.</p><p>${he === 'She' ? 'Her' : 'His'} present monthly gross salary is <b>${inr(sal)}</b> (${inr(sal * 12)} per year), made up as follows:</p><table><tbody>${salSplit(sal).filter(z => z[1] > 0).map(([l, v]) => `<tr><td>${l}</td><td class="n">${inr(v)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Gross salary per month</td><td class="n">${inr(sal)}</td></tr></tfoot></table>`],
 employment: ['Employment certificate', `<p>This is to certify that ${who} is a permanent employee of ${esc(co.company)}, working as ${role} at our ${esc(e.office || '')} office since ${since}.</p>`],
 address: ['Address proof', `<p>This is to certify that ${who} is working with ${esc(co.company)} as ${role} since ${since}, and that ${he === 'She' ? 'her' : 'his'} residential address as per our records is:</p><p style="margin-left:20px"><b>[address]</b></p>`],
 noc: ['No objection certificate', `<p>This is to certify that ${who} is working with ${esc(co.company)} as ${role} since ${since}.</p><p>The company has <b>no objection</b> to ${he === 'She' ? 'her' : 'him'} ${esc(r.purpose || 'applying for a passport / visa')}. ${he} will continue in employment with us.</p>`],
