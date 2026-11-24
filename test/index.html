@@ -389,6 +389,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 @media (max-width:760px){#astb{right:14px;bottom:calc(86px + env(safe-area-inset-bottom));width:46px;height:46px;font-size:19px}#astp{bottom:calc(142px + env(safe-area-inset-bottom));height:min(520px,calc(100vh - 220px))}}
 .misscard{border:1px solid #fecaca;background:#fff7f7}.misscard .mch{display:flex;flex-direction:column;gap:2px;margin-bottom:6px;color:#b91c1c}.misscard .mch .small{color:#7f1d1d}
 .regbtn{background:#fff1f2!important;color:#be123c!important;border-color:#fecdd3!important;white-space:nowrap}
+.rejbox .rjn{display:inline-block;min-width:26px;padding:1px 8px;border-radius:99px;background:#fee2e2;color:#b91c1c;font-size:14px;text-align:center}.rejbox .rjby{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -897,7 +898,7 @@ const lv = (await q(sb.from('leave_requests').select('*').order('created_at', { 
 const pend = lv.filter(l => l.status === 'pending'), done = lv.filter(l => l.status !== 'pending').slice(0, 15);
 S.certRows = Object.fromEntries(lv.filter(l => l.cert_path).map(l => [l.id, l]));
 const card = (l, act) => `<div class="li"><div><b>${esc(empById(l.employee_id)?.name)} · ${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.reason ? ' · ' + esc(l.reason) : ''}</small>${l.cert_path ? `<div class="certline">${certChips(l.cert_check)} <button class="btn sm" data-cert="${l.id}">🩺 View ${l.cert_check?.kind === 'rx' ? 'prescription' : 'certificate'}</button></div>` : certNeeded(l.type, Number(l.days)) ? '<div class="certline"><span class="chip bad">No certificate / prescription</span></div>' : ''}</div>${act ? `${chainBtns(l, 'dl')}` : stChip(l.status)}</div>`;
-body = `<div class="card"><h3>Waiting for your approval</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(l => card(l, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(l => card(l, 0)).join('')}</div></div>` : ''}`;
+body = rejBox(lv, 'leave') + `<div class="card"><h3>Waiting for your approval</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(l => card(l, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(l => card(l, 0)).join('')}</div></div>` : ''}`;
 }
 if (tab === 'fixes') body = await teamFixes(ids);
 if (tab === 'extra') {
@@ -918,7 +919,7 @@ const b = e.target.closest('[data-tm],[data-dl],[data-dx],[data-tday]'); if (!b)
 try {
 if (b.dataset.tm) { S.tmTab = b.dataset.tm; render(); }
 if (b.dataset.tday) { S.tmDay = addDays(S.tmDay || todayStr(), Number(b.dataset.tday)); render(); }
-if (b.dataset.dl) { const note = b.dataset.dl === 'rejected' ? (prompt('Reason (optional)') || null) : null; await rpc('decide_leave', { p_id: b.dataset.id, p_status: b.dataset.dl, p_note: note }); toast(await chainToast('leave_requests', b.dataset.id, b.dataset.dl, 'Leave approved ✓')); render(); }
+if (b.dataset.dl) { let note = null; if (b.dataset.dl === 'rejected') { note = await askReason('Reject leave', b.dataset.id, 'leave_requests'); if (!note) return; } await rpc('decide_leave', { p_id: b.dataset.id, p_status: b.dataset.dl, p_note: note }); toast(await chainToast('leave_requests', b.dataset.id, b.dataset.dl, 'Leave approved ✓')); render(); }
 if (b.dataset.dx) { let m = Number(b.dataset.m || 0); if (b.dataset.dx === 'approved') { const v = prompt('Approve how many minutes?', m); if (v === null) return; m = Number(v) || m; } await rpc('decide_extra', { p_id: b.dataset.id, p_status: b.dataset.dx, p_minutes: m }); toast('Extra break ' + b.dataset.dx); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
@@ -1625,14 +1626,14 @@ async function teamFixes(ids) {
 let fx = []; try { fx = (await q(sb.from('punch_fixes').select('*').order('created_at', { ascending: false }).limit(200))).filter(f => ids.includes(f.employee_id)); } catch { return '<p class="msg bad">Corrections need the latest database update (Phase 1 SQL).</p>'; }
 const pend = fx.filter(f => f.status === 'pending'), done = fx.filter(f => f.status !== 'pending').slice(0, 15);
 const row = (f, act) => `<div class="li"><div><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty · ' : ''}${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${f.in_time ? 'Check-in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ' · ' : ''}${f.out_time ? 'Check-out ' + f.out_time.slice(0, 5) : ''} · ${esc(f.reason)}</small></div>${act ? `${chainBtns(f, 'dfx')}` : `<span class="chip ${f.status === 'approved' ? 'good' : 'crit'}">${f.status}</span>`}</div>`;
-return `<div class="card"><h3>Corrections &amp; on-duty requests</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(f => row(f, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(f => row(f, 0)).join('')}</div></div>` : ''}`;
+return rejBox(fx, 'fix') + `<div class="card"><h3>Corrections &amp; on-duty requests</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(f => row(f, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(f => row(f, 0)).join('')}</div></div>` : ''}`;
 }
 document.addEventListener('click', async e => {
 const b = e.target.closest('[data-fix],[data-fxcancel],[data-dfx]'); if (!b) return;
 try {
 if (b.dataset.fix !== undefined) fixDlg(b.dataset.fix);
 if (b.dataset.fxcancel) { await q(sb.from('punch_fixes').delete().eq('id', b.dataset.fxcancel)); toast('Request cancelled'); render(); }
-if (b.dataset.dfx) { const note = b.dataset.dfx === 'rejected' ? (prompt('Reason (optional)') || null) : null; await rpc('decide_fix', { p_id: b.dataset.id, p_status: b.dataset.dfx, p_note: note }); toast(await chainToast('punch_fixes', b.dataset.id, b.dataset.dfx, '✓ Approved — attendance updated')); render(); }
+if (b.dataset.dfx) { let note = null; if (b.dataset.dfx === 'rejected') { note = await askReason('Reject request', b.dataset.id, 'punch_fixes'); if (!note) return; } await rpc('decide_fix', { p_id: b.dataset.id, p_status: b.dataset.dfx, p_note: note }); toast(await chainToast('punch_fixes', b.dataset.id, b.dataset.dfx, '✓ Approved — attendance updated')); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
 async function salaryRows(ym) {
@@ -4243,4 +4244,22 @@ if (!m?.length) return '';
 return `<div class="card misscard"><div class="mch">⚠ <b>Missed check-out${m.length > 1 ? 's' : ''}</b><span class="small">Regularise so the day isn't counted short.</span></div>${m.slice(0, 5).map(x => `<div class="li"><div><b>${DOW[dowOf(x.day)]} ${fmtD(x.day)}</b><small>Checked in ${hm(x.in_at)} · no check-out</small></div><button class="btn sm pri" data-fix="${x.day}">Regularise</button></div>`).join('')}</div>`;
 }
 { const _nlP = navList; navList = function () { const n = _nlP.apply(this, arguments); return onMobile() ? n.filter(x => !['people', 'advances'].includes(x[0])) : n; }; }
+function askReason(title, id, tbl) {
+return new Promise(res => {
+let done = false; const fin = v => { if (done) return; done = true; res(v); };
+dlg('✕ ' + title, `<p class="small muted">The employee will see this reason.</p><label>Reason for rejecting <b style="color:#e11d48">*</b><textarea id="rj_t" rows="3" maxlength="300" placeholder="e.g. Month-end closing — please take it next week"></textarea></label>`,
+`<button class="btn bad" id="rj_ok">Reject</button>`);
+setTimeout(() => $('#rj_t')?.focus(), 80);
+$('#rj_ok').onclick = () => { const v = $('#rj_t').value.trim(); if (v.length < 3) { toast('Please write the reason for rejecting', true); $('#rj_t').focus(); return; } closeDlg(); fin(v); };
+$('#dlg').addEventListener('close', () => fin(null), { once: true });
+});
+}
+function rejBox(rows, kind) {
+const since = addDays(todayStr(), -90), rj = (rows || []).filter(r => r.status === 'rejected' && (r.decided_at || r.created_at || '').slice(0, 10) >= since);
+const byP = {}; rj.forEach(r => { const k = r.decided_by || '?'; byP[k] = (byP[k] || 0) + 1; });
+const nm = id => id === '?' ? 'Unknown' : (empById(id)?.name || 'HR');
+return `<div class="card rejbox"><div class="row"><h3 style="margin:0">✕ Rejected <span class="rjn">${rj.length}</span></h3><span class="small muted">last 90 days</span></div>
+${rj.length ? `<div class="rjby">${Object.entries(byP).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<span class="chip">${esc(nm(k).split(' ')[0])} · ${n}</span>`).join('')}</div>
+<div class="stack" style="gap:6px;margin-top:8px">${rj.slice(0, 10).map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '?')} · ${kind === 'leave' ? `${esc(ltName(r.type))} · ${fmtD(r.from_date)}${r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : ''}` : fmtD(r.day)}</b><small>Rejected by <strong>${esc(nm(r.decided_by || '?'))}</strong>${r.decided_at ? ' · ' + fmtD(r.decided_at.slice(0, 10)) : ''} · ${r.note ? '“' + esc(r.note) + '”' : '<i>no reason given</i>'}</small></div></div>`).join('')}</div>${rj.length > 10 ? `<div class="small muted" style="margin-top:6px">+${rj.length - 10} more</div>` : ''}` : '<p class="muted small" style="margin:6px 0 0">Nothing rejected 👍</p>'}</div>`;
+}
 </script></body></html>
