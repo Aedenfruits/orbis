@@ -349,6 +349,33 @@ small.red{color:#d33}
 .home .punch.hhero{width:100%;align-items:stretch}.home .hhero .pb{max-width:none!important;width:100%;margin:0;box-sizing:border-box}
 .hlic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;flex:none}.hlic .oi{width:18px;height:18px}.hlic.cake{background:#f3e8ff;color:#7e22ce}.hlic.party{background:#e0f2fe;color:#0369a1}.hlic.wave{background:#dcfce7;color:#15803d}.hlic.leave{background:#ffe4ef;color:#e01664}.hlic.truck{background:#dbeafe;color:#1d4ed8}
 @media (max-width:560px){.pbbig{font-size:52px}.pbhi{margin-top:16px;font-size:15px}.pbt{margin-top:20px}.pbtl{margin:18px 0 14px}.pbh .alg.w{height:24px}.pb .mobnote{padding:14px}.pb .mobnote span{font-size:14px}}
+.hierwrap{overflow:auto;padding:24px 16px 30px}
+.htree,.htree ul{display:flex;justify-content:center;padding:22px 0 0;margin:0;list-style:none;position:relative}.htree{padding-top:0;min-width:max-content}
+.htree li{position:relative;padding:22px 8px 0;display:flex;flex-direction:column;align-items:center}
+.htree>li{padding-top:0}
+.htree li::before,.htree li::after{content:'';position:absolute;top:0;width:50%;height:22px;border-top:2px solid #d5dbe8}
+.htree li::before{right:50%}.htree li::after{left:50%;border-left:2px solid #d5dbe8}
+.htree li:only-child::before,.htree li:only-child::after{border-top:0}.htree li:only-child{padding-top:22px}
+.htree li:first-child::before,.htree li:last-child::after{border:0}.htree li:last-child::before{border-right:2px solid #d5dbe8;border-top-right-radius:8px}.htree li:first-child::after{border-top-left-radius:8px}
+.htree>li::before,.htree>li::after{display:none}.htree>li:only-child{padding-top:0}
+.htree ul::before{content:'';position:absolute;top:0;left:50%;height:22px;border-left:2px solid #d5dbe8}
+.hcard2{position:relative;display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #e3e6ef;border-radius:16px;padding:9px 32px 9px 9px;min-width:150px;max-width:190px;cursor:grab;box-shadow:0 6px 16px -12px rgba(29,43,83,.4);transition:box-shadow .15s,transform .15s,border-color .15s;user-select:none}
+.hcard2:hover{box-shadow:0 12px 24px -14px rgba(29,43,83,.55);transform:translateY(-1px)}
+.hcard2 .hci{min-width:0}.hcard2 b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hcard2 small{display:block;font-size:12px;color:#7a82a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hcard2 .ht{position:absolute;top:-9px;left:12px;font-style:normal;font-size:10px;font-weight:800;padding:2px 8px;border-radius:99px;color:#fff;letter-spacing:.04em}.ht.md{background:#1D2B53}.ht.hr{background:#e01664}
+.hmv{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:8px;border:0;background:#f1f2f6;color:#1D2B53;cursor:pointer;font-size:13px;line-height:24px;padding:0}.hmv:hover{background:#ffe4ef;color:#e01664}
+.hcard2.drag{opacity:.35}.hcard2.over{border-color:#e01664;box-shadow:0 0 0 4px rgba(224,22,100,.18);transform:scale(1.04)}.hcard2.sel{border-color:#e01664;background:#fff0f6}
+.hdrop{border:2px dashed #d5dbe8;border-radius:16px;padding:12px;text-align:center;color:#7a82a0;font-size:14px;display:none}
+body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664;color:#e01664;background:#fff0f6}
+.chainln{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px;font-size:12px}.chainln i{color:#b4b9cc;font-style:normal}
+.cs{padding:2px 8px;border-radius:99px;background:#f1f2f6;color:#7a82a0;font-weight:600;white-space:nowrap}.cs.ok{background:#dcfce7;color:#15803d}.cs.now{background:#fff1d6;color:#b45309}.cs.no{background:#ffe4e6;color:#be123c}
+.hpanel{display:flex;flex-direction:column;gap:12px}.hpr{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:start}.hpr>b{padding-top:6px}
+.hdl{display:flex;flex-wrap:wrap;gap:8px}.hdchip{border:1.5px solid color-mix(in srgb,var(--c,#9aa0b5) 35%,#fff);background:color-mix(in srgb,var(--c,#9aa0b5) 9%,#fff);color:var(--c,#1D2B53);border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.hdchip small{opacity:.7;font-weight:600;margin-left:2px}.hdchip.on{background:var(--c);color:#fff}.hdchip.add{--c:#1D2B53;border-style:dashed;background:#fff}
+.hrow3{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.hdept{border:0;border-radius:99px;padding:2px 8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;background:color-mix(in srgb,var(--c) 12%,#fff);color:var(--c);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.happ{border:1px dashed #cfd3e2;border-radius:99px;padding:1px 8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;background:#fff;color:#9aa0b5}.happ.on{border:1px solid #16a34a;background:#dcfce7;color:#15803d}
+.hcard2{align-items:flex-start;max-width:210px;min-width:170px}.hcard2.appr{border-color:#86efac}.hcard2.dim{opacity:.3}.hcard2.path{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18)}.hcard2.pstart{background:#eff6ff}
+@media (max-width:700px){.hpr{grid-template-columns:1fr;gap:4px}}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -736,7 +763,7 @@ S.myLeaves = mine; S.ladj = await loadAdj(S.me.id, yr);
 const cards = ltypes().map(t => { const used = mine.filter(l => l.type === t.k && l.status === 'approved').reduce((s, l) => s + Number(l.days), 0); const pend = mine.filter(l => l.type === t.k && l.status === 'pending').reduce((s, l) => s + Number(l.days), 0); const left = ltq(t) - used, cf = Number(S.ladj[t.k]?.days || 0);
 return `<div class="lb" data-lt="${t.k}"><div class="row"><span>${esc(t.name)}</span><small>${t.k}</small></div><div class="lbn"><b class="${left <= 0 ? 'neg' : ''}">${left}</b><span>of ${ltq(t)} left</span></div><div class="bar"><i style="width:${Math.max(0, Math.min(100, left / (ltq(t) || 1) * 100))}%"></i></div><small>${cf ? `+${cf} carried · ` : ''}${used} used${pend ? ` · <b class="pend">${pend} pending</b>` : ''}</small></div>`; }).join('');
 const mgr = empById(S.me.reports_to);
-const reqs = mine.slice(0, 10).map(l => `<div class="li"><div><b>${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.status === 'pending' ? ` · waiting for ${mgr ? esc(mgr.name.split(' ')[0]) : 'HR'}` : l.decided_by ? ' · by ' + esc(empById(l.decided_by)?.name || '') : ''}${l.note ? ' · ' + esc(l.note) : ''}</small></div><div class="hstack">${stChip(l.status)}${l.status === 'pending' ? `<button class="btn sm" data-lcancel="${l.id}">Cancel</button>` : ''}</div></div>`).join('');
+const reqs = mine.slice(0, 10).map(l => `<div class="li"><div><b>${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.status === 'pending' ? (l.chain?.length ? '' : ` · waiting for ${mgr ? esc(mgr.name.split(' ')[0]) : 'HR'}`) : l.decided_by ? ' · by ' + esc(empById(l.decided_by)?.name || '') : ''}${l.note ? ' · ' + esc(l.note) : ''}</small>${chainLine(l)}</div><div class="hstack">${stChip(l.status)}${l.status === 'pending' ? `<button class="btn sm" data-lcancel="${l.id}">Cancel</button>` : ''}</div></div>`).join('');
 afterFns.push(leaveAfter);
 return `<div class="stack narrow"><div><span class="eyebrow">Leave</span><h2>Apply for leave</h2></div>
 <div class="card"><h3>Leave balance ${yr}</h3><div class="lbg">${cards}</div>${reqs ? `<h4>My requests</h4><div class="stack" style="gap:6px">${reqs}</div>` : ''}</div>
@@ -850,7 +877,7 @@ if (tab === 'leave') {
 const lv = (await q(sb.from('leave_requests').select('*').order('created_at', { ascending: false }).limit(200))).filter(l => ids.includes(l.employee_id));
 const pend = lv.filter(l => l.status === 'pending'), done = lv.filter(l => l.status !== 'pending').slice(0, 15);
 S.certRows = Object.fromEntries(lv.filter(l => l.cert_path).map(l => [l.id, l]));
-const card = (l, act) => `<div class="li"><div><b>${esc(empById(l.employee_id)?.name)} · ${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.reason ? ' · ' + esc(l.reason) : ''}</small>${l.cert_path ? `<div class="certline">${certChips(l.cert_check)} <button class="btn sm" data-cert="${l.id}">🩺 View ${l.cert_check?.kind === 'rx' ? 'prescription' : 'certificate'}</button></div>` : certNeeded(l.type, Number(l.days)) ? '<div class="certline"><span class="chip bad">No certificate / prescription</span></div>' : ''}</div>${act ? `<div class="hstack"><button class="btn sm good" data-dl="approved" data-id="${l.id}">Approve</button><button class="btn sm bad" data-dl="rejected" data-id="${l.id}">Reject</button></div>` : stChip(l.status)}</div>`;
+const card = (l, act) => `<div class="li"><div><b>${esc(empById(l.employee_id)?.name)} · ${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.reason ? ' · ' + esc(l.reason) : ''}</small>${l.cert_path ? `<div class="certline">${certChips(l.cert_check)} <button class="btn sm" data-cert="${l.id}">🩺 View ${l.cert_check?.kind === 'rx' ? 'prescription' : 'certificate'}</button></div>` : certNeeded(l.type, Number(l.days)) ? '<div class="certline"><span class="chip bad">No certificate / prescription</span></div>' : ''}</div>${act ? `${chainBtns(l, 'dl')}` : stChip(l.status)}</div>`;
 body = `<div class="card"><h3>Waiting for your approval</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(l => card(l, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(l => card(l, 0)).join('')}</div></div>` : ''}`;
 }
 if (tab === 'fixes') body = await teamFixes(ids);
@@ -872,7 +899,7 @@ const b = e.target.closest('[data-tm],[data-dl],[data-dx],[data-tday]'); if (!b)
 try {
 if (b.dataset.tm) { S.tmTab = b.dataset.tm; render(); }
 if (b.dataset.tday) { S.tmDay = addDays(S.tmDay || todayStr(), Number(b.dataset.tday)); render(); }
-if (b.dataset.dl) { const note = b.dataset.dl === 'rejected' ? (prompt('Reason (optional)') || null) : null; await rpc('decide_leave', { p_id: b.dataset.id, p_status: b.dataset.dl, p_note: note }); toast('Leave ' + b.dataset.dl); render(); }
+if (b.dataset.dl) { const note = b.dataset.dl === 'rejected' ? (prompt('Reason (optional)') || null) : null; await rpc('decide_leave', { p_id: b.dataset.id, p_status: b.dataset.dl, p_note: note }); toast(await chainToast('leave_requests', b.dataset.id, b.dataset.dl, 'Leave approved ✓')); render(); }
 if (b.dataset.dx) { let m = Number(b.dataset.m || 0); if (b.dataset.dx === 'approved') { const v = prompt('Approve how many minutes?', m); if (v === null) return; m = Number(v) || m; } await rpc('decide_extra', { p_id: b.dataset.id, p_status: b.dataset.dx, p_minutes: m }); toast('Extra break ' + b.dataset.dx); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
@@ -1572,12 +1599,12 @@ async function myFixesCard(ym) {
 let fx = []; try { fx = await q(sb.from('punch_fixes').select('*').eq('employee_id', S.me.id).gte('day', ym + '-01').order('created_at', { ascending: false })); } catch { return ''; }
 if (!fx.length) return '';
 const st = { pending: ['⏳ Waiting', 'warn'], approved: ['✓ Approved', 'good'], rejected: ['✗ Rejected', 'crit'] };
-return `<div class="card"><h3>My corrections &amp; on-duty requests</h3><div class="stack" style="gap:6px">${fx.map(f => `<div class="li"><div><b>${f.kind === 'od' ? '🚗 On duty · ' : ''}${fmtD(f.day)} · ${f.in_time ? 'in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ', ' : ''}${f.out_time ? 'out ' + f.out_time.slice(0, 5) : ''}</b><small>${esc(f.reason)}${f.note ? ' · ' + esc(f.note) : ''}</small></div><div class="hstack"><span class="chip ${st[f.status][1]}">${st[f.status][0]}</span>${f.status === 'pending' ? `<button class="btn sm" data-fxcancel="${f.id}">Cancel</button>` : ''}</div></div>`).join('')}</div></div>`;
+return `<div class="card"><h3>My corrections &amp; on-duty requests</h3><div class="stack" style="gap:6px">${fx.map(f => `<div class="li"><div><b>${f.kind === 'od' ? '🚗 On duty · ' : ''}${fmtD(f.day)} · ${f.in_time ? 'in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ', ' : ''}${f.out_time ? 'out ' + f.out_time.slice(0, 5) : ''}</b><small>${esc(f.reason)}${f.note ? ' · ' + esc(f.note) : ''}</small>${chainLine(f)}</div><div class="hstack"><span class="chip ${st[f.status][1]}">${st[f.status][0]}</span>${f.status === 'pending' ? `<button class="btn sm" data-fxcancel="${f.id}">Cancel</button>` : ''}</div></div>`).join('')}</div></div>`;
 }
 async function teamFixes(ids) {
 let fx = []; try { fx = (await q(sb.from('punch_fixes').select('*').order('created_at', { ascending: false }).limit(200))).filter(f => ids.includes(f.employee_id)); } catch { return '<p class="msg bad">Corrections need the latest database update (Phase 1 SQL).</p>'; }
 const pend = fx.filter(f => f.status === 'pending'), done = fx.filter(f => f.status !== 'pending').slice(0, 15);
-const row = (f, act) => `<div class="li"><div><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty · ' : ''}${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${f.in_time ? 'Check-in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ' · ' : ''}${f.out_time ? 'Check-out ' + f.out_time.slice(0, 5) : ''} · ${esc(f.reason)}</small></div>${act ? `<div class="hstack"><button class="btn sm pri" data-dfx="approved" data-id="${f.id}">Approve</button><button class="btn sm" data-dfx="rejected" data-id="${f.id}">Reject</button></div>` : `<span class="chip ${f.status === 'approved' ? 'good' : 'crit'}">${f.status}</span>`}</div>`;
+const row = (f, act) => `<div class="li"><div><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty · ' : ''}${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${f.in_time ? 'Check-in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ' · ' : ''}${f.out_time ? 'Check-out ' + f.out_time.slice(0, 5) : ''} · ${esc(f.reason)}</small></div>${act ? `${chainBtns(f, 'dfx')}` : `<span class="chip ${f.status === 'approved' ? 'good' : 'crit'}">${f.status}</span>`}</div>`;
 return `<div class="card"><h3>Corrections &amp; on-duty requests</h3>${pend.length ? `<div class="stack" style="gap:6px">${pend.map(f => row(f, 1)).join('')}</div>` : '<p class="muted small">Nothing pending 🎉</p>'}</div>${done.length ? `<div class="card"><h3>Recent decisions</h3><div class="stack" style="gap:6px">${done.map(f => row(f, 0)).join('')}</div></div>` : ''}`;
 }
 document.addEventListener('click', async e => {
@@ -1585,7 +1612,7 @@ const b = e.target.closest('[data-fix],[data-fxcancel],[data-dfx]'); if (!b) ret
 try {
 if (b.dataset.fix !== undefined) fixDlg(b.dataset.fix);
 if (b.dataset.fxcancel) { await q(sb.from('punch_fixes').delete().eq('id', b.dataset.fxcancel)); toast('Request cancelled'); render(); }
-if (b.dataset.dfx) { const note = b.dataset.dfx === 'rejected' ? (prompt('Reason (optional)') || null) : null; await rpc('decide_fix', { p_id: b.dataset.id, p_status: b.dataset.dfx, p_note: note }); toast(b.dataset.dfx === 'approved' ? '✓ Attendance corrected' : 'Request rejected'); render(); }
+if (b.dataset.dfx) { const note = b.dataset.dfx === 'rejected' ? (prompt('Reason (optional)') || null) : null; await rpc('decide_fix', { p_id: b.dataset.id, p_status: b.dataset.dfx, p_note: note }); toast(await chainToast('punch_fixes', b.dataset.id, b.dataset.dfx, '✓ Approved — attendance updated')); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
 async function salaryRows(ym) {
@@ -3521,7 +3548,7 @@ q(sb.from('extra_breaks').select('*').eq('status', 'pending').order('created_at'
 q(sb.from('leave_requests').select('*').in('status', ['approved', 'pending']).gte('to_date', t)).catch(() => []),
 q(sb.from('appraisals').select('*')).catch(() => [])]);
 const mine = r => ids.includes(r.employee_id);
-const pd = r => mine(r) && r.status === 'pending', L = lv.filter(pd), F = fx.filter(pd), X = xb.filter(pd);
+const pd = r => mine(r) && r.status === 'pending', L = lv.filter(r => pd(r) && chainMine(r)), F = fx.filter(r => pd(r) && chainMine(r)), X = xb.filter(pd);
 S.aprAll = apr; const R = apr.filter(a => aprTodo(a) && a.employee_id !== S.me.id && (ids.includes(a.employee_id) || a.manager_id === S.me.id));
 S.certRows = Object.fromEntries(L.filter(l => l.cert_path).map(l => [l.id, l]));
 const clash = l => { const e = empById(l.employee_id); return near.filter(o => o.id !== l.id && o.employee_id !== l.employee_id && ids.includes(o.employee_id) && empById(o.employee_id)?.dept === e?.dept && overlap(l.from_date, l.to_date, o.from_date, o.to_date)); };
@@ -3529,8 +3556,8 @@ const items = [
 ...L.map(l => ({ at: l.created_at, h: (() => { const c = clash(l); return `<div class="li ibx"><span class="ibk lv">${ico('leave')}</span><div class="grow"><b>${esc(empById(l.employee_id)?.name)} · ${esc(ltName(l.type))} · ${l.days} day${l.days > 1 ? 's' : ''}</b><small>${fmtD(l.from_date)}${l.to_date !== l.from_date ? ' – ' + fmtD(l.to_date) : ''}${l.reason ? ' · ' + esc(l.reason) : ''} · asked ${ago(l.created_at)}</small>
 ${c.length ? `<div class="certline"><span class="chip warn">⚠ Same team also off: ${c.map(o => `${fName(o.employee_id)} (${fmtD(o.from_date).slice(0, -5)}${o.to_date !== o.from_date ? '–' + fmtD(o.to_date).slice(0, -5) : ''}${o.status === 'pending' ? ', pending' : ''})`).join(', ')}</span></div>` : ''}
 ${l.cert_path ? `<div class="certline">${certChips(l.cert_check)} <button class="btn sm" data-cert="${l.id}">View ${l.cert_check?.kind === 'rx' ? 'prescription' : 'certificate'}</button></div>` : certNeeded(l.type, Number(l.days)) ? '<div class="certline"><span class="chip bad">No certificate / prescription</span></div>' : ''}</div>
-<div class="hstack"><button class="btn sm good" data-dl="approved" data-id="${l.id}">Approve</button><button class="btn sm bad" data-dl="rejected" data-id="${l.id}">Reject</button></div></div>`; })() })),
-...F.map(f => ({ at: f.created_at, h: `<div class="li ibx"><span class="ibk fx">${ico('my')}</span><div class="grow"><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty' : 'Punch correction'} · ${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${f.in_time ? 'Check-in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ' · ' : ''}${f.out_time ? 'Check-out ' + f.out_time.slice(0, 5) : ''} · ${esc(f.reason)} · asked ${ago(f.created_at)}</small></div><div class="hstack"><button class="btn sm good" data-dfx="approved" data-id="${f.id}">Approve</button><button class="btn sm bad" data-dfx="rejected" data-id="${f.id}">Reject</button></div></div>` })),
+${chainBtns(l, 'dl')}</div>`; })() })),
+...F.map(f => ({ at: f.created_at, h: `<div class="li ibx"><span class="ibk fx">${ico('my')}</span><div class="grow"><b>${esc(empById(f.employee_id)?.name)} · ${f.kind === 'od' ? '🚗 On duty' : 'Punch correction'} · ${fmtD(f.day)}</b><small>${f.place ? '📍 ' + esc(f.place) + ' · ' : ''}${f.in_time ? 'Check-in ' + f.in_time.slice(0, 5) : ''}${f.in_time && f.out_time ? ' · ' : ''}${f.out_time ? 'Check-out ' + f.out_time.slice(0, 5) : ''} · ${esc(f.reason)} · asked ${ago(f.created_at)}</small></div>${chainBtns(f, 'dfx')}</div>` })),
 ...X.map(x => ({ at: x.created_at, h: `<div class="li ibx"><span class="ibk xb">${ico('punch')}</span><div class="grow"><b>${esc(empById(x.employee_id)?.name)} · Extra break · ${x.minutes_req} min</b><small>${fmtD(x.day)} · ${esc(x.reason)} · asked ${ago(x.created_at)}</small></div><div class="hstack"><button class="btn sm good" data-dx="approved" data-id="${x.id}" data-m="${x.minutes_req}">Approve</button><button class="btn sm bad" data-dx="rejected" data-id="${x.id}">Reject</button></div></div>` })),
 ...R.map(a => ({ at: a.created_at, h: `<div class="li ibx"><span class="ibk rv">${ico('reviews')}</span><div class="grow"><b>${esc(empById(a.employee_id)?.name)} · Performance review</b><small>${esc(a.cycle)} · ${APR_ST[a.status][0]} — waiting for you</small></div><div class="hstack"><button class="btn sm pri" data-apr="${a.id}">${aprCan(a).goals ? 'Set goals' : 'Review'}</button></div></div>` }))
 ].sort((a, b) => String(a.at).localeCompare(String(b.at)));
@@ -3979,5 +4006,91 @@ $('#geo_pt').value = g.lat.toFixed(5) + ', ' + g.lng.toFixed(5); $('#geoMsg').in
 if (e.target.closest('#geoSave')) { const cur = C().geo || {}, n = S.geoNew || {}; const mode = $('#geo_mode').value, radius = Math.max(50, Math.min(5000, Number($('#geo_r').value) || 300));
 const lat = n.lat ?? cur.lat, lng = n.lng ?? cur.lng; if (mode !== 'off' && lat == null) return toast('Set the office point first (📍 button)', true);
 try { await saveSettings({ geo: { mode, radius, lat, lng, acc: n.acc ?? cur.acc, by: n.lat ? S.me.name : cur.by } }); S.geoNew = null; toast('📍 Location settings saved'); render(); } catch (er) { toast(errMsg(er), true); } }
+});
+if (ICP.org) ICP.hier = ICP.org;
+{ const _navH = navList; navList = function () { const n = _navH(); if (isAdmin() && !n.some(x => x[0] === 'hier')) { const i = n.findIndex(x => x[0] === 'employees'); n.splice(i >= 0 ? i + 1 : n.length, 0, ['hier', 'Hierarchy', '🌳']); } return n; }; }
+const hierKids = id => S.emps.filter(e => e.active && (e.reports_to || null) === id && (id || !e.reports_to || !S.emps.some(m => m.id === e.reports_to && m.active)));
+function hierUnder(id, target) { let t = S.emps.find(e => e.id === target), n = 0; while (t && n++ < 50) { if (t.id === id) return true; t = S.emps.find(e => e.id === t.reports_to); } return false; }
+VIEWS.hier = async () => {
+const roots = S.emps.filter(e => e.active && (!e.reports_to || !S.emps.some(m => m.id === e.reports_to && m.active)));
+const accTag = e => e.access === 'md' ? '<em class="ht md">MD</em>' : e.access === 'hr' ? '<em class="ht hr">HR</em>' : '';
+const node = (e, d) => { const k = d < 12 ? S.emps.filter(x => x.active && x.reports_to === e.id) : [];
+const dim = S.hierDept && e.dept !== S.hierDept, onPath = S.hierPath && hierPathIds(S.hierPath).includes(e.id);
+return `<li><div class="hcard2 ${S.hierSel === e.id ? 'sel' : ''} ${e.approver ? 'appr' : ''} ${dim ? 'dim' : ''} ${onPath ? 'path' : ''} ${S.hierPath === e.id ? 'pstart' : ''}" draggable="true" data-hid="${e.id}" title="Drag onto the new manager · click to see their approval path">${avatarHTML(e, 'sm')}<div class="hci"><b>${esc(e.name)}</b><small>${esc(e.desig || '')}${k.length ? `${e.desig ? ' · ' : ''}${k.length} report${k.length > 1 ? 's' : ''}` : ''}</small>
+<div class="hrow3"><button class="hdept" data-hdept="${e.id}" style="--c:${deptColor(e.dept)}" title="Change department">${esc(e.dept || '+ department')}</button><button class="happ ${e.approver ? 'on' : ''}" data-happ="${e.id}" title="${e.approver ? 'Approves requests from everyone under them — click to turn off' : 'Click to make an approver'}">${e.approver ? '✔ Approver' : '○ Approver'}</button></div></div>${accTag(e)}<button class="hmv" data-hmv="${e.id}" title="Move (tap here, then tap the new manager)">⇄</button></div>${k.length ? `<ul>${k.map(x => node(x, d + 1)).join('')}</ul>` : ''}</li>`; };
+const n = S.emps.filter(e => e.active).length, sel = S.hierSel && empById(S.hierSel);
+return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · structure</span><h2>Hierarchy</h2><p class="small muted" style="margin:0">Drag a person onto their new manager. Their whole team moves with them. Approvals, "My team", alerts and the org chart all follow this.</p></div>
+<div class="hstack"><button class="btn sm" data-hz="-1" title="Smaller">−</button><button class="btn sm" data-hz="1" title="Bigger">＋</button>${S.hierUndo ? '<button class="btn sm" id="hUndo">↶ Undo last move</button>' : ''}<a class="btn sm" href="#employees">Manage staff</a></div></div>
+${sel ? `<div class="msg">Moving <b>${esc(sel.name)}</b> — tap the new manager, or <a href="#" data-hroot="">put at the top</a> · <a href="#" id="hCancel">cancel</a></div>` : ''}
+<div class="card hpanel"><div class="hpr"><b>Departments</b><div class="hdl">${hierDepts().map(d => `<button class="hdchip ${S.hierDept === d ? 'on' : ''}" data-hdf="${esc(d)}" style="--c:${deptColor(d)}">${esc(d)} <small>${S.emps.filter(e => e.active && e.dept === d).length}</small></button>`).join('')}<button class="hdchip add" id="hDeptAdd">＋ Add department</button>${S.hierDept ? `<button class="hdchip" data-hdf="">Show all</button>` : ''}</div></div>
+<div class="hpr"><b>Approvals</b><div class="small">Leave, attendance corrections and on-duty requests go <b>up the tree</b> to each <span class="happ on" style="position:static">✔ Approver</span> in turn${C().hrFinal !== false ? ', then <b>HR</b> gives the final approval' : ''}. If nobody above is marked, the direct manager approves.
+<label class="chk" style="margin-top:6px"><input type="checkbox" id="hHrFinal" ${C().hrFinal !== false ? 'checked' : ''}> HR gives the final approval after the managers</label></div></div>
+${S.hierPath && empById(S.hierPath) ? `<div class="hpr"><b>Path</b><div class="small">${esc(empById(S.hierPath).name)}'s requests go to: ${(() => { const p = hierPathIds(S.hierPath).filter(x => x !== S.hierPath); return [...p.map(x => `<b>${esc(empById(x).name)}</b>`), ...(C().hrFinal !== false || !p.length ? ['<b>HR</b>'] : [])].join(' → '); })()} <a href="#" id="hPathX">clear</a></div></div>` : ''}</div>
+<div class="hdrop" data-hroot="">⬆ Drop here to put someone at the <b>top</b> (no manager)</div>
+<div class="card hierwrap">${n ? `<ul class="htree" style="zoom:${S.hierZ || 1}">${roots.map(r => node(r, 0)).join('')}</ul>` : '<p class="muted">No employees yet. Add them in Manage staff.</p>'}</div>
+<p class="small muted">Tip: on a phone, tap ⇄ on a person, then tap their new manager.</p></div>`;
+};
+async function hierMove(id, mgr) {
+const e = empById(id); if (!e) return; mgr = mgr || null;
+if ((e.reports_to || null) === mgr) return;
+if (mgr && (mgr === id || hierUnder(id, mgr))) return toast(`${e.name.split(' ')[0]} can't report to someone in their own team`, true);
+const prev = e.reports_to || null;
+try { await q(sb.from('employees').update({ reports_to: mgr }).eq('id', id)); e.reports_to = mgr; S.hierUndo = { id, prev }; S.hierSel = null;
+toast(mgr ? `✓ ${e.name.split(' ')[0]} now reports to ${empById(mgr).name.split(' ')[0]}` : `✓ ${e.name.split(' ')[0]} is now at the top`); await loadCore().catch(() => { }); render(); }
+catch (er) { toast(errMsg(er), true); }
+}
+document.addEventListener('dragstart', e => { const c = e.target.closest?.('[data-hid]'); if (!c) return; S.hierDrag = c.dataset.hid; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', c.dataset.hid); } catch { } setTimeout(() => c.classList.add('drag'), 0); document.body.classList.add('hdragging'); });
+document.addEventListener('dragend', () => { S.hierDrag = null; document.body.classList.remove('hdragging'); document.querySelectorAll('.hcard2.drag,.hcard2.over,.hdrop.over').forEach(x => x.classList.remove('drag', 'over')); });
+document.addEventListener('dragover', e => { if (!S.hierDrag) return; const t = e.target.closest?.('[data-hid],.hdrop'); document.querySelectorAll('.hcard2.over,.hdrop.over').forEach(x => x !== t && x.classList.remove('over'));
+if (!t) return; const id = t.dataset.hid; if (id && (id === S.hierDrag || hierUnder(S.hierDrag, id))) return; e.preventDefault(); t.classList.add('over'); });
+document.addEventListener('drop', e => { if (!S.hierDrag) return; const t = e.target.closest?.('[data-hid],.hdrop'); if (!t) return; e.preventDefault(); const who = S.hierDrag; S.hierDrag = null; hierMove(who, t.dataset.hid || null); });
+document.addEventListener('click', e => {
+if (S.view !== 'hier') return;
+const z = e.target.closest('[data-hz]'); if (z) { S.hierZ = Math.max(.5, Math.min(1.3, Math.round(((S.hierZ || 1) + Number(z.dataset.hz) * .1) * 10) / 10)); const t = $('.htree'); if (t) t.style.zoom = S.hierZ; return; }
+const mv = e.target.closest('[data-hmv]'); if (mv) { e.preventDefault(); e.stopPropagation(); S.hierSel = S.hierSel === mv.dataset.hmv ? null : mv.dataset.hmv; render(); return; }
+if (e.target.closest('#hCancel')) { e.preventDefault(); S.hierSel = null; render(); return; }
+if (e.target.closest('#hUndo') && S.hierUndo) { const u = S.hierUndo; S.hierUndo = null; hierMove(u.id, u.prev).then(() => { S.hierUndo = null; render(); }); return; }
+if (S.hierSel) { const r = e.target.closest('[data-hroot]'); if (r) { e.preventDefault(); hierMove(S.hierSel, null); return; } const c = e.target.closest('[data-hid]'); if (c) hierMove(S.hierSel, c.dataset.hid); }
+});
+function chainCur(r) { const ch = r.chain || [], s = r.step || 0; return s < ch.length ? ch[s] : null; }
+function chainMine(r) { if (r.status !== 'pending') return false; const ch = r.chain || []; if (!ch.length) return true; const c = chainCur(r); return c === S.me.id || isAdmin(); }
+function chainLine(r) {
+const ch = r.chain || []; if (!ch.length) return ''; const s = r.step || 0, hrF = C().hrFinal !== false, done = r.status !== 'pending', rej = r.status === 'rejected';
+const steps = ch.map((id, i) => ({ n: (empById(id)?.name || '?').split(' ')[0], st: i < s ? 'ok' : (i === s && !done) ? 'now' : (done && !rej) ? 'ok' : 'todo' }));
+if (hrF) steps.push({ n: 'HR', st: done ? (rej ? 'todo' : 'ok') : s >= ch.length ? 'now' : 'todo' });
+if (rej) { const by = (r.trail || []).slice(-1)[0]?.by; const k = steps.findIndex(x => x.st === 'now' || x.st === 'todo'); if (k >= 0) steps[k] = { n: by ? (empById(by)?.name || 'HR').split(' ')[0] : steps[k].n, st: 'no' }; }
+return `<div class="chainln">${steps.map(x => `<span class="cs ${x.st}">${x.st === 'ok' ? '✓' : x.st === 'now' ? '⏳' : x.st === 'no' ? '✕' : '○'} ${esc(x.n)}</span>`).join('<i>›</i>')}</div>`;
+}
+function chainBtns(r, k) {
+const ln = chainLine(r);
+if (!chainMine(r)) { const c = chainCur(r); return `<div class="stack" style="gap:4px;align-items:flex-end"><span class="chip">⏳ Waiting for ${c ? esc((empById(c)?.name || '').split(' ')[0]) : 'HR'}</span>${ln}</div>`; }
+const c = chainCur(r), early = isAdmin() && (r.chain || []).length && c && c !== S.me.id;
+return `<div class="stack" style="gap:4px;align-items:flex-end"><div class="hstack"><button class="btn sm good" data-${k}="approved" data-id="${r.id}" ${early ? `title="${esc((empById(c)?.name || '').split(' ')[0])} has not approved yet — HR approval is final"` : ''}>${early ? 'Approve (final)' : 'Approve'}</button><button class="btn sm bad" data-${k}="rejected" data-id="${r.id}">Reject</button></div>${ln}</div>`;
+}
+async function chainToast(tbl, id, st, fin) {
+if (st === 'rejected') return 'Request rejected';
+try { const r = (await q(sb.from(tbl).select('status,chain,step').eq('id', id)))[0]; if (r && r.status === 'pending') { const c = chainCur(r); return `✓ Approved — sent to ${c ? (empById(c)?.name || '').split(' ')[0] : 'HR'} for the next approval`; } } catch { }
+return fin;
+}
+const DEPT_COL = ['#e01664', '#2563eb', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#65a30d', '#ea580c', '#4f46e5', '#0d9488', '#b91c1c'];
+function hierDepts() { return [...new Set([...(C().depts || []), ...S.emps.filter(e => e.active && e.dept).map(e => e.dept)])].filter(Boolean); }
+function deptColor(d) { if (!d) return '#9aa0b5'; const L = hierDepts(), i = L.indexOf(d); return DEPT_COL[(i >= 0 ? i : [...d].reduce((s, c) => s + c.charCodeAt(0), 0)) % DEPT_COL.length]; }
+function hierPathIds(id) { const out = [id]; let cur = empById(id)?.reports_to, n = 0; const ap = []; let first = cur;
+while (cur && n++ < 10) { const m = empById(cur); if (!m) break; if (m.active && m.approver) ap.push(m.id); cur = m.reports_to; }
+return [id, ...(ap.length ? ap : first && empById(first)?.active ? [first] : [])]; }
+document.addEventListener('click', async e => {
+if (S.view !== 'hier') return;
+const ap = e.target.closest('[data-happ]'); if (ap) { e.stopPropagation(); const emp = empById(ap.dataset.happ); try { await q(sb.from('employees').update({ approver: !emp.approver }).eq('id', emp.id)); emp.approver = !emp.approver; toast(emp.approver ? `✔ ${emp.name.split(' ')[0]} now approves requests from everyone under them` : `${emp.name.split(' ')[0]} is no longer an approver`); render(); } catch (er) { toast(errMsg(er), true); } return; }
+const dp = e.target.closest('[data-hdept]'); if (dp) { e.stopPropagation(); const emp = empById(dp.dataset.hdept), L = hierDepts();
+dlg(`Department · ${esc(emp.name)}`, `<label>Department<select id="hd_sel">${L.map(d => `<option ${d === emp.dept ? 'selected' : ''}>${esc(d)}</option>`).join('')}<option value="__new">＋ New department…</option></select></label><label id="hd_newl" hidden>New department name<input id="hd_new" maxlength="40"></label>`, `<button class="btn pri" id="hd_ok">Save</button>`);
+$('#hd_sel').onchange = () => { $('#hd_newl').hidden = $('#hd_sel').value !== '__new'; };
+$('#hd_ok').onclick = async () => { let d = $('#hd_sel').value; if (d === '__new') { d = $('#hd_new').value.trim(); if (!d) return toast('Type the department name', true); if (!(C().depts || []).includes(d)) await saveSettings({ depts: [...(C().depts || []), d] }); }
+try { await q(sb.from('employees').update({ dept: d }).eq('id', emp.id)); emp.dept = d; closeDlg(); toast(`✓ ${emp.name.split(' ')[0]} → ${d}`); render(); } catch (er) { toast(errMsg(er), true); } };
+return; }
+const df = e.target.closest('[data-hdf]'); if (df) { S.hierDept = df.dataset.hdf && S.hierDept !== df.dataset.hdf ? df.dataset.hdf : null; render(); return; }
+if (e.target.closest('#hDeptAdd')) { const d = (prompt('New department name (e.g. Procurement)') || '').trim(); if (!d) return; if (hierDepts().includes(d)) return toast('That department already exists', true); try { await saveSettings({ depts: [...(C().depts || []), d] }); toast(`✓ Department "${d}" added — click a person's department tag to move them in`); render(); } catch (er) { toast(errMsg(er), true); } return; }
+if (e.target.closest('#hPathX')) { e.preventDefault(); S.hierPath = null; render(); return; }
+const hf = e.target.closest('#hHrFinal'); if (hf) { try { await saveSettings({ hrFinal: hf.checked }); toast(hf.checked ? 'HR gives the final approval' : 'The last manager\'s approval is final'); render(); } catch (er) { toast(errMsg(er), true); } return; }
+if (!S.hierSel) { const c = e.target.closest('[data-hid]'); if (c && !e.target.closest('button')) { S.hierPath = S.hierPath === c.dataset.hid ? null : c.dataset.hid; render(); } }
 });
 </script></body></html>
