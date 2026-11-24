@@ -424,6 +424,7 @@ html,body{touch-action:manipulation}@media (max-width:760px){input,select,textar
 .tkch{display:flex;align-items:center;gap:10px}.tkch b{font-size:15.5px}.tkav{width:34px;height:34px;border-radius:50%;background:#2563eb;color:#fff;display:grid;place-items:center;font-weight:800;font-size:12.5px;flex:none}
 .tkc .tkbar{height:9px!important;margin:14px 0 12px!important}.tkbar .p{background:#ca8a04!important}.tkbar .d{background:#15803d!important}
 .tkn{font-size:13px!important;color:#334155!important}.tkn b{font-size:19px!important;margin-bottom:2px}.tkn .o{color:#ca8a04!important}.tkn .g{color:#15803d!important}.tkn .r{color:#dc2626!important}
+.mubtn{position:fixed;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:50;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -4593,4 +4594,16 @@ document.addEventListener('click', async e => {
 if (e.target.closest('#emSave')) { const v = $('#emIn').value.trim(); try { await rpc('set_my_email', { p_email: v }); toast(v ? '📧 Email saved — reminders will come here' : 'Email removed'); render(); } catch (er) { toast(errMsg(er), true); } }
 if (e.target.closest('#emTest')) { const b = e.target.closest('#emTest'); b.disabled = true; try { const { data, error } = await sb.functions.invoke('orbis-push', { body: { testmail: true } }); if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch { } throw new Error(m); } toast(data?.mailed ? `📧 Test email sent to ${data.to}` : 'Could not send the email', !data?.mailed); } catch (er) { toast(errMsg(er), true); } finally { b.disabled = false; } }
 });
+const INTRO_MUSIC = location.pathname.startsWith('/test') ? '/test/intro.mp3' : '';
+{ const _spM = splash; splash = async function () {
+if (!INTRO_MUSIC) return _spM.apply(this, arguments);
+const au = new Audio(INTRO_MUSIC); au.volume = 0; au.loop = false; let fadeI;
+const fadeTo = (v, ms, then) => { clearInterval(fadeI); const st = au.volume, t0 = performance.now(); fadeI = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / ms); au.volume = Math.max(0, Math.min(1, st + (v - st) * k)); if (k >= 1) { clearInterval(fadeI); then && then(); } }, 40); };
+const play = () => au.play().then(() => { fadeTo(0.55, 1200); setBtn(true); }).catch(() => setBtn(false));
+const setBtn = on => { const b = document.getElementById('muBtn'); if (b) { b.textContent = on ? '🔊' : '🔈 Music'; b.dataset.on = on ? '1' : ''; } };
+const p = _spM.apply(this, arguments);
+setTimeout(() => { const box = document.querySelector('.authbox.splash'); if (!box) return; box.insertAdjacentHTML('beforeend', '<button id="muBtn" class="mubtn" type="button" title="Music on / off">🔈 Music</button>');
+document.getElementById('muBtn').onclick = ev => { ev.stopPropagation(); if (ev.currentTarget.dataset.on) { fadeTo(0, 400, () => au.pause()); setBtn(false); lsSet('musicOff', true); } else { lsSet('musicOff', false); play(); } }; if (!lsGet('musicOff', false)) play(); }, 30);
+try { await p; } finally { fadeTo(0, 1500, () => { au.pause(); au.src = ''; }); }
+}; }
 </script></body></html>
