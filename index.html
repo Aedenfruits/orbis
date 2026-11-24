@@ -1474,7 +1474,7 @@ function fillAvatars() {   // swap initials for photos once they load
 document.querySelectorAll('[data-ava]').forEach(async el => { const e = empById(el.dataset.ava); const u = await photoUrl(e).catch(() => null); if (u && el.isConnected) el.innerHTML = `<img src="${u}" alt="">`; });
 }
 async function cropToJpeg(src, w = 480, h = 600) {   // centre-crop to 4:5 portrait
-const img = src instanceof HTMLVideoElement ? src : await createImageBitmap(src);
+const img = src instanceof HTMLVideoElement || src instanceof HTMLCanvasElement || src instanceof HTMLImageElement ? src : await blobImg(src);
 const iw = img.videoWidth || img.width, ih = img.videoHeight || img.height, r = w / h;
 let sw = iw, sh = iw / r; if (sh > ih) { sh = ih; sw = ih * r; }
 const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high';
@@ -1489,15 +1489,16 @@ const e = empById(id); if (!e) return; const self = id === S.me.id; if (!self &&
 const u = await photoUrl(e).catch(() => null); S.photoNew = null;
 dlg(self ? '📷 My photo' : `📷 Photo — ${esc(e.name)}`, `<div class="phwrap"><div class="phbox" id="phBox">${u ? `<img src="${u}" alt="">` : `<span>${esc(initials(e.name))}</span>`}</div>
 <div class="stack" style="gap:8px"><p class="small muted">Used on the company ID card. A clear, front-facing photo with a plain background works best.</p>
-<label class="btn" style="margin:0;position:relative;overflow:hidden">🖼 ${onMobile() ? 'Choose from gallery' : 'Choose a photo'}<input type="file" id="phFile" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*" class="fpick"></label>
-${onMobile() ? `<label class="btn" style="margin:0;position:relative;overflow:hidden">📸 Take a selfie<input type="file" id="phFile2" accept="image/*" capture="user" class="fpick"></label>` : `<button class="btn" type="button" id="phCam">📸 Use this computer's camera</button>`}<button class="btn pri" type="button" id="phSnap" hidden>● Take photo</button>
+<button class="btn" type="button" id="phPick">🖼 ${onMobile() ? 'Choose from gallery' : 'Choose a photo'}</button>
+${onMobile() ? `<button class="btn" type="button" id="phSelfie">📸 Take a selfie</button>` : `<button class="btn" type="button" id="phCam">📸 Use this computer's camera</button>`}<button class="btn pri" type="button" id="phSnap" hidden>● Take photo</button>
 ${u ? '<button class="btn" type="button" id="phDel">Remove photo</button>' : ''}</div></div>`, `<button class="btn pri" id="phSave" disabled>Save photo</button>`);
 $('#dlg').addEventListener('close', stopCam, { once: true });
 const show = async blob => { S.photoNew = blob; $('#phBox').innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="">`; $('#phSave').disabled = false; };
-const pick = async ev => { const f = ev.target.files[0]; if (!f) return; stopCam(); $('#phSnap').hidden = true; toast('Loading photo…');
-try { await show(await cropToJpeg(f)); } catch { try { const bm = await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = URL.createObjectURL(f); }); const c = document.createElement('canvas'); const s = Math.min(1, 1200 / Math.max(bm.width, bm.height)); c.width = bm.width * s; c.height = bm.height * s; c.getContext('2d').drawImage(bm, 0, 0, c.width, c.height); await show(await cropToJpeg(c)); }
-catch { toast('Could not read that photo. Take a screenshot of it, or use "Take a selfie".', true); } } ev.target.value = ''; };
-$('#phFile').onchange = pick; if ($('#phFile2')) $('#phFile2').onchange = pick;
+const pick = async f => { if (!f) return; stopCam(); $('#phSnap').hidden = true;
+try { await show(await cropToJpeg(f)); } catch { toast('Could not read that photo. Take a screenshot of it and choose the screenshot.', true); } };
+const open = sel => { let i = document.getElementById('phIn'); if (i) i.remove(); i = document.createElement('input'); i.type = 'file'; i.id = 'phIn'; i.accept = 'image/*'; if (sel) i.setAttribute('capture', 'user');
+i.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(i); i.addEventListener('change', () => pick(i.files && i.files[0])); i.click(); };
+$('#phPick').onclick = () => open(false); if ($('#phSelfie')) $('#phSelfie').onclick = () => open(true);
 if ($('#phCam')) $('#phCam').onclick = async () => { try { camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 960, facingMode: 'user' } });
 $('#phBox').innerHTML = '<video id="phVid" autoplay playsinline muted></video>'; $('#phVid').srcObject = camStream; $('#phSnap').hidden = false; }
 catch { toast('Camera not available. Use "Choose a photo" instead.', true); } };
@@ -4268,4 +4269,5 @@ return `<div class="card rejbox"><div class="row"><h3 style="margin:0">✕ Rejec
 ${rj.length ? `<div class="rjby">${Object.entries(byP).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<span class="chip">${esc(nm(k).split(' ')[0])} · ${n}</span>`).join('')}</div>
 <div class="stack" style="gap:6px;margin-top:8px">${rj.slice(0, 10).map(r => `<div class="li"><div><b>${esc(empById(r.employee_id)?.name || '?')} · ${r.from_date ? `${esc(ltName(r.type))} · ${fmtD(r.from_date)}${r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : ''}` : (r.kind === 'od' ? '🚗 On duty · ' : 'Regularise · ') + fmtD(r.day)}</b><small>Rejected by <strong>${esc(nm(r.decided_by || '?'))}</strong>${r.decided_at ? ' · ' + fmtD(r.decided_at.slice(0, 10)) : ''} · ${r.note ? '“' + esc(r.note) + '”' : '<i>no reason given</i>'}</small></div></div>`).join('')}</div>${rj.length > 10 ? `<div class="small muted" style="margin-top:6px">+${rj.length - 10} more</div>` : ''}` : '<p class="muted small" style="margin:6px 0 0">Nothing rejected 👍</p>'}</div>`;
 }
+function blobImg(f) { return new Promise((ok, no) => { const u = URL.createObjectURL(f), im = new Image(); im.onload = () => ok(im); im.onerror = () => { if (window.createImageBitmap) createImageBitmap(f).then(ok, no); else no(new Error('img')); }; im.src = u; }); }
 </script></body></html>
