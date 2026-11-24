@@ -1009,10 +1009,12 @@ dlg(id ? 'Edit employee' : 'Add employee', `<div class="grid2"><label>Employee c
 <label>Office<select id="e_office"><option></option>${opt(C().offices || [], x.office)}</select></label><label>Joining date<input type="date" id="e_join" value="${x.join_date || ''}"></label><label>Biometric machine ID <span class="small muted">(only if different from code)</span><input id="e_bio" value="${esc(x.bio_id || '')}" placeholder="e.g. 71"></label><label>Shift<select id="e_shift">${shiftsCfg().map(z => `<option value="${z.k}" ${(x.shift || 'gen') === z.k ? 'selected' : ''}>${esc(z.name)} · ${z.start}–${z.end}</option>`).join('')}</select></label><label>Weekly off${woBoxes('e_wo', weekOffs(x))}</label>
 <label>Reports to<select id="e_mgr"><option value="">— nobody —</option>${S.emps.filter(o => o.id !== id && o.active).map(o => `<option value="${o.id}" ${x.reports_to === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
 <label>Access level<select id="e_acc"><option value="" ${!x.access ? 'selected' : ''}>Employee — own data (+ team if manager)</option><option value="hr" ${x.access === 'hr' ? 'selected' : ''}>HR — all employees</option><option value="md" ${x.access === 'md' ? 'selected' : ''}>MD / Director — all employees</option></select></label></div>
+<label>Email for reminders <span class="small muted">(personal or company)</span><input type="email" id="e_em" placeholder="name@gmail.com"></label>
 <label class="chk"><input type="checkbox" id="e_np" ${x.no_punch ? 'checked' : ''}> No punching needed (directors / MD) — always counted present, not shown as late or absent</label>
 ${id ? `<label class="chk"><input type="checkbox" id="e_active" ${x.active ? 'checked' : ''}> Active (untick when the person leaves)</label>` : ''}
 <div class="card soft"><b>${id ? (x.auth_uid ? 'Reset password' : 'Create login') : 'Login password'}</b><p class="small muted">They sign in with their employee code and this password.${id && x.auth_uid ? ' Leave empty to keep the current password.' : ''}</p><input id="e_pw" type="text" placeholder="e.g. 123456 — they must change it at first login" autocomplete="off"></div>`,
 `<button class="btn pri" data-emp="save" data-id="${id || ''}">Save</button>`);
+if (id) q(sb.from('emp_email').select('email').eq('employee_id', id)).then(r => { const i = $('#e_em'); if (i && r[0]?.email) { i.value = r[0].email; i.dataset.had = '1'; } }).catch(() => { });
 }
 if (a === 'save') {
 const v = k => $('#' + k)?.value?.trim() ?? ''; const pw = $('#e_pw').value;
@@ -1027,6 +1029,8 @@ let emp = id ? empById(id) : null;
 if (!id) { const code = v('e_code').toUpperCase(); if (!code) throw new Error('Enter the employee code'); if (S.emps.some(e => e.code === code)) throw new Error('That employee code already exists');
 row.code = code; emp = (await q(sb.from('employees').insert(row).select().single())); }
 else await q(sb.from('employees').update(row).eq('id', id));
+{ const em = v('e_em').toLowerCase(); if (em && !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(em)) throw new Error('That email address does not look right');
+if (em) await q(sb.from('emp_email').upsert({ employee_id: emp.id, email: em, updated_at: new Date().toISOString() })); else if ($('#e_em')?.dataset.had) await q(sb.from('emp_email').delete().eq('employee_id', emp.id)); }
 if (pw) { if (pw.length < 6) throw new Error('Password must be at least 6 characters');
 if (emp.auth_uid) await rpc('hr_set_password', { p_emp: emp.id, p_password: PW(pw) });
 else { const tmp = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: false, autoRefreshToken: false, storageKey: 'orbis.tmp' } });
@@ -4579,5 +4583,14 @@ add(trend, '6-month trend', [26, 18, 18, 18, 18, 18, 18]);
 add(log.filter(l => l.action === 'due').map(l => ({ Task: l.title, 'Assigned to': nm(l.assigned_to), 'Old deadline': l.old_val ? fmtD(l.old_val) : '', 'New deadline': l.new_val ? fmtD(l.new_val) : '', 'Changed by': nm(l.by), 'Changed on': fmtD(ymd(l.at)) + ' ' + hm(l.at) })), 'Deadline changes', [40, 22, 13, 13, 22, 18]);
 add(log.filter(l => l.action === 'delete').map(l => ({ Task: l.title, 'Assigned to': nm(l.assigned_to), 'Assigned by': nm(l.assigned_by), 'Status when deleted': (TST[l.old_val] || [l.old_val])[0], Deadline: l.new_val ? fmtD(l.new_val) : '', 'Deleted by': nm(l.by), 'Deleted on': fmtD(ymd(l.at)) + ' ' + hm(l.at) })), 'Deleted tasks', [40, 22, 22, 16, 13, 22, 18]);
 X.writeFile(wb, `Task-MIS-${M}.xlsx`); toast('⬇ Task MIS report downloaded'); } catch (er) { toast(errMsg(er), true); } finally { xb.disabled = false; }
+});
+function emailCard(cur) { return `<div class="card emc"><div class="row"><h3 style="margin:0">📧 Email reminders</h3>${cur ? '<span class="chip good">On</span>' : '<span class="chip warn">Add your email</span>'}</div>
+<p class="small muted">ORBIS emails you if you forget to check in or check out. Only you and HR can see this address.</p>
+<div class="hstack wrap"><input type="email" id="emIn" value="${esc(cur || '')}" placeholder="yourname@gmail.com" style="flex:1;min-width:220px"><button class="btn pri" id="emSave">Save</button>${cur ? '<button class="btn" id="emTest">Send test email</button>' : ''}</div></div>`; }
+{ const _pfE = VIEWS.profile; VIEWS.profile = async () => { const h = await _pfE(); let cur = ''; try { cur = (await q(sb.from('emp_email').select('email').eq('employee_id', S.me.id)))[0]?.email || ''; } catch { }
+const c = emailCard(cur); const i = h.indexOf('<div class="card'); return i >= 0 ? h.slice(0, i) + c + h.slice(i) : h + c; }; }
+document.addEventListener('click', async e => {
+if (e.target.closest('#emSave')) { const v = $('#emIn').value.trim(); try { await rpc('set_my_email', { p_email: v }); toast(v ? '📧 Email saved — reminders will come here' : 'Email removed'); render(); } catch (er) { toast(errMsg(er), true); } }
+if (e.target.closest('#emTest')) { const b = e.target.closest('#emTest'); b.disabled = true; try { const { data, error } = await sb.functions.invoke('orbis-push', { body: { testmail: true } }); if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch { } throw new Error(m); } toast(data?.mailed ? `📧 Test email sent to ${data.to}` : 'Could not send the email', !data?.mailed); } catch (er) { toast(errMsg(er), true); } finally { b.disabled = false; } }
 });
 </script></body></html>
