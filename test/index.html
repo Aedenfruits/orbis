@@ -598,7 +598,7 @@ const cfg = brCfg(), totalAllow = cfg.reduce((s, b) => s + b.min, 0);
 const late = a?.in_at && hm(a.in_at) > lateLim();
 const dev = S.device;
 const devLine = dev ? `<span class="chip good">🖥️ Registered computer · ${esc(dev.name || '')}${dev.office ? ' · ' + esc(dev.office) : ''}</span>`
-: onMobile() ? `<span class="chip">📱 Phone · check in & out on an office computer</span>` : `<span class="chip crit">🖥️ This computer isn't registered for punching</span>${isAdmin() ? ' <a class="chip good" href="#setup">Register it →</a>' : '<div class="small" style="opacity:.75;margin-top:6px">Ask HR to register it, or use your own office computer.</div>'}`;
+: onMobile() ? `<span class="chip">📱 Phone · check in & out on an office computer</span>` : `<span class="chip crit">🖥️ This computer isn't registered for punching</span>${isAdmin() ? ' <a class="chip good" href="#setup">Register it →</a>' : devReqHTML()}`;
 const mob = !dev && onMobile() && state !== 'done';
 const brkHTML = state === 'out' ? breakPanel(ob, cfg) : '';
 afterFns.push(setupSwipe, startTicker);
@@ -3774,7 +3774,7 @@ const state = !a ? 'in' : !a.out_at ? 'out' : 'done';
 const cfg = brCfg(), allow = cfg.reduce((s, b) => s + b.min, 0), used = breakUsedMin();
 const late = a?.in_at && hm(a.in_at) > lateLim(), sh = shiftOf(), dev = S.device, first = esc(S.me.name.split(' ')[0]);
 const devLine = dev ? `<span class="chip good">🖥️ Registered computer · ${esc(dev.name || '')}${dev.office ? ' · ' + esc(dev.office) : ''}</span>`
-: onMobile() ? `<span class="chip">📱 Phone · check in & out on an office computer</span>` : `<span class="chip crit">🖥️ This computer isn't registered for punching</span>${isAdmin() ? ' <a class="chip good" href="#setup">Register it →</a>' : '<div class="small" style="opacity:.75;margin-top:6px">Ask HR to register it, or use your own office computer.</div>'}`;
+: onMobile() ? `<span class="chip">📱 Phone · check in & out on an office computer</span>` : `<span class="chip crit">🖥️ This computer isn't registered for punching</span>${isAdmin() ? ' <a class="chip good" href="#setup">Register it →</a>' : devReqHTML()}`;
 const mob = !dev && onMobile() && state !== 'done', L = pbLine();
 const eve = ist(Date.now()).getHours(), gr = eve < 12 ? 'Good morning' : eve < 17 ? 'Good afternoon' : 'Good evening';
 const head = state === 'in' ? `${gr}, ${first} — worked today` : state === 'out' ? (ob ? `${first}, you're on a break — work time paused` : `Hi ${first} — you've been working`) : `Well done, ${first} — you worked`;
@@ -3898,4 +3898,57 @@ if (e.target.closest('[data-hfind]')) { S.dirQ = ''; S.pplTab = 'dir'; location.
 if (e.target.closest('[data-tmcal]')) S.tmTab = 'cal';
 });
 document.addEventListener('keydown', e => { if (e.target.id === 'hq' && e.key === 'Enter') { S.dirQ = e.target.value.trim(); S.pplTab = 'dir'; location.hash = '#people'; } });
+function devReqHTML() {
+const r = lsGet('devreq', null);
+return r ? `<div class="small" style="margin-top:8px"><span class="chip warn">⏳ Registration requested · waiting for HR</span> <button class="btn sm" data-devreqchk="">Check now</button> <button class="btn sm" data-devreqcancel="">Cancel</button></div>`
+: `<div style="margin-top:8px"><button class="btn sm pri" data-devreq="">🖥️ Request HR to register this computer</button></div>`;
+}
+async function sha256hex(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+function devReqDlg() {
+const offs = C().offices || [], first = S.me.name.split(' ')[0];
+dlg('🖥️ Register this computer', `<p class="small muted">HR will get your request. Once they approve it, this computer can be used to clock in and out — nothing else to install.</p>
+<label>Computer name<input id="dr_name" maxlength="60" value="${esc(first)}'s computer" placeholder="e.g. Accounts PC 2"></label>
+<div class="grid2"><label>Office<select id="dr_off">${(offs.length ? offs : ['']).map(o => `<option ${o === S.me.office ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></label>
+<label>Who uses it<select id="dr_kind"><option value="own">Only me (my computer)</option><option value="kiosk">Shared by many (common PC)</option></select></label></div>`,
+`<button class="btn pri" id="dr_send">Send to HR</button>`);
+$('#dr_send').onclick = async () => {
+const name = $('#dr_name').value.trim(); if (!name) return toast('Give this computer a name', true);
+const key = [...crypto.getRandomValues(new Uint8Array(32))].map(x => x.toString(16).padStart(2, '0')).join('');
+try { const id = await rpc('request_device', { p_name: name, p_office: $('#dr_off').value, p_kind: $('#dr_kind').value, p_hash: await sha256hex(key), p_ua: navigator.userAgent.slice(0, 200) });
+lsSet('devreq', { id, key, at: Date.now() }); closeDlg(); toast('✓ Sent to HR. This computer will be ready as soon as they approve.'); render(); } catch (er) { toast(errMsg(er), true); }
+};
+}
+async function devReqCheck(manual) {
+const r = lsGet('devreq', null); if (!r || !S.me || S.device) return;
+try { const x = await rpc('claim_device', { p_id: r.id, p_key: r.key });
+if (x?.status === 'approved' && x.token) { lsSet('device', x.token); lsSet('devreq', null); await loadCore(); toast('✅ HR approved — this computer can clock in now'); render(); }
+else if (x?.status === 'rejected') { lsSet('devreq', null); toast('HR did not approve this computer' + (x.note ? ': ' + x.note : ''), true); render(); }
+else if (x?.status === 'missing' || x?.status === 'used') { lsSet('devreq', null); render(); }
+else if (manual) toast('Still waiting for HR to approve');
+} catch (er) { if (manual) toast(errMsg(er), true); }
+}
+{ const _bootD = boot; boot = async function () { const r = await _bootD.apply(this, arguments); devReqCheck(); return r; }; }
+setInterval(() => { if (lsGet('devreq', null) && !document.hidden) devReqCheck(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && lsGet('devreq', null)) devReqCheck(); });
+document.addEventListener('click', async e => {
+if (e.target.closest('[data-devreq]')) return devReqDlg();
+if (e.target.closest('[data-devreqchk]')) return devReqCheck(true);
+if (e.target.closest('[data-devreqcancel]')) { const r = lsGet('devreq', null); if (r) try { await q(sb.from('device_requests').delete().eq('id', r.id)); } catch { } lsSet('devreq', null); render(); return; }
+const d = e.target.closest('[data-drdec]'); if (d) {
+const id = d.dataset.drdec, st = d.dataset.st, own = $(`[data-drown="${id}"]`)?.value || null;
+let note = null; if (st === 'rejected') { note = prompt('Reason (optional)') ?? null; }
+d.disabled = true; try { await rpc('decide_device', { p_id: id, p_status: st, p_owner: own, p_note: note }); toast(st === 'approved' ? '✓ Computer approved — it will be ready on that computer in a minute' : 'Request rejected'); render(); } catch (er) { toast(errMsg(er), true); d.disabled = false; }
+}
+});
+async function devReqCard() {
+let rs = []; try { rs = await q(sb.from('device_requests').select('*').eq('status', 'pending').order('created_at')); } catch { return ''; }
+if (!rs.length) return '';
+const br = ua => /Edg\//.test(ua || '') ? 'Edge' : /Chrome\//.test(ua || '') ? 'Chrome' : /Firefox/.test(ua || '') ? 'Firefox' : /Safari/.test(ua || '') ? 'Safari' : 'Browser';
+const os = ua => /Windows/.test(ua || '') ? 'Windows' : /Mac OS/.test(ua || '') ? 'Mac' : /Android/.test(ua || '') ? 'Android' : /iPhone|iPad/.test(ua || '') ? 'iPhone/iPad' : /Linux/.test(ua || '') ? 'Linux' : '';
+const offIp = ip => (C().officeIps || []).includes(ip);
+return `<div class="card" style="border:2px solid #ff3d8b"><h3>🖥️ Computers waiting for approval (${rs.length})</h3><p class="small muted">Staff asked to use these computers for clocking in. Approve only computers you know are in the office.</p>
+${rs.map(r => `<div class="li"><div><div><b style="display:inline">${esc(r.name)}</b> <span class="chip">${r.kind === 'kiosk' ? 'Common PC' : 'Own computer'}</span></div><small style="display:block">Asked by <strong>${esc(empById(r.employee_id)?.name || '?')}</strong> · ${esc(r.office || '')} · ${os(r.ua)} ${br(r.ua)} · ${fmtD(ymd(r.created_at))} ${hm(r.created_at)}<br>Network ${esc(r.ip || '?')} ${(C().officeIps || []).length ? (offIp(r.ip) ? '<span class="chip good">office network</span>' : '<span class="chip crit">not the office network</span>') : ''}</small></div>
+<div class="hstack">${r.kind === 'own' ? `<select data-drown="${r.id}" style="width:auto" title="Who may clock in on it"><option value="${r.employee_id}">Only ${esc(empById(r.employee_id)?.name.split(' ')[0] || 'them')}</option><option value="">Anyone</option></select>` : ''}<button class="btn sm pri" data-drdec="${r.id}" data-st="approved">Approve</button><button class="btn sm" data-drdec="${r.id}" data-st="rejected">Reject</button></div></div>`).join('')}</div>`;
+}
+{ const _setupV = VIEWS.setup; VIEWS.setup = async () => { const [h, c] = await Promise.all([_setupV(), devReqCard()]); return c ? h.replace('<div class="card">', c + '<div class="card">') : h; }; }
 </script></body></html>
