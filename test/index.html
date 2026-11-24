@@ -405,6 +405,7 @@ body.hdragging .hdrop,.msg~.hdrop{display:block}.hdrop.over{border-color:#e01664
 .lbt .o{color:#d97706}.lbt .r{color:#e11d48}.lbdays{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
 .notax{background:#f0fdf4;border:1px solid #bbf7d0}
 .paytbl .ptot td{background:#f1f5f9;font-weight:700}.paytbl th{white-space:nowrap}.paytbl .numin{width:84px}
+.backbar{display:inline-flex;align-items:center;gap:4px;margin:0 0 12px;padding:7px 14px 7px 10px;border:1px solid var(--line);border-radius:99px;background:#fff;color:#1D2B53;font:inherit;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 1px 3px rgba(29,43,83,.06)}.backbar:hover{background:#f1f5f9}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -4458,4 +4459,8 @@ const mb = e.target.closest('[data-lbm]'); if (mb) { const [y, m] = (S.lbYm || t
 const x = e.target.closest('[data-lbx]'); if (x) { const r = document.querySelector(`[data-lbrow="${x.dataset.lbx}"]`); if (r) r.hidden = !r.hidden; }
 });
 document.addEventListener('click', e => { if (e.target.closest('#tdOpen')) { S.tdOpen = true; render(); } });
+addEventListener('hashchange', () => { S.navDepth = (S.navDepth || 0) + 1; });
+{ const _rBack = render; render = async function () { const r = await _rBack.apply(this, arguments);
+try { const m = $('#main'); if (m && S.me && S.view !== 'punch' && !m.querySelector('.backbar') && !KMODE()) m.insertAdjacentHTML('afterbegin', `<button class="backbar" type="button" data-goback>‹ Back</button>`); } catch { } return r; }; }
+document.addEventListener('click', e => { if (!e.target.closest('[data-goback]')) return; if ((S.navDepth || 0) > 1 && history.length > 1) { S.navDepth -= 2; history.back(); } else { S.navDepth = 0; location.hash = '#punch'; } });
 </script></body></html>
