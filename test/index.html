@@ -4217,7 +4217,7 @@ if (S.hierSel) { const r = e.target.closest('[data-hroot]'); if (r) { e.preventD
 });
 function chainCur(r) { const ch = r.chain || [], s = r.step || 0; return s < ch.length ? ch[s] : null; }
 function isDHeadOf(emp) { const d = empById(emp)?.dept; return !!d && emp !== S.me?.id && (S.heads || []).some(h => h.employee_id === S.me?.id && h.dept === d); }
-function chainMine(r) { if (r.status !== 'pending') return false; const ch = r.chain || []; if (!ch.length) return true; const c = chainCur(r); return c === S.me.id || isAdmin() || isDHeadOf(r.employee_id); }
+function chainMine(r) { if (r.status !== 'pending') return false; const ch = r.chain || []; if (!ch.length) return true; const c = chainCur(r); return c === S.me.id || (isAdmin() && (r.step || 0) >= ch.length) || isDHeadOf(r.employee_id); }
 function chainLine(r) {
 const ch = r.chain || []; if (!ch.length) return ''; const dh = (S.heads || []).find(x => x.dept === empById(r.employee_id)?.dept)?.employee_id, s = r.step || 0, hrF = C().hrFinal !== false && (flowFixed(r.employee_id, ch) || !ch.some(id => empById(id)?.access === 'md' || id === dh)), done = r.status !== 'pending', rej = r.status === 'rejected';
 const steps = ch.map((id, i) => ({ n: (empById(id)?.name || '?').split(' ')[0], st: i < s ? 'ok' : (i === s && !done) ? 'now' : (done && !rej) ? 'ok' : 'todo' }));
