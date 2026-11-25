@@ -498,6 +498,29 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .fwkr button{flex:1;max-width:42px;height:48px;border:0;border-radius:8px;background:#e7eaf3;font:700 15px DM Sans,system-ui;cursor:pointer;padding:0}
 .fwkr button.wide{max-width:64px;flex:1.5;font-size:12px}
 .fwkr button.kg{background:#16a34a;color:#fff}.fwkr button.ky{background:#eab308;color:#fff}.fwkr button.kx{background:#8b93b0;color:#fff}
+.ldsvg{width:100%;max-width:440px;display:block;margin:0 auto;border-radius:14px;box-shadow:0 0 0 2px #e4e7f0}
+.ldt.can{cursor:pointer}.ldpulse{animation:ldp 1s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ldp{0%,100%{opacity:.25;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+.ldtop{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
+.ldp{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:#f1f3f9;border:2px solid transparent}
+.ldp.on{border-color:var(--c);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.ldbar{display:flex;align-items:center;gap:14px;max-width:440px;margin:12px auto 0}
+.lddie{width:64px;height:64px;flex:none;border-radius:16px;border:3px solid var(--c);background:#fff;font-size:40px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.lddie.go{animation:ldbob 1s ease-in-out infinite;box-shadow:0 6px 18px rgba(0,0,0,.15)}.lddie:disabled{opacity:.75;cursor:default}
+@keyframes ldbob{50%{transform:translateY(-4px)}}
+.ldmsg{font-size:14px;line-height:1.35}
+.ldend{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:12px}
+.ldpick{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:18px 6px}
+.chst{text-align:center;font-size:15px;margin-bottom:8px;min-height:22px}
+.chb{display:grid;grid-template-columns:repeat(8,1fr);max-width:440px;margin:0 auto;border-radius:10px;overflow:hidden;box-shadow:0 0 0 3px #1e2a5a}
+.chs{position:relative;aspect-ratio:1;border:0;padding:0;display:grid;place-items:center;cursor:pointer;font:inherit}
+.chs.l{background:#f3e8d6}.chs.d{background:#b58863}
+.chs.last{box-shadow:inset 0 0 0 100px rgba(255,214,0,.33)}.chs.sel{box-shadow:inset 0 0 0 100px rgba(37,99,235,.38)}.chs.chk{box-shadow:inset 0 0 0 100px rgba(225,29,72,.55)}
+.chp{font-size:clamp(28px,9vw,44px);line-height:1}
+.chp.w{color:#fff;text-shadow:0 0 1px #000,0 0 1px #000,0 1px 1px #000,0 0 3px rgba(0,0,0,.6)}.chp.b{color:#1b1b1b}
+.chs i.dot{position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(20,30,60,.35)}
+.chs i.cap{position:absolute;inset:6%;border-radius:50%;box-shadow:inset 0 0 0 4px rgba(225,29,72,.7)}
+.chs em{position:absolute;font-style:normal;font-size:9px;font-weight:700;opacity:.6}.chs em.rk{left:2px;top:1px}.chs em.fl{right:3px;bottom:0}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -4916,12 +4939,12 @@ const cv = $('#fsC'), wrap = $('#fsWrap'); if (!cv || cv.dataset.on) return; cv.
 const ctx = cv.getContext('2d'); let W = 0, H = 0;
 const fit = () => { const d = Math.min(2, devicePixelRatio || 1); W = wrap.clientWidth; H = Math.round(Math.min(620, Math.max(420, innerHeight * 0.6))); wrap.style.height = H + 'px'; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(d, 0, 0, d, 0, 0); };
 fit(); addEventListener('resize', fit);
-const FR = ['🍎', '🍊', '🍉', '🍍', '🥭', '🍐', '🍑', '🥝', '🍋', '🍌'];
-let G = null, raf = 0, trail = [], down = false, stroke = 0;
-const reset = () => { G = { items: [], fx: [], score: 0, left: 60, spawn: 0.5, sliced: 0, flash: 0, over: false, last: performance.now() }; };
+const FR = ['🍎', '🍊', '🍉', '🍍', '🍇', '🍐', '🍑', '🍓', '🍋', '🍌'];
+let G = null, raf = 0, trail = [], down = false, stroke = 0, seq = 0, chk = 0;
+const reset = () => { G = { items: [], fx: [], score: 0, left: 60, spawn: 0.3, sliced: 0, flash: 0, over: false, last: performance.now() }; };
 const spawn = () => { const n = 1 + (Math.random() < 0.45) + (Math.random() < 0.2 && G.left < 45);
 for (let i = 0; i < n; i++) { const bug = Math.random() < 0.14, x = W * (0.2 + Math.random() * 0.6);
-G.items.push({ e: bug ? '🪲' : FR[(Math.random() * FR.length) | 0], bug, x, y: H + 30, vx: (W / 2 - x) * (0.4 + Math.random() * 0.5) + (Math.random() - 0.5) * 90, vy: -(H * 1.05 + Math.random() * H * 0.35), rot: 0, vr: (Math.random() - 0.5) * 6, r: 24, cut: false }); } };
+G.items.push({ e: bug ? '🪲' : FR[(Math.random() * FR.length) | 0], bug, x, y: H + 30, vx: ((W * (0.25 + Math.random() * 0.5)) - x) / 2.0, vy: -(H * 1.05 + Math.random() * H * 0.35), rot: 0, vr: (Math.random() - 0.5) * 6, r: 24, cut: false }); } };
 const say = (x, y, t, c, big) => G.fx.push({ k: 't', x, y, t, c, big, life: 0.9 });
 const burst = (x, y, c) => { for (let i = 0; i < 14; i++) { const a = Math.random() * 6.283, s = 80 + Math.random() * 200; G.fx.push({ k: 'p', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6, c }); } };
 const hitSeg = (it, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((it.x - a.x) * dx + (it.y - a.y) * dy) / L)); return (a.x + t * dx - it.x) ** 2 + (a.y + t * dy - it.y) ** 2 < (it.r + 6) ** 2; };
@@ -4933,14 +4956,16 @@ G.left -= dt; if (G.left <= 0) { G.left = 0; end(); }
 G.spawn -= dt; if (G.spawn <= 0) { spawn(); G.spawn = Math.max(0.45, 1.1 - (60 - G.left) * 0.01) * (0.7 + Math.random() * 0.6); }
 const g = H * 1.25;
 for (const it of G.items) { it.vy += g * dt; it.x += it.vx * dt; it.y += it.vy * dt; it.rot += it.vr * dt; }
-if (trail.length > 1) { const a = trail[trail.length - 2], b = trail[trail.length - 1];
-for (const it of G.items) if (!it.cut && hitSeg(it, a, b)) { it.cut = true;
+for (let s = 1; s < trail.length; s++) { if (trail[s].id <= chk) continue; const a = trail[s - 1], b = trail[s];
+for (const it of G.items) if (!it.cut && hitSeg(it, a, b)) { it.cut = true; const ang = Math.atan2(b.y - a.y, b.x - a.x);
+G.fx.push({ k: 'h', e: it.e, x: it.x, y: it.y, vx: it.vx * 0.4 - Math.sin(ang) * 90, vy: it.vy * 0.3 - 60 + Math.cos(ang) * 60, rot: it.rot, vr: -3, side: -1, life: 1.1 }, { k: 'h', e: it.e, x: it.x, y: it.y, vx: it.vx * 0.4 + Math.sin(ang) * 90, vy: it.vy * 0.3 - 60 - Math.cos(ang) * 60, rot: it.rot, vr: 3, side: 1, life: 1.1 });
 if (it.bug) { G.score = Math.max(0, G.score - 30); G.flash = 0.35; say(it.x, it.y, '−30 bug!', '#ff4d6d'); burst(it.x, it.y, '#a3a3a3'); navigator.vibrate?.(80); stroke = 0; }
 else { stroke++; G.sliced++; G.score += 10; say(it.x, it.y, '+10', '#a3e635'); burst(it.x, it.y, ['#ef4444', '#f97316', '#facc15', '#84cc16'][(Math.random() * 4) | 0]);
 if (stroke >= 3) { const bonus = stroke * 10; G.score += bonus; say(W / 2, H * 0.3, `${stroke}× COMBO +${bonus}`, '#ff7aa8', 1); } } } }
+if (trail.length) chk = trail[trail.length - 1].id;
 G.items = G.items.filter(it => !it.cut && it.y < H + 60);
 }
-for (const p of G.fx) { p.life -= dt; if (p.k === 'p') { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 500 * dt; } else p.y -= 30 * dt; }
+for (const p of G.fx) { p.life -= dt; if (p.k === 'p' || p.k === 'h') { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.k === 'h' ? H * 1.25 : 500) * dt; if (p.k === 'h') p.rot += p.vr * dt; } else p.y -= 30 * dt; }
 G.fx = G.fx.filter(p => p.life > 0); G.flash = Math.max(0, G.flash - dt);
 trail = trail.filter(p => now - p.t < 140);
 draw(now);
@@ -4951,7 +4976,7 @@ ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; for (let x = 0; x < W; x
 ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '44px serif';
 for (const it of G.items) { ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot); ctx.fillText(it.e, 0, 0); ctx.restore(); }
 if (trail.length > 1) { ctx.lineCap = 'round'; for (let i = 1; i < trail.length; i++) { ctx.strokeStyle = `rgba(255,255,255,${i / trail.length})`; ctx.lineWidth = 2 + 6 * i / trail.length; ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); } }
-for (const p of G.fx) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); if (p.k === 'p') { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.283); ctx.fill(); } else { ctx.font = `bold ${p.big ? 26 : 18}px DM Sans,system-ui`; ctx.fillStyle = p.c; ctx.fillText(p.t, p.x, p.y); } }
+for (const p of G.fx) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); if (p.k === 'h') { ctx.globalAlpha = Math.min(1, p.life * 1.5); ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.beginPath(); ctx.rect(p.side < 0 ? -30 : 0, -30, 30, 60); ctx.clip(); ctx.font = '44px serif'; ctx.fillText(p.e, 0, 0); ctx.restore(); } else if (p.k === 'p') { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.283); ctx.fill(); } else { ctx.font = `bold ${p.big ? 26 : 18}px DM Sans,system-ui`; ctx.fillStyle = p.c; ctx.fillText(p.t, p.x, p.y); } }
 ctx.globalAlpha = 1; if (G.flash) { ctx.fillStyle = `rgba(255,0,60,${G.flash})`; ctx.fillRect(0, 0, W, H); }
 ctx.textAlign = 'left'; ctx.font = 'bold 18px DM Sans,system-ui'; ctx.fillStyle = '#fff'; ctx.fillText(G.score.toLocaleString('en-IN'), 14, 22);
 ctx.textAlign = 'right'; ctx.fillStyle = G.left < 10 ? '#ff7aa8' : '#fff'; ctx.fillText('⏱ ' + Math.ceil(G.left) + 's', W - 14, 22);
@@ -4959,9 +4984,9 @@ ctx.textAlign = 'right'; ctx.fillStyle = G.left < 10 ? '#ff7aa8' : '#fff'; ctx.f
 const end = async () => { G.over = true; const ov = $('#fsOv'); if (!ov) return;
 ov.innerHTML = `<div class="pbt">Time's up!</div><div class="pbbig">${G.score.toLocaleString('en-IN')}</div><p>${G.sliced} fruits sliced</p><button class="btn pri big" data-gstart="slice">↻ Play again</button><div class="small" id="fsSave" style="margin-top:10px;opacity:.8">Saving…</div>`; ov.style.display = 'flex';
 const r = await gSave('slice', G.score); const s = $('#fsSave'); if (s) s.textContent = !r.saved ? 'Could not save (check internet)' : r.newBest ? '🎉 New personal best!' : `Your best: ${r.best.toLocaleString('en-IN')}`; };
-const pt = e => { const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return { x: t.clientX - r.left, y: t.clientY - r.top, t: performance.now() }; };
+const pt = e => { const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return { x: t.clientX - r.left, y: t.clientY - r.top, t: performance.now(), id: ++seq }; };
 cv.addEventListener('pointerdown', e => { down = true; stroke = 0; trail = [pt(e)]; cv.setPointerCapture?.(e.pointerId); });
-cv.addEventListener('pointermove', e => { if (down || e.pointerType === 'mouse' && e.buttons) trail.push(pt(e)); });
+cv.addEventListener('pointermove', e => { if (!(down || e.pointerType === 'mouse' && e.buttons)) return; const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e]; for (const c of (evs.length ? evs : [e])) trail.push(pt(c)); });
 cv.addEventListener('pointerup', () => { down = false; stroke = 0; }); cv.addEventListener('pointercancel', () => { down = false; });
 cv.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 wrap.addEventListener('click', e => { if (!e.target.closest('[data-gstart="slice"]')) return; reset(); $('#fsOv').style.display = 'none'; cancelAnimationFrame(raf); G.last = performance.now(); raf = requestAnimationFrame(step); });
@@ -5018,5 +5043,173 @@ const press = c => { if (st.done) return; if (c === '⏎' || c === 'ENTER') retu
 K.addEventListener('click', e => { const b = e.target.closest('[data-fwk]'); if (b) press(b.dataset.fwk); });
 const kd = e => { if (!B.isConnected) return removeEventListener('keydown', kd); if (e.ctrlKey || e.metaKey || e.altKey || /input|textarea/i.test(document.activeElement?.tagName || '')) return; const k = e.key.toUpperCase(); if (k === 'ENTER' || k === 'BACKSPACE' || /^[A-Z]$/.test(k)) { e.preventDefault(); press(k); } };
 addEventListener('keydown', kd); draw();
+}
+const LD = (() => {
+const T = []; const add = (x, y) => T.push([x, y]);
+for (let x = 1; x <= 5; x++) add(x, 6); for (let y = 5; y >= 0; y--) add(6, y); add(7, 0); for (let y = 0; y <= 5; y++) add(8, y);
+for (let x = 9; x <= 14; x++) add(x, 6); add(14, 7); for (let x = 14; x >= 9; x--) add(x, 8); for (let y = 9; y <= 14; y++) add(8, y);
+add(7, 14); for (let y = 14; y >= 9; y--) add(6, y); for (let x = 5; x >= 0; x--) add(x, 8); add(0, 7); add(0, 6);
+const C = [{ k: 'r', n: 'Red', c: '#e11d48', start: 0, home: [[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]], base: [[2, 2], [3, 2], [2, 3], [3, 3]], bz: [0, 0] },
+{ k: 'g', n: 'Green', c: '#16a34a', start: 13, home: [[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]], base: [[11, 2], [12, 2], [11, 3], [12, 3]], bz: [9, 0] },
+{ k: 'y', n: 'Yellow', c: '#eab308', start: 26, home: [[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]], base: [[11, 11], [12, 11], [11, 12], [12, 12]], bz: [9, 9] },
+{ k: 'b', n: 'Blue', c: '#2563eb', start: 39, home: [[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]], base: [[2, 11], [3, 11], [2, 12], [3, 12]], bz: [0, 9] }];
+const SAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+return { T, C, SAFE };
+})();
+function ldInit() {
+const box = $('#ldBox'); if (!box || box.dataset.on) return; box.dataset.on = 1;
+let G = null, busy = false;
+const cell = 24, pos = (pi, p) => { const c = LD.C[pi]; if (p < 0) return null; if (p >= 56) return [7, 7]; if (p >= 51) return c.home[p - 51]; return LD.T[(c.start + p) % 52]; };
+const tIdx = (pi, p) => p >= 0 && p <= 50 ? (LD.C[pi].start + p) % 52 : -1;
+const newGame = n => { const pl = n === 2 ? [0, 2] : [0, 1, 2, 3]; G = { pl, tok: pl.map(() => [-1, -1, -1, -1]), turn: 0, roll: 0, sixes: 0, rolled: false, msg: 'Your turn — tap the dice 🎲', over: false, t0: Date.now(), caps: 0 }; draw(); };
+const P = i => LD.C[G.pl[i]];
+const movable = (i, r) => G.tok[i].map((p, t) => (p < 0 ? r === 6 : p + r <= 56) ? t : -1).filter(t => t >= 0);
+const draw = () => {
+if (!box.isConnected) return;
+let s = `<svg viewBox="0 0 ${15 * cell} ${15 * cell}" class="ldsvg">`;
+s += `<rect width="${15 * cell}" height="${15 * cell}" fill="#fff"/>`;
+for (const c of LD.C) { const [bx, by] = c.bz; s += `<rect x="${bx * cell}" y="${by * cell}" width="${6 * cell}" height="${6 * cell}" fill="${c.c}"/><rect x="${(bx + 1) * cell}" y="${(by + 1) * cell}" width="${4 * cell}" height="${4 * cell}" rx="10" fill="#fff"/>`;
+for (const [x, y] of c.base) s += `<circle cx="${x * cell + cell / 2 + (x % 2 ? -6 : 6) * 0}" cy="${y * cell + cell / 2}" r="9" fill="${c.c}" opacity=".18"/>`; }
+LD.T.forEach(([x, y], i) => { const own = LD.C.find(c => c.start === i); s += `<rect x="${x * cell}" y="${y * cell}" width="${cell}" height="${cell}" fill="${own ? own.c : '#fff'}" stroke="#d6d9e4"/>`; if (LD.SAFE.has(i) && !own) s += `<text x="${x * cell + cell / 2}" y="${y * cell + cell / 2 + 5}" text-anchor="middle" font-size="14" fill="#9aa1b9">★</text>`; });
+for (const c of LD.C) for (const [x, y] of c.home) s += `<rect x="${x * cell}" y="${y * cell}" width="${cell}" height="${cell}" fill="${c.c}" stroke="#fff" opacity=".85"/>`;
+const m = 7.5 * cell; s += `<polygon points="${6 * cell},${6 * cell} ${9 * cell},${6 * cell} ${m},${m}" fill="${LD.C[1].c}"/><polygon points="${9 * cell},${6 * cell} ${9 * cell},${9 * cell} ${m},${m}" fill="${LD.C[2].c}"/><polygon points="${9 * cell},${9 * cell} ${6 * cell},${9 * cell} ${m},${m}" fill="${LD.C[3].c}"/><polygon points="${6 * cell},${9 * cell} ${6 * cell},${6 * cell} ${m},${m}" fill="${LD.C[0].c}"/>`;
+const can = G && !G.over && G.turn === 0 && G.rolled ? movable(0, G.roll) : [];
+const spots = {}; G?.pl.forEach((pi, i) => G.tok[i].forEach((p, t) => { const xy = p < 0 ? LD.C[pi].base[t] : pos(pi, p); const key = xy.join(','); (spots[key] = spots[key] || []).push({ i, t, pi }); }));
+for (const [key, arr] of Object.entries(spots)) { const [x, y] = key.split(',').map(Number);
+arr.forEach((o, n) => { const off = arr.length > 1 ? (n - (arr.length - 1) / 2) * 7 : 0, cx = x * cell + cell / 2 + off, cy = y * cell + cell / 2 - (arr.length > 1 ? 2 : 0), hl = o.i === 0 && can.includes(o.t);
+s += `<g class="ldt${hl ? ' can' : ''}" ${hl ? `data-ldt="${o.t}"` : ''}><circle cx="${cx}" cy="${cy}" r="${hl ? 10 : 8.5}" fill="${LD.C[o.pi].c}" stroke="#fff" stroke-width="2.5"/>${hl ? `<circle cx="${cx}" cy="${cy}" r="13" fill="none" stroke="${LD.C[o.pi].c}" stroke-width="2" class="ldpulse"/>` : ''}</g>`; }); }
+s += '</svg>';
+const done = i => G.tok[i].filter(p => p >= 56).length;
+box.innerHTML = `<div class="ldtop">${G.pl.map((pi, i) => `<span class="ldp ${G.turn === i && !G.over ? 'on' : ''}" style="--c:${LD.C[pi].c}">${i === 0 ? 'You' : LD.C[pi].n + ' 🤖'} · ${done(i)}/4</span>`).join('')}</div>${s}
+<div class="ldbar"><button class="lddie ${G.turn === 0 && !G.rolled && !G.over ? 'go' : ''}" data-ldroll ${G.turn === 0 && !G.rolled && !G.over ? '' : 'disabled'} style="--c:${P(G.turn).c}">${G.roll ? '⚀⚁⚂⚃⚄⚅'[G.roll - 1] : '🎲'}</button><div class="ldmsg">${G.msg}</div></div>`;
+};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const roll = async () => { for (let k = 0; k < 6; k++) { G.roll = 1 + ((Math.random() * 6) | 0); draw(); await sleep(60); } G.roll = 1 + ((Math.random() * 6) | 0); G.rolled = true; draw(); return G.roll; };
+const step = async (i, t, r) => {
+const pi = G.pl[i]; let p = G.tok[i][t], extra = r === 6, captured = false;
+if (p < 0) { G.tok[i][t] = 0; } else { for (let k = 0; k < r; k++) { G.tok[i][t] = ++p; draw(); await sleep(110); } }
+const ti = tIdx(pi, G.tok[i][t]);
+if (ti >= 0 && !LD.SAFE.has(ti)) G.pl.forEach((pj, j) => { if (j === i) return; G.tok[j].forEach((q, u) => { if (tIdx(pj, q) === ti) { G.tok[j][u] = -1; captured = true; } }); });
+if (captured) { extra = true; if (i === 0) G.caps++; }
+if (G.tok[i][t] >= 56) extra = true;
+draw();
+if (G.tok[i].every(q => q >= 56)) { G.over = true; return finish(i); }
+return extra;
+};
+const next = extra => { if (extra && G.sixes < 3) { G.rolled = false; } else { G.turn = (G.turn + 1) % G.pl.length; G.sixes = 0; G.rolled = false; } G.roll = G.roll; };
+const botPick = (i, r, opts) => { const pi = G.pl[i];
+const score = t => { const p = G.tok[i][t], np = p < 0 ? 0 : p + r, ti = tIdx(pi, np); let v = np;
+if (np >= 56) v += 200; if (p < 0) v += 80;
+if (ti >= 0 && !LD.SAFE.has(ti) && G.pl.some((pj, j) => j !== i && G.tok[j].some(q => tIdx(pj, q) === ti))) v += 150;
+if (ti >= 0 && LD.SAFE.has(ti)) v += 25; if (np >= 51) v += 40; return v + Math.random() * 5; };
+return opts.sort((a, b) => score(b) - score(a))[0]; };
+const play = async () => {
+while (!G.over && G.turn !== 0 && box.isConnected) {
+const i = G.turn; G.msg = `${P(i).n} is thinking…`; draw(); await sleep(450); const r = await roll(); if (r === 6) G.sixes++;
+const opts = movable(i, r); if (!opts.length || G.sixes >= 3) { G.msg = `${P(i).n} rolled ${r}${G.sixes >= 3 ? ' (three 6s)' : ''} — no move`; draw(); await sleep(650); next(false); continue; }
+const ex = await step(i, botPick(i, r, opts), r); if (G.over) return; await sleep(300); next(ex);
+}
+if (!G.over) { G.msg = G.rolled ? 'Tap a glowing token' : 'Your turn — tap the dice 🎲'; draw(); }
+};
+const finish = async i => {
+const win = i === 0, secs = Math.round((Date.now() - G.t0) / 1000), score = win ? Math.max(150, 600 - Math.floor(secs / 6)) + G.caps * 25 : 0;
+G.msg = win ? `🎉 <b>You won!</b> ${score} points` : `${P(i).n} won this time. Try again!`; draw();
+box.insertAdjacentHTML('beforeend', `<div class="ldend"><button class="btn pri" data-ldnew="${G.pl.length}">↻ Play again</button><small id="ldSave">${win ? 'Saving…' : ''}</small></div>`);
+if (win) { const r = await gSave('ludo', score); const s = $('#ldSave'); if (s) s.textContent = !r.saved ? 'Could not save (check internet)' : r.newBest ? '🎉 New personal best!' : `Your best: ${r.best}`; }
+};
+box.addEventListener('click', async e => {
+if (e.target.closest('[data-ldnew]')) { newGame(+e.target.closest('[data-ldnew]').dataset.ldnew); return; }
+if (busy || !G || G.over || G.turn !== 0) return;
+if (e.target.closest('[data-ldroll]') && !G.rolled) { busy = true; const r = await roll(); if (r === 6) G.sixes++; const opts = movable(0, r);
+if (!opts.length || G.sixes >= 3) { G.msg = `You rolled ${r} — no move`; draw(); await sleep(700); next(false); busy = false; return play(); }
+if (opts.length === 1 && G.tok[0][opts[0]] >= 0 && opts.every(t => G.tok[0][t] === G.tok[0][opts[0]])) { const ex = await step(0, opts[0], r); busy = false; if (G.over) return; next(ex); return play(); }
+G.msg = `You rolled ${r} — tap a glowing token`; draw(); busy = false; return; }
+const tk = e.target.closest('[data-ldt]'); if (tk && G.rolled) { busy = true; const ex = await step(0, +tk.dataset.ldt, G.roll); busy = false; if (G.over) return; next(ex); return play(); }
+});
+G = null; box.innerHTML = `<div class="ldpick"><div class="pbt" style="color:var(--ink,#1e2a5a)">🎲 Ludo</div><p class="muted">You are <b style="color:#e11d48">Red</b>. Roll a 6 to bring a token out. Capture rivals, reach home first!</p><div class="row" style="justify-content:center;gap:10px"><button class="btn pri" data-ldnew="2">vs 1 computer</button><button class="btn" data-ldnew="4">vs 3 computers</button></div><small class="muted">Your best: ${gBest('ludo')}</small></div>`;
+}
+const CH = (() => {
+const VAL = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0 };
+const PST = { P: [0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 50, 50, 50, 50, 50, 10, 10, 20, 30, 30, 20, 10, 10, 5, 5, 10, 25, 25, 10, 5, 5, 0, 0, 0, 20, 20, 0, 0, 0, 5, -5, -10, 0, 0, -10, -5, 5, 5, 10, 10, -20, -20, 10, 10, 5, 0, 0, 0, 0, 0, 0, 0, 0],
+N: [-50, -40, -30, -30, -30, -30, -40, -50, -40, -20, 0, 0, 0, 0, -20, -40, -30, 0, 10, 15, 15, 10, 0, -30, -30, 5, 15, 20, 20, 15, 5, -30, -30, 0, 15, 20, 20, 15, 0, -30, -30, 5, 10, 15, 15, 10, 5, -30, -40, -20, 0, 5, 5, 0, -20, -40, -50, -40, -30, -30, -30, -30, -40, -50],
+B: [-20, -10, -10, -10, -10, -10, -10, -20, -10, 0, 0, 0, 0, 0, 0, -10, -10, 0, 5, 10, 10, 5, 0, -10, -10, 5, 5, 10, 10, 5, 5, -10, -10, 0, 10, 10, 10, 10, 0, -10, -10, 10, 10, 10, 10, 10, 10, -10, -10, 5, 0, 0, 0, 0, 5, -10, -20, -10, -10, -10, -10, -10, -10, -20],
+R: [0, 0, 0, 0, 0, 0, 0, 0, 5, 10, 10, 10, 10, 10, 10, 5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, -5, 0, 0, 0, 0, 0, 0, -5, 0, 0, 0, 5, 5, 0, 0, 0],
+Q: [-20, -10, -10, -5, -5, -10, -10, -20, -10, 0, 0, 0, 0, 0, 0, -10, -10, 0, 5, 5, 5, 5, 0, -10, -5, 0, 5, 5, 5, 5, 0, -5, 0, 0, 5, 5, 5, 5, 0, -5, -10, 5, 5, 5, 5, 5, 0, -10, -10, 0, 5, 0, 0, 0, 0, -10, -20, -10, -10, -5, -5, -10, -10, -20],
+K: [-30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -30, -40, -40, -50, -50, -40, -40, -30, -20, -30, -30, -40, -40, -30, -30, -20, -10, -20, -20, -20, -20, -20, -20, -10, 20, 20, 0, 0, 0, 0, 20, 20, 20, 30, 10, 0, 0, 10, 30, 20] };
+const start = () => { const b = Array(64).fill(null), back = 'RNBQKBNR';
+for (let i = 0; i < 8; i++) { b[i] = 'b' + back[i]; b[8 + i] = 'bP'; b[48 + i] = 'wP'; b[56 + i] = 'w' + back[i]; }
+return { b, turn: 'w', cs: { wK: 1, wQ: 1, bK: 1, bQ: 1 }, ep: -1, ply: 0 }; };
+const rc = i => [i >> 3, i & 7], on = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+const attacked = (b, sq, by) => { const [r, c] = rc(sq), d = by === 'w' ? 1 : -1;
+for (const dc of [-1, 1]) { const rr = r + d, cc = c + dc; if (on(rr, cc) && b[rr * 8 + cc] === by + 'P') return true; }
+for (const [dr, dc] of [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]]) { const rr = r + dr, cc = c + dc; if (on(rr, cc) && b[rr * 8 + cc] === by + 'N') return true; }
+for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { if (!dr && !dc) continue; const rr = r + dr, cc = c + dc; if (on(rr, cc) && b[rr * 8 + cc] === by + 'K') return true; }
+for (const [dr, dc, ps] of [[1, 0, 'RQ'], [-1, 0, 'RQ'], [0, 1, 'RQ'], [0, -1, 'RQ'], [1, 1, 'BQ'], [1, -1, 'BQ'], [-1, 1, 'BQ'], [-1, -1, 'BQ']]) {
+let rr = r + dr, cc = c + dc; while (on(rr, cc)) { const p = b[rr * 8 + cc]; if (p) { if (p[0] === by && ps.includes(p[1])) return true; break; } rr += dr; cc += dc; } }
+return false; };
+const pseudo = s => { const { b, turn: w } = s, o = w === 'w' ? 'b' : 'w', mv = [];
+for (let i = 0; i < 64; i++) { const p = b[i]; if (!p || p[0] !== w) continue; const [r, c] = rc(i), t = p[1];
+const push = (j, extra = {}) => mv.push({ f: i, t: j, p, x: b[j], ...extra });
+if (t === 'P') { const d = w === 'w' ? -1 : 1, sr = w === 'w' ? 6 : 1, pr = w === 'w' ? 0 : 7, r1 = r + d;
+const pm = (j, ex) => (j >> 3) === pr ? push(j, { ...ex, pro: w + 'Q' }) : push(j, ex);
+if (on(r1, c) && !b[r1 * 8 + c]) { pm(r1 * 8 + c); if (r === sr && !b[(r + 2 * d) * 8 + c]) push((r + 2 * d) * 8 + c, { dbl: 1 }); }
+for (const dc of [-1, 1]) { const cc = c + dc; if (!on(r1, cc)) continue; const j = r1 * 8 + cc; if (b[j] && b[j][0] === o) pm(j); else if (j === s.ep) push(j, { epc: (r * 8 + cc) }); } }
+else if (t === 'N' || t === 'K') { const D = t === 'N' ? [[1, 2], [2, 1], [-1, 2], [-2, 1], [1, -2], [2, -1], [-1, -2], [-2, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+for (const [dr, dc] of D) { const rr = r + dr, cc = c + dc; if (!on(rr, cc)) continue; const j = rr * 8 + cc; if (!b[j] || b[j][0] === o) push(j); }
+if (t === 'K') { const R = w === 'w' ? 7 : 0, k = R * 8 + 4; if (i === k && !attacked(b, k, o)) {
+if (s.cs[w + 'K'] && !b[k + 1] && !b[k + 2] && b[k + 3] === w + 'R' && !attacked(b, k + 1, o) && !attacked(b, k + 2, o)) push(k + 2, { cas: 'K' });
+if (s.cs[w + 'Q'] && !b[k - 1] && !b[k - 2] && !b[k - 3] && b[k - 4] === w + 'R' && !attacked(b, k - 1, o) && !attacked(b, k - 2, o)) push(k - 2, { cas: 'Q' }); } } }
+else { const D = t === 'R' ? [[1, 0], [-1, 0], [0, 1], [0, -1]] : t === 'B' ? [[1, 1], [1, -1], [-1, 1], [-1, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+for (const [dr, dc] of D) { let rr = r + dr, cc = c + dc; while (on(rr, cc)) { const j = rr * 8 + cc; if (!b[j]) push(j); else { if (b[j][0] === o) push(j); break; } rr += dr; cc += dc; } } } }
+return mv; };
+const make = (s, m) => { const b = s.b.slice(), w = s.turn, cs = { ...s.cs };
+b[m.t] = m.pro || m.p; b[m.f] = null; if (m.epc !== undefined) b[m.epc] = null;
+if (m.cas) { const R = w === 'w' ? 56 : 0; if (m.cas === 'K') { b[R + 5] = b[R + 7]; b[R + 7] = null; } else { b[R + 3] = b[R]; b[R] = null; } }
+if (m.p[1] === 'K') { cs[w + 'K'] = 0; cs[w + 'Q'] = 0; }
+for (const [sq, k] of [[56, 'wQ'], [63, 'wK'], [0, 'bQ'], [7, 'bK']]) if (m.f === sq || m.t === sq) cs[k] = 0;
+return { b, turn: w === 'w' ? 'b' : 'w', cs, ep: m.dbl ? (m.f + m.t) / 2 : -1, ply: s.ply + 1 }; };
+const kingSq = (b, w) => b.indexOf(w + 'K');
+const legal = s => pseudo(s).filter(m => { const n = make(s, m); return !attacked(n.b, kingSq(n.b, s.turn), n.turn); });
+const inCheck = s => attacked(s.b, kingSq(s.b, s.turn), s.turn === 'w' ? 'b' : 'w');
+const evalB = b => { let v = 0; for (let i = 0; i < 64; i++) { const p = b[i]; if (!p) continue; const t = p[1], idx = p[0] === 'w' ? i : (7 - (i >> 3)) * 8 + (i & 7), x = VAL[t] + PST[t][idx]; v += p[0] === 'w' ? x : -x; } return v; };
+const order = ms => ms.sort((a, b) => ((b.x ? VAL[b.x[1]] * 10 - VAL[b.p[1]] : 0) + (b.pro ? 800 : 0)) - ((a.x ? VAL[a.x[1]] * 10 - VAL[a.p[1]] : 0) + (a.pro ? 800 : 0)));
+const search = (s, d, al, be) => { const ms = legal(s); if (!ms.length) return inCheck(s) ? -100000 - d : 0; if (d === 0) return (s.turn === 'w' ? 1 : -1) * evalB(s.b);
+let best = -Infinity; for (const m of order(ms)) { const v = -search(make(s, m), d - 1, -be, -al); if (v > best) best = v; if (v > al) al = v; if (al >= be) break; } return best; };
+const bestMove = (s, depth) => { const ms = order(legal(s)); if (!ms.length) return null; let best = null, bv = -Infinity;
+for (const m of ms) { const v = -search(make(s, m), depth - 1, -Infinity, -bv) + Math.random() * (depth === 1 ? 60 : 8); if (v > bv) { bv = v; best = m; } } return best; };
+return { start, legal, make, inCheck, bestMove };
+})();
+function chInit() {
+const box = $('#chBox'); if (!box || box.dataset.on) return; box.dataset.on = 1;
+const GL = { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟' }, LV = [['easy', 'Easy', 1, 150, 50], ['med', 'Medium', 2, 300, 100], ['hard', 'Hard', 3, 500, 150]];
+let s = null, sel = -1, moves = [], last = null, lv = null, busy = false, over = '';
+const status = () => { if (over) return over; if (busy) return '🤖 Computer is thinking…'; return CH.inCheck(s) ? '⚠️ <b>Check!</b> Your move' : 'Your move (White)'; };
+const draw = () => { if (!box.isConnected) return; const tg = new Set(moves.map(m => m.t)), chk = CH.inCheck(s) ? s.b.indexOf(s.turn + 'K') : -1;
+box.innerHTML = `<div class="chst">${status()}</div><div class="chb">${s.b.map((p, i) => { const r = i >> 3, c = i & 7, dark = (r + c) % 2;
+return `<button class="chs ${dark ? 'd' : 'l'} ${i === sel ? 'sel' : ''} ${last && (last.f === i || last.t === i) ? 'last' : ''} ${i === chk ? 'chk' : ''}" data-chs="${i}">${p ? `<span class="chp ${p[0]}">${GL[p[1]]}</span>` : ''}${tg.has(i) ? `<i class="${p ? 'cap' : 'dot'}"></i>` : ''}${c === 0 ? `<em class="rk">${8 - r}</em>` : ''}${r === 7 ? `<em class="fl">${'abcdefgh'[c]}</em>` : ''}</button>`; }).join('')}</div>
+<div class="row" style="justify-content:space-between;margin-top:10px"><small class="muted">Level: <b>${lv[1]}</b></small><button class="btn sm" data-chnew>↻ New game</button></div>${over ? '<div class="small center" id="chSave" style="margin-top:6px"></div>' : ''}`; };
+const end = async (txt, pts) => { over = txt; draw(); if (pts > 0) { const r = await gSave('chess', pts, lv[2]); const el = $('#chSave'); if (el) el.textContent = !r.saved ? 'Could not save (check internet)' : `+${pts} points · ${r.newBest ? '🎉 New personal best!' : 'Your best: ' + r.best}`; } };
+const after = async () => { const ms = CH.legal(s);
+if (!ms.length) { if (CH.inCheck(s)) return s.turn === 'b' ? end('🏆 <b>Checkmate — you win!</b>', lv[3]) : end('😵 Checkmate — computer wins', 0); return end('🤝 Stalemate — draw', lv[4]); }
+if (s.ply >= 200) return end('🤝 Draw (move limit)', lv[4]);
+if (s.turn === 'b') { busy = true; draw(); await new Promise(r => setTimeout(r, 250)); const m = CH.bestMove(s, lv[2]); s = CH.make(s, m); last = m; busy = false; draw(); return after(); } };
+box.addEventListener('click', async e => {
+const lb = e.target.closest('[data-chlv]'); if (lb) { lv = LV.find(x => x[0] === lb.dataset.chlv); s = CH.start(); sel = -1; moves = []; last = null; over = ''; return draw(); }
+if (e.target.closest('[data-chnew]')) return pick();
+const q = e.target.closest('[data-chs]'); if (!q || busy || over || s.turn !== 'w') return; const i = +q.dataset.chs;
+const mv = moves.find(m => m.t === i); if (mv) { s = CH.make(s, mv); last = mv; sel = -1; moves = []; draw(); return after(); }
+if (s.b[i] && s.b[i][0] === 'w') { sel = i; moves = CH.legal(s).filter(m => m.f === i); } else { sel = -1; moves = []; } draw(); });
+const pick = () => { s = null; box.innerHTML = `<div class="ldpick"><div class="pbt" style="color:var(--ink,#1e2a5a)">♞ Chess</div><p class="muted">You play <b>White</b> against the computer. Pawns promote to a queen automatically.</p><div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">${LV.map(l => `<button class="btn ${l[0] === 'med' ? 'pri' : ''}" data-chlv="${l[0]}">${l[1]} <small>(win ${l[3]})</small></button>`).join('')}</div><small class="muted">Your best: ${gBest('chess')}</small></div>`; };
+pick();
+}
+{ const _gv = VIEWS.games;
+GAMES.push(['ludo', '🎲', 'Ludo', 'You vs computer — race your 4 tokens home'], ['chess', '♞', 'Chess', 'Beat the computer — easy, medium or hard']);
+VIEWS.games = async () => { const back = `<button class="btn sm" data-game="">‹ All games</button>`;
+if (S.game === 'ludo' || S.game === 'chess') { const fab = $('#astb'); if (fab) { fab.style.display = 'none'; const off = () => { if (S.view !== 'games') { fab.style.display = ''; S.game = null; removeEventListener('hashchange', off); } }; addEventListener('hashchange', off); } }
+if (S.game === 'ludo') { setTimeout(() => { ldInit(); gBoard('ludo'); }, 30);
+return `<div class="stack"><div class="pgh"><div>${back}<div class="eyebrow">Break time</div><h2>🎲 Ludo</h2></div></div><div class="card"><div id="ldBox"></div></div>${gLbCard('Ludo champions')}</div>`; }
+if (S.game === 'chess') { setTimeout(() => { chInit(); gBoard('chess'); }, 30);
+return `<div class="stack"><div class="pgh"><div>${back}<div class="eyebrow">Break time</div><h2>♞ Chess</h2></div></div><div class="card"><div id="chBox"></div></div>${gLbCard('Chess masters')}</div>`; }
+return _gv(); };
 }
 </script></body></html>
