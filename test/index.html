@@ -950,7 +950,7 @@ VIEWS.team = async () => {
 const ids = isAdmin() ? S.emps.filter(e => e.active && e.id !== S.me.id).map(e => e.id) : S.team;
 const team = S.emps.filter(e => ids.includes(e.id) && e.active);
 const tab = S.tmTab || 'today', t = todayStr();
-const seg = `<div class="seg">${[['today', 'Today'], ['leave', 'Leave approvals'], ['fixes', 'Corrections'], ['extra', 'Extra breaks'], ...(S.me.access !== 'hr' ? [['plans', 'Work plans']] : [])].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
+const seg = `<div class="seg">${[['today', 'Today'], ['leave', 'Leave approvals'], ['fixes', 'Corrections'], ['extra', 'Extra breaks'], ...(S.me.access !== 'md' ? [['plans', 'Work plans']] : [])].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
 let body = '';
 if (tab === 'today') {
 const [att, brk, lv] = await Promise.all([q(sb.from('attendance').select('*').eq('day', t)), q(sb.from('breaks').select('*').eq('day', t)), q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', t).gte('to_date', t))]);
@@ -3649,7 +3649,7 @@ VIEWS.team = async () => {
 const ids = teamIds(), team = S.emps.filter(e => ids.includes(e.id) && e.active);
 if (!S.tmTab) S.tmTab = (S.badge || {}).team ? 'inbox' : 'today';
 const tab = S.tmTab, pend = (S.badge || {}).team || 0;
-const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(S.me.access !== 'hr' ? [['plans', 'Work plans']] : []), ['ttasks', 'Tasks'], ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['lb', 'Late & breaks'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
+const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(S.me.access !== 'md' ? [['plans', 'Work plans']] : []), ['ttasks', 'Tasks'], ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['lb', 'Late & breaks'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
 const on = ['leave', 'fixes', 'extra'].includes(tab) ? 'inbox' : tab;
 const seg = `<div class="seg">${tabs.map(([k, l]) => `<button class="${on === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
 if (['today', 'leave', 'fixes', 'extra', 'plans'].includes(tab)) {
@@ -3871,7 +3871,7 @@ const _teamWP = VIEWS.team;
 VIEWS.team = async () => {
 if (S.me.access === 'md' && S.tmTab === 'plans') S.tmTab = 'today';
 let h = await _teamWP();
-if (isAdmin()) return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
+if (S.me.access === 'md') return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
 if (S.tmTab !== 'plans') return h;
 const v = S.tmPlanV || 'day', sub = `<div class="seg sub"><button class="${v === 'day' ? 'on' : ''}" data-wpp="day">Day view</button><button class="${v === 'pend' ? 'on' : ''}" data-wpp="pend">Pending &amp; completed</button></div>`;
 if (v === 'day') return h.replace(/(<div class="seg">[\s\S]*?<\/div>)/, `$1${sub}`);
