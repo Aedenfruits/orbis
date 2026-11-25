@@ -470,6 +470,34 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .pbrk{width:26px;text-align:center;font-weight:800}
 .pbsc{min-width:64px;text-align:right}
 .av.sm{width:30px;height:30px;font-size:12px}
+.ghub{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:900px){.ghub{grid-template-columns:repeat(4,1fr)}}
+.gtile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:16px;border-radius:20px;border:0;cursor:pointer;color:#fff;background:linear-gradient(145deg,#1e2a5a,#5b1a4a);box-shadow:0 10px 24px rgba(29,43,83,.18);font:inherit}
+.gtile:nth-child(2){background:linear-gradient(145deg,#7c2d12,#b45309)}.gtile:nth-child(3){background:linear-gradient(145deg,#4c1d95,#7e22ce)}.gtile:nth-child(4){background:linear-gradient(145deg,#065f46,#0d9488)}
+.gtile .ge{font-size:34px;line-height:1.1}.gtile b{font-size:16px}.gtile small{opacity:.82;font-size:12.5px;line-height:1.35}
+.gtile em{font-style:normal;font-size:12px;font-weight:700;margin-top:6px;background:rgba(255,255,255,.16);padding:3px 9px;border-radius:99px}
+.gtile .gbest{font-size:11.5px;opacity:.7}
+.pgh .btn.sm[data-game]{margin-bottom:8px}
+.mmg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;max-width:420px;margin:12px auto 0}
+.mmc{position:relative;aspect-ratio:1;border:0;border-radius:14px;background:none;padding:0;cursor:pointer;perspective:600px}
+.mmc span{position:absolute;inset:0;display:grid;place-items:center;border-radius:14px;font-size:clamp(26px,8vw,40px);backface-visibility:hidden;transition:transform .35s}
+.mmb{background:linear-gradient(145deg,#1e2a5a,#e0115f);color:#fff;font-size:22px!important}
+.mmf{background:#fff;box-shadow:inset 0 0 0 2px #e6e8f2;transform:rotateY(180deg)}
+.mmc.up .mmb{transform:rotateY(180deg)}.mmc.up .mmf{transform:rotateY(0)}
+.mmc.ok .mmf{box-shadow:inset 0 0 0 3px #16a34a;background:#ecfdf3}
+.mmwin{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:14px;text-align:center}
+.mmwin .pbbig{color:#e0115f}
+.fwb{display:flex;flex-direction:column;gap:6px;align-items:center;margin:8px 0}
+.fwr{display:flex;gap:6px}
+.fwt{width:clamp(46px,13vw,56px);height:clamp(46px,13vw,56px);display:grid;place-items:center;border:2px solid #dfe3ee;border-radius:10px;font-size:24px;font-weight:800;text-transform:uppercase}
+.fwt.in{border-color:#8b93b0}
+.fwt.mg{background:#16a34a;border-color:#16a34a;color:#fff}.fwt.my{background:#eab308;border-color:#eab308;color:#fff}.fwt.mx{background:#8b93b0;border-color:#8b93b0;color:#fff}
+.fwmsg{text-align:center;min-height:22px;margin:4px 0 10px;font-size:14px}
+.fwk{display:flex;flex-direction:column;gap:6px;align-items:center}
+.fwkr{display:flex;gap:5px;width:100%;justify-content:center}
+.fwkr button{flex:1;max-width:42px;height:48px;border:0;border-radius:8px;background:#e7eaf3;font:700 15px DM Sans,system-ui;cursor:pointer;padding:0}
+.fwkr button.wide{max-width:64px;flex:1.5;font-size:12px}
+.fwkr button.kg{background:#16a34a;color:#fff}.fwkr button.ky{background:#eab308;color:#fff}.fwkr button.kx{background:#8b93b0;color:#fff}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -4835,5 +4863,160 @@ const ku = e => { keys[e.key] = 0; }; addEventListener('keydown', kd); addEventL
 document.addEventListener('visibilitychange', () => { if (G) G.paused = document.hidden; });
 wrap.addEventListener('click', e => { if (e.target.closest('#pbGo')) start(); });
 reset(); G.over = true; draw();
+}
+const GAMES = [['pest', '🪲', 'Pest Blaster', 'Blast the pests, save the fruit'], ['slice', '🔪', 'Fruit Slice', 'Swipe to slice fruit in 60 seconds'], ['memory', '🃏', 'Memory Match', 'Find all 8 fruit pairs, fast'], ['word', '🧩', 'Fruit Word', "Guess today's 5-letter fruit"]];
+const gWeekSince = () => new Date(monOf(todayStr()) + 'T00:00:00+05:30').toISOString();
+async function gBoard(game, el) {
+el = el || $('#gLb'); if (!el) return;
+try {
+const rows = await q(sb.from('game_scores').select('employee_id,score,level').eq('game', game).gte('played_at', gWeekSince()).order('score', { ascending: false }).limit(300));
+const best = new Map(); for (const r of rows || []) if (!best.has(r.employee_id)) best.set(r.employee_id, r);
+const top = [...best.values()].slice(0, 10);
+el.innerHTML = top.length ? top.map((r, i) => { const e = empById(r.employee_id), me = r.employee_id === S.me.id;
+return `<div class="pblr ${me ? 'me' : ''}"><span class="pbrk">${['🥇', '🥈', '🥉'][i] || i + 1}</span><span class="av sm" data-ava="${r.employee_id}">${esc(initials(e?.name))}</span><b class="grow">${esc(e?.name || 'Someone')}${me ? ' (you)' : ''}</b><b class="pbsc">${r.score.toLocaleString('en-IN')}</b></div>`; }).join('')
+: '<div class="muted small">No scores this week yet — be the first!</div>';
+fillAvatars();
+} catch { el.innerHTML = '<div class="muted small">Leaderboard could not load.</div>'; }
+}
+async function gSave(game, score, level = 1) {
+const best = 'orbis.g.best.' + game; let b = 0; try { b = +localStorage.getItem(best) || 0; if (score > b) localStorage.setItem(best, score); } catch { }
+if (score > 0) { try { await q(sb.from('game_scores').insert({ employee_id: S.me.id, game, score, level })); } catch { return { best: Math.max(b, score), saved: false }; } }
+gBoard(game); return { best: Math.max(b, score), saved: true, newBest: score > b };
+}
+const gBest = g => { try { return +localStorage.getItem('orbis.g.best.' + g) || 0; } catch { return 0; } };
+const gLbCard = (t) => `<div class="card"><div class="row"><h3>🏆 ${t}</h3><span class="small muted">This week · resets Monday</span></div><div id="gLb" class="stack" style="gap:6px"><div class="muted small">Loading…</div></div></div>`;
+{ const _pest = VIEWS.games;
+VIEWS.games = async () => {
+const fab = $('#astb'); if (fab) { fab.style.display = 'none'; const off = () => { if (S.view !== 'games') { fab.style.display = ''; S.game = null; removeEventListener('hashchange', off); } }; addEventListener('hashchange', off); }
+const g = S.game, back = `<button class="btn sm" data-game="">‹ All games</button>`;
+if (!g) {
+setTimeout(async () => { for (const [k] of GAMES) { const el = $(`[data-gtop="${k}"]`); if (!el) continue;
+try { const r = await q(sb.from('game_scores').select('employee_id,score').eq('game', k).gte('played_at', gWeekSince()).order('score', { ascending: false }).limit(1));
+el.textContent = r?.[0] ? `👑 ${empById(r[0].employee_id)?.name?.split(' ')[0] || '—'} · ${r[0].score.toLocaleString('en-IN')}` : 'No champion yet'; } catch { el.textContent = ''; } } }, 30);
+return `<div class="stack"><div class="pgh"><div><div class="eyebrow">Break time</div><h2>🎮 Games</h2></div></div>
+<div class="ghub">${GAMES.map(([k, e, t, d]) => `<button class="gtile" data-game="${k}"><span class="ge">${e}</span><b>${t}</b><small>${d}</small><em data-gtop="${k}">…</em><span class="gbest">Your best: ${gBest(k === 'pest' ? 'pest' : k) || (k === 'pest' ? PB.best() : 0)}</span></button>`).join('')}</div>
+<p class="small muted center">Weekly champions reset every Monday. Play during breaks 🙂</p></div>`;
+}
+if (g === 'pest') { const h = await _pest(); return h.replace('<div class="pgh"><div>', `<div class="pgh"><div>${back}`); }
+if (g === 'slice') { setTimeout(fsInit, 30); setTimeout(() => gBoard('slice'), 40);
+return `<div class="stack"><div class="pgh"><div>${back}<div class="eyebrow">Break time</div><h2>🔪 Fruit Slice</h2></div></div>
+<div class="card pbcard"><div class="pbwrap" id="fsWrap"><canvas id="fsC"></canvas><div class="pbov" id="fsOv"><div class="pbt">🔪 Fruit Slice</div><p>Swipe across the fruit to slice it!<br>Slice 3+ in one swipe for a <b>combo</b>.<br><b>Don't slice the bugs</b> 🪲 (−30)</p><p class="small">60 seconds · drag your finger or mouse</p><button class="btn pri big" data-gstart="slice">▶ Play</button><div class="small" style="margin-top:10px;opacity:.8">Your best: <b>${gBest('slice')}</b></div></div></div></div>${gLbCard('Top slicers')}</div>`; }
+if (g === 'memory') { setTimeout(() => { mmInit(); gBoard('memory'); }, 30);
+return `<div class="stack"><div class="pgh"><div>${back}<div class="eyebrow">Break time</div><h2>🃏 Memory Match</h2></div></div>
+<div class="card"><div class="row"><span id="mmStat" class="small muted">Tap a card to start</span><button class="btn sm" id="mmNew">↻ New game</button></div><div class="mmg" id="mmG"></div><div id="mmDone"></div></div>${gLbCard('Sharpest memory')}</div>`; }
+if (g === 'word') { setTimeout(() => { fwInit(); gBoard('word'); }, 30);
+return `<div class="stack"><div class="pgh"><div>${back}<div class="eyebrow">Daily puzzle</div><h2>🧩 Fruit Word</h2></div></div>
+<div class="card"><p class="small muted" style="margin-top:0">Guess today's <b>5-letter fruit</b> in 6 tries. 🟩 right place · 🟨 in the word · ⬜ not in it. New word every day.</p><div class="fwb" id="fwB"></div><div id="fwMsg" class="fwmsg"></div><div class="fwk" id="fwK"></div></div>${gLbCard('Word champions')}</div>`; }
+S.game = null; return VIEWS.games();
+};
+document.addEventListener('click', e => { const t = e.target.closest('[data-game]'); if (!t) return; S.game = t.dataset.game || null; render(); window.scrollTo(0, 0); });
+}
+function fsInit() {
+const cv = $('#fsC'), wrap = $('#fsWrap'); if (!cv || cv.dataset.on) return; cv.dataset.on = 1;
+const ctx = cv.getContext('2d'); let W = 0, H = 0;
+const fit = () => { const d = Math.min(2, devicePixelRatio || 1); W = wrap.clientWidth; H = Math.round(Math.min(620, Math.max(420, innerHeight * 0.6))); wrap.style.height = H + 'px'; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(d, 0, 0, d, 0, 0); };
+fit(); addEventListener('resize', fit);
+const FR = ['🍎', '🍊', '🍉', '🍍', '🥭', '🍐', '🍑', '🥝', '🍋', '🍌'];
+let G = null, raf = 0, trail = [], down = false, stroke = 0;
+const reset = () => { G = { items: [], fx: [], score: 0, left: 60, spawn: 0.5, sliced: 0, flash: 0, over: false, last: performance.now() }; };
+const spawn = () => { const n = 1 + (Math.random() < 0.45) + (Math.random() < 0.2 && G.left < 45);
+for (let i = 0; i < n; i++) { const bug = Math.random() < 0.14, x = W * (0.2 + Math.random() * 0.6);
+G.items.push({ e: bug ? '🪲' : FR[(Math.random() * FR.length) | 0], bug, x, y: H + 30, vx: (W / 2 - x) * (0.4 + Math.random() * 0.5) + (Math.random() - 0.5) * 90, vy: -(H * 1.05 + Math.random() * H * 0.35), rot: 0, vr: (Math.random() - 0.5) * 6, r: 24, cut: false }); } };
+const say = (x, y, t, c, big) => G.fx.push({ k: 't', x, y, t, c, big, life: 0.9 });
+const burst = (x, y, c) => { for (let i = 0; i < 14; i++) { const a = Math.random() * 6.283, s = 80 + Math.random() * 200; G.fx.push({ k: 'p', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6, c }); } };
+const hitSeg = (it, a, b) => { const dx = b.x - a.x, dy = b.y - a.y, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((it.x - a.x) * dx + (it.y - a.y) * dy) / L)); return (a.x + t * dx - it.x) ** 2 + (a.y + t * dy - it.y) ** 2 < (it.r + 6) ** 2; };
+const step = now => {
+raf = requestAnimationFrame(step); if (!cv.isConnected) { cancelAnimationFrame(raf); removeEventListener('resize', fit); return; }
+const dt = Math.min(0.05, (now - G.last) / 1000); G.last = now;
+if (!G.over) {
+G.left -= dt; if (G.left <= 0) { G.left = 0; end(); }
+G.spawn -= dt; if (G.spawn <= 0) { spawn(); G.spawn = Math.max(0.45, 1.1 - (60 - G.left) * 0.01) * (0.7 + Math.random() * 0.6); }
+const g = H * 1.25;
+for (const it of G.items) { it.vy += g * dt; it.x += it.vx * dt; it.y += it.vy * dt; it.rot += it.vr * dt; }
+if (trail.length > 1) { const a = trail[trail.length - 2], b = trail[trail.length - 1];
+for (const it of G.items) if (!it.cut && hitSeg(it, a, b)) { it.cut = true;
+if (it.bug) { G.score = Math.max(0, G.score - 30); G.flash = 0.35; say(it.x, it.y, '−30 bug!', '#ff4d6d'); burst(it.x, it.y, '#a3a3a3'); navigator.vibrate?.(80); stroke = 0; }
+else { stroke++; G.sliced++; G.score += 10; say(it.x, it.y, '+10', '#a3e635'); burst(it.x, it.y, ['#ef4444', '#f97316', '#facc15', '#84cc16'][(Math.random() * 4) | 0]);
+if (stroke >= 3) { const bonus = stroke * 10; G.score += bonus; say(W / 2, H * 0.3, `${stroke}× COMBO +${bonus}`, '#ff7aa8', 1); } } } }
+G.items = G.items.filter(it => !it.cut && it.y < H + 60);
+}
+for (const p of G.fx) { p.life -= dt; if (p.k === 'p') { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 500 * dt; } else p.y -= 30 * dt; }
+G.fx = G.fx.filter(p => p.life > 0); G.flash = Math.max(0, G.flash - dt);
+trail = trail.filter(p => now - p.t < 140);
+draw(now);
+};
+const draw = () => {
+const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3b1d0f'); g.addColorStop(1, '#5a2e14'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; for (let x = 0; x < W; x += 46) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '44px serif';
+for (const it of G.items) { ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot); ctx.fillText(it.e, 0, 0); ctx.restore(); }
+if (trail.length > 1) { ctx.lineCap = 'round'; for (let i = 1; i < trail.length; i++) { ctx.strokeStyle = `rgba(255,255,255,${i / trail.length})`; ctx.lineWidth = 2 + 6 * i / trail.length; ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); } }
+for (const p of G.fx) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); if (p.k === 'p') { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.283); ctx.fill(); } else { ctx.font = `bold ${p.big ? 26 : 18}px DM Sans,system-ui`; ctx.fillStyle = p.c; ctx.fillText(p.t, p.x, p.y); } }
+ctx.globalAlpha = 1; if (G.flash) { ctx.fillStyle = `rgba(255,0,60,${G.flash})`; ctx.fillRect(0, 0, W, H); }
+ctx.textAlign = 'left'; ctx.font = 'bold 18px DM Sans,system-ui'; ctx.fillStyle = '#fff'; ctx.fillText(G.score.toLocaleString('en-IN'), 14, 22);
+ctx.textAlign = 'right'; ctx.fillStyle = G.left < 10 ? '#ff7aa8' : '#fff'; ctx.fillText('⏱ ' + Math.ceil(G.left) + 's', W - 14, 22);
+};
+const end = async () => { G.over = true; const ov = $('#fsOv'); if (!ov) return;
+ov.innerHTML = `<div class="pbt">Time's up!</div><div class="pbbig">${G.score.toLocaleString('en-IN')}</div><p>${G.sliced} fruits sliced</p><button class="btn pri big" data-gstart="slice">↻ Play again</button><div class="small" id="fsSave" style="margin-top:10px;opacity:.8">Saving…</div>`; ov.style.display = 'flex';
+const r = await gSave('slice', G.score); const s = $('#fsSave'); if (s) s.textContent = !r.saved ? 'Could not save (check internet)' : r.newBest ? '🎉 New personal best!' : `Your best: ${r.best.toLocaleString('en-IN')}`; };
+const pt = e => { const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; return { x: t.clientX - r.left, y: t.clientY - r.top, t: performance.now() }; };
+cv.addEventListener('pointerdown', e => { down = true; stroke = 0; trail = [pt(e)]; cv.setPointerCapture?.(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (down || e.pointerType === 'mouse' && e.buttons) trail.push(pt(e)); });
+cv.addEventListener('pointerup', () => { down = false; stroke = 0; }); cv.addEventListener('pointercancel', () => { down = false; });
+cv.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+wrap.addEventListener('click', e => { if (!e.target.closest('[data-gstart="slice"]')) return; reset(); $('#fsOv').style.display = 'none'; cancelAnimationFrame(raf); G.last = performance.now(); raf = requestAnimationFrame(step); });
+reset(); G.over = true; draw();
+}
+function mmInit() {
+const box = $('#mmG'); if (!box || box.dataset.on) return; box.dataset.on = 1;
+const F = ['🍎', '🍊', '🍇', '🥭', '🍍', '🍉', '🍒', '🥝'];
+let M;
+const deal = () => { const d = [...F, ...F].map(v => ({ v, s: Math.random() })).sort((a, b) => a.s - b.s).map(x => x.v);
+M = { d, open: [], done: new Set(), moves: 0, t0: 0, lock: false, tick: 0 };
+box.innerHTML = d.map((v, i) => `<button class="mmc" data-mq="${i}"><span class="mmf">${v}</span><span class="mmb">🍃</span></button>`).join(''); $('#mmDone').innerHTML = ''; stat(); };
+const secs = () => M.t0 ? Math.floor((Date.now() - M.t0) / 1000) : 0;
+const stat = () => { const s = $('#mmStat'); if (s) s.textContent = M.t0 ? `⏱ ${secs()}s · ${M.moves} moves · ${M.done.size / 2}/8 pairs` : 'Tap a card to start'; };
+box.addEventListener('click', async e => { const c = e.target.closest('[data-mq]'); if (!c || M.lock) return; const i = +c.dataset.mq; if (M.done.has(i) || M.open.includes(i)) return;
+if (!M.t0) { M.t0 = Date.now(); M.tick = setInterval(() => { if (!box.isConnected) return clearInterval(M.tick); stat(); }, 500); }
+c.classList.add('up'); M.open.push(i);
+if (M.open.length === 2) { M.moves++; const [a, b] = M.open;
+if (M.d[a] === M.d[b]) { M.done.add(a); M.done.add(b); M.open = []; box.querySelectorAll(`[data-mq="${a}"],[data-mq="${b}"]`).forEach(x => x.classList.add('ok'));
+if (M.done.size === 16) { clearInterval(M.tick); const t = secs(), score = Math.max(100, 2000 - t * 15 - Math.max(0, M.moves - 8) * 20);
+$('#mmDone').innerHTML = `<div class="mmwin"><b>🎉 All pairs found!</b><span>${t}s · ${M.moves} moves</span><div class="pbbig" style="font-size:40px">${score.toLocaleString('en-IN')}</div><small id="mmSave">Saving…</small></div>`;
+const r = await gSave('memory', score); const s = $('#mmSave'); if (s) s.textContent = !r.saved ? 'Could not save (check internet)' : r.newBest ? '🎉 New personal best!' : `Your best: ${r.best.toLocaleString('en-IN')}`; } }
+else { M.lock = true; setTimeout(() => { box.querySelectorAll(`[data-mq="${a}"],[data-mq="${b}"]`).forEach(x => x.classList.remove('up')); M.open = []; M.lock = false; }, 750); } }
+stat(); });
+$('#mmNew')?.addEventListener('click', () => { clearInterval(M?.tick); deal(); });
+deal();
+}
+const FW_WORDS = ['MANGO', 'APPLE', 'GRAPE', 'LEMON', 'MELON', 'PEACH', 'GUAVA', 'OLIVE', 'BERRY', 'DATES', 'PLUMS', 'LIMES', 'PEARS', 'KIWIS', 'JAMUN', 'PAPAW', 'CHIKU'].filter(w => w.length === 5);
+function fwInit() {
+const B = $('#fwB'), K = $('#fwK'); if (!B || B.dataset.on) return; B.dataset.on = 1;
+const day = todayStr(), idx = Math.floor(new Date(day + 'T00:00:00Z') / 864e5), ans = FW_WORDS[idx % FW_WORDS.length], key = 'orbis.fw.' + day;
+let st; try { st = JSON.parse(localStorage.getItem(key) || 'null'); } catch { }
+st = st || { rows: [], cur: '', done: false, won: false, saved: false };
+const save = () => { try { localStorage.setItem(key, JSON.stringify(st)); } catch { } };
+const mark = g => { const r = Array(5).fill('x'), pool = {}; for (let i = 0; i < 5; i++) { if (g[i] === ans[i]) r[i] = 'g'; else pool[ans[i]] = (pool[ans[i]] || 0) + 1; }
+for (let i = 0; i < 5; i++) if (r[i] !== 'g' && pool[g[i]]) { r[i] = 'y'; pool[g[i]]--; } return r; };
+const keyCls = () => { const k = {}, rank = { g: 3, y: 2, x: 1 }; for (const g of st.rows) mark(g).forEach((m, i) => { const c = g[i]; if (!k[c] || rank[m] > rank[k[c]]) k[c] = m; }); return k; };
+const msg = t => { const m = $('#fwMsg'); if (m) m.innerHTML = t; };
+const draw = () => {
+B.innerHTML = [...Array(6)].map((_, r) => { const g = st.rows[r], m = g ? mark(g) : null, cur = r === st.rows.length && !st.done ? st.cur : '';
+return `<div class="fwr">${[...Array(5)].map((_, i) => { const ch = g ? g[i] : cur[i] || ''; return `<span class="fwt ${m ? 'm' + m[i] : ch ? 'in' : ''}">${ch}</span>`; }).join('')}</div>`; }).join('');
+const kc = keyCls();
+K.innerHTML = ['QWERTYUIOP', 'ASDFGHJKL', '⏎ZXCVBNM⌫'].map(row => `<div class="fwkr">${[...row].map(c => `<button data-fwk="${c}" class="${c === '⏎' || c === '⌫' ? 'wide' : ''} ${kc[c] ? 'k' + kc[c] : ''}">${c === '⏎' ? 'Enter' : c}</button>`).join('')}</div>`).join('');
+if (st.done) msg(st.won ? `🎉 <b>${ans}</b> in ${st.rows.length}/6! +${(7 - st.rows.length) * 100} points · come back tomorrow` : `Today's fruit was <b>${ans}</b>. New word tomorrow!`);
+};
+const enter = async () => {
+if (st.done) return; if (st.cur.length < 5) return msg('Type 5 letters');
+st.rows.push(st.cur); st.cur = ''; msg('');
+if (st.rows[st.rows.length - 1] === ans) { st.done = st.won = true; } else if (st.rows.length >= 6) st.done = true;
+save(); draw();
+if (st.done && !st.saved) { st.saved = true; save(); if (st.won) await gSave('word', (7 - st.rows.length) * 100, st.rows.length); else gBoard('word'); }
+};
+const press = c => { if (st.done) return; if (c === '⏎' || c === 'ENTER') return enter(); if (c === '⌫' || c === 'BACKSPACE') { st.cur = st.cur.slice(0, -1); return draw(); } if (/^[A-Z]$/.test(c) && st.cur.length < 5) { st.cur += c; draw(); } };
+K.addEventListener('click', e => { const b = e.target.closest('[data-fwk]'); if (b) press(b.dataset.fwk); });
+const kd = e => { if (!B.isConnected) return removeEventListener('keydown', kd); if (e.ctrlKey || e.metaKey || e.altKey || /input|textarea/i.test(document.activeElement?.tagName || '')) return; const k = e.key.toUpperCase(); if (k === 'ENTER' || k === 'BACKSPACE' || /^[A-Z]$/.test(k)) { e.preventDefault(); press(k); } };
+addEventListener('keydown', kd); draw();
 }
 </script></body></html>
