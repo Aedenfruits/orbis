@@ -442,7 +442,22 @@ html,body{touch-action:manipulation}@media (max-width:760px){input,select,textar
 @media (min-width:900px){.wl>.wli{grid-column:1;grid-row:1/4;align-self:center;justify-self:center;margin:0 auto!important}}
 .wli .rg{left:calc(50% - var(--w)*.68)!important;top:calc(50% - var(--w)*.68)!important;width:calc(var(--w)*1.36)!important;height:calc(var(--w)*1.36)!important}
 @media (min-width:900px){.wli{--w:min(30vw,300px)!important}}
-.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
+dialog.gmdlg{max-width:388px}
+.gmw{display:flex;flex-direction:column;gap:12px;align-items:center}
+.gmload{display:flex;gap:10px;align-items:center;padding:40px 0;color:var(--mut,#667)}
+.gmap{position:relative;overflow:hidden;border-radius:16px;background:#e8ecf3 repeating-linear-gradient(0deg,transparent 0 31px,#dde2ec 31px 32px),#e8ecf3;max-width:100%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.gmap img{position:absolute;width:256px;height:256px;max-width:none;pointer-events:none}
+.gmap svg{position:absolute;left:0;top:0}
+.gml{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#1e2a5a;color:#fff;white-space:nowrap}
+.gml.u{background:var(--c)}
+.gmc{position:absolute;right:4px;bottom:2px;font-size:9px;color:#555;background:rgba(255,255,255,.75);padding:0 4px;border-radius:4px;font-style:normal}
+.gmst{width:100%;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.4}
+.gmst>b:first-child{display:block;font-size:16px;margin-bottom:3px}
+.gmst small{display:block;margin-top:6px;opacity:.8}
+.gmst.ok{background:#e9f8ee;color:#14532d}.gmst.bad{background:#fdecf1;color:#8a0f3c}
+.gmacc{font-size:12px;color:#8a6d00;background:#fff7d6;border-radius:10px;padding:6px 10px;width:100%}
+dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
+.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -4625,7 +4640,46 @@ try { await p; } finally { fadeTo(0, 1500, () => { au.pause(); au.src = ''; }); 
 }; }
 function introUnlock() { if (!INTRO_MUSIC || S.introAu || lsGet('musicOff', false)) return; try { const a = new Audio(INTRO_MUSIC); a.volume = 0; a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { }); S.introAu = a; } catch { } }
 { const _spH = splash; splash = async function () { const p = _spH.apply(this, arguments);
-setTimeout(() => { const box = document.querySelector('.authbox.splash.wl'); if (!box || !window.__ibHTML) return; const lg = box.querySelector(':scope > .alg'), t = box.querySelector(':scope > .orbis-t'); if (!lg || !t) return;
+setTimeout(() => { const box = document.querySelector('.authbox.splash.wl'); if (!box || !window.__ibHTML || !location.pathname.startsWith('/test')) return; const lg = box.querySelector(':scope > .alg'), t = box.querySelector(':scope > .orbis-t'); if (!lg || !t) return;
 const w = document.createElement('div'); w.innerHTML = window.__ibHTML.replace('class="ib"', 'class="ib wli"'); const ib = w.firstElementChild; lg.replaceWith(ib); t.remove(); const tg = box.querySelector(':scope > .tag'); if (tg) ib.appendChild(tg); }, 0);
 return p; }; }
+function gmDist(a, b, c, d) { const R = 6371000, r = x => x * Math.PI / 180; return 2 * R * Math.asin(Math.sqrt(Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2)); }
+function gmFmt(m) { return m >= 1000 ? (m / 1000).toFixed(m >= 10000 ? 0 : 1) + ' km' : Math.round(m) + ' m'; }
+function gmMap(o, u, ok) {
+const W = 340, H = 250, px = (lat, lng, z) => { const s = 256 * 2 ** z, x = (lng + 180) / 360 * s, sl = Math.sin(lat * Math.PI / 180); return [x, (0.5 - Math.log((1 + sl) / (1 - sl)) / (4 * Math.PI)) * s]; };
+let z = 18; for (; z > 3; z--) { const a = px(o.lat, o.lng, z), b = px(u.lat, u.lng, z), mpp = 156543.03 * Math.cos(o.lat * Math.PI / 180) / 2 ** z, rr = (o.radius || 100) / mpp; if (Math.abs(a[0] - b[0]) + 2 * rr < W - 70 && Math.abs(a[1] - b[1]) + 2 * rr < H - 70) break; }
+const a = px(o.lat, o.lng, z), b = px(u.lat, u.lng, z), cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2, x0 = cx - W / 2, y0 = cy - H / 2;
+const mpp = 156543.03 * Math.cos(o.lat * Math.PI / 180) / 2 ** z, rr = Math.max(8, (o.radius || 100) / mpp), ar = Math.min(400, (u.acc || 0) / mpp), n = 2 ** z;
+let tiles = ''; for (let tx = Math.floor(x0 / 256); tx <= Math.floor((x0 + W) / 256); tx++) for (let ty = Math.floor(y0 / 256); ty <= Math.floor((y0 + H) / 256); ty++) { if (ty < 0 || ty >= n) continue;
+tiles += `<img src="https://tile.openstreetmap.org/${z}/${((tx % n) + n) % n}/${ty}.png" style="left:${tx * 256 - x0}px;top:${ty * 256 - y0}px" alt="" onerror="this.remove()">`; }
+const O = [a[0] - x0, a[1] - y0], U = [b[0] - x0, b[1] - y0], col = ok ? '#16a34a' : '#e0115f';
+return `<div class="gmap" style="width:${W}px;height:${H}px">${tiles}<svg width="${W}" height="${H}">
+<circle cx="${O[0]}" cy="${O[1]}" r="${rr}" fill="rgba(22,163,74,.16)" stroke="#16a34a" stroke-width="2" stroke-dasharray="5 4"/>
+${ok ? '' : `<line x1="${O[0]}" y1="${O[1]}" x2="${U[0]}" y2="${U[1]}" stroke="#e0115f" stroke-width="2.5" stroke-dasharray="6 5"/>`}
+<g transform="translate(${O[0]},${O[1]})"><path d="M0 0c-7-9-11-14-11-19a11 11 0 0 1 22 0c0 5-4 10-11 19z" fill="#1e2a5a" stroke="#fff" stroke-width="2"/><circle cy="-19" r="4" fill="#fff"/></g>
+${ar > 10 ? `<circle cx="${U[0]}" cy="${U[1]}" r="${ar}" fill="rgba(37,99,235,.12)"/>` : ''}<circle cx="${U[0]}" cy="${U[1]}" r="9" fill="#2563eb" stroke="#fff" stroke-width="3"/></svg>
+<span class="gml o" style="left:${O[0]}px;top:${O[1] - 44}px">Office</span><span class="gml u" style="left:${U[0]}px;top:${U[1] + 14}px;--c:${col}">You</span><i class="gmc">© OpenStreetMap</i></div>`;
+}
+async function geoPunchDlg(g) {
+const o = C().geo || {}, out = !!(S.today?.in_at && !S.today?.out_at), verb = out ? 'Check out' : 'Check in';
+if (!o.lat) return toast('HR has not set the office location yet.', true);
+dlg('📍 ' + verb, `<div class="gmw"><div class="gmload"><span class="spin"></span>Finding your location…</div></div>`, '');
+$('#dlg').classList.add('gmdlg'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('gmdlg'), { once: true }); if (!$('#dlg').open) $('#dlg').showModal();
+if (!g) g = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }), er => res({ err: er.code }), { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }) : res({ err: 9 }));
+const w = $('#dlg .gmw'); if (!w) return; const df = $('#dlg .df');
+if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location. Turn on <b>Location (GPS)</b> on your phone and try again.'}</div>`;
+df.insertAdjacentHTML('afterbegin', `<button class="btn pri" data-gmre>Try again</button>`); return; }
+const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, ok = d - Math.min(g.acc || 0, 1500) <= rad;
+w.innerHTML = gmMap(o, g, ok) + (ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
+: `<div class="gmst bad"><b>You are not at the office</b>You are about <b>${gmFmt(d)}</b> away. Please go to the office to ${verb.toLowerCase()}.<small>On duty outside today? Use <b>On duty</b> instead.</small></div>`) + (g.acc > 80 ? `<div class="gmacc">GPS accuracy ±${gmFmt(g.acc)} — step near a window or outside for a better fix.</div>` : '');
+S._gmG = g;
+df.insertAdjacentHTML('afterbegin', ok ? `<button class="btn pri big" data-gmgo>${verb} now</button>` : `<button class="btn" data-gmre>Refresh location</button>`);
+}
+{ const _sa = stationAction; stationAction = async function (kind) {
+if (kind === 'punch' && phonePunch() && !S._gmPass) return geoPunchDlg();
+return _sa.apply(this, arguments); };
+const _gg = getGeo; getGeo = function (show) { if (S._gmPre) { const g = S._gmPre; S._gmPre = null; return Promise.resolve(g); } return _gg.apply(this, arguments); };
+document.addEventListener('click', async e => { const t = e.target.closest('[data-gmgo],[data-gmre]'); if (!t) return;
+if (t.hasAttribute('data-gmre')) { $('#dlg .df [data-gmre]')?.remove(); return geoPunchDlg(); }
+S._gmPre = S._gmG; S._gmPass = true; closeDlg(); try { await stationAction('punch'); } finally { S._gmPass = false; S._gmPre = null; } }); }
 </script></body></html>
