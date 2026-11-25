@@ -4660,14 +4660,27 @@ ${ok ? '' : `<line x1="${O[0]}" y1="${O[1]}" x2="${U[0]}" y2="${U[1]}" stroke="#
 ${ar > 10 ? `<circle cx="${U[0]}" cy="${U[1]}" r="${ar}" fill="rgba(37,99,235,.12)"/>` : ''}<circle cx="${U[0]}" cy="${U[1]}" r="9" fill="#2563eb" stroke="#fff" stroke-width="3"/></svg>
 <span class="gml o" style="left:${O[0]}px;top:${O[1] - 44}px">Office</span><span class="gml u" style="left:${U[0]}px;top:${U[1] + 14}px;--c:${col}">You</span><i class="gmc">© OpenStreetMap</i></div>`;
 }
+function gmLocate() {
+const one = (hi, to, age) => new Promise(res => navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }), er => res({ err: er.code }), { enableHighAccuracy: hi, timeout: to, maximumAge: age }));
+if (!navigator.geolocation) return Promise.resolve({ err: 9 });
+return new Promise(async done => {
+let best = null, fin = false; const end = g => { if (!fin) { fin = true; try { navigator.geolocation.clearWatch(wid); } catch { } done(g); } };
+const wid = navigator.geolocation.watchPosition(p => { const g = { lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }; if (!best || g.acc < best.acc) best = g; if (best.acc <= 50) end(best); },
+er => { if (er.code === 1) end({ err: 1 }); }, { enableHighAccuracy: true, timeout: 25000, maximumAge: 10000 });
+const quick = await one(false, 12000, 120000);           /* Wi-Fi / network location (works indoors) */
+if (quick.err === 1) return end(quick);
+if (!quick.err && (!best || quick.acc < best.acc)) best = quick;
+setTimeout(() => end(best || quick), best ? 4000 : 14000);  /* give GPS a few seconds to sharpen */
+});
+}
 async function geoPunchDlg(g) {
 const o = C().geo || {}, out = !!(S.today?.in_at && !S.today?.out_at), verb = out ? 'Check out' : 'Check in';
 if (!o.lat) return toast('HR has not set the office location yet.', true);
-dlg('📍 ' + verb, `<div class="gmw"><div class="gmload"><span class="spin"></span>Finding your location…</div></div>`, '');
+dlg('📍 ' + verb, `<div class="gmw"><div class="gmload"><span class="spin"></span>Finding your location… (up to 15 sec)</div></div>`, '');
 $('#dlg').classList.add('gmdlg'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('gmdlg'), { once: true }); if (!$('#dlg').open) $('#dlg').showModal();
-if (!g) g = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }), er => res({ err: er.code }), { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }) : res({ err: 9 }));
+if (!g) g = await gmLocate();
 const w = $('#dlg .gmw'); if (!w) return; const df = $('#dlg .df');
-if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location. Turn on <b>Location (GPS)</b> on your phone and try again.'}</div>`;
+if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location yet. Make sure <b>Location</b> is ON, step near a window or outside, then tap <b>Try again</b>.' + (g.err === 2 ? ' <small>(Phone could not get a position)</small>' : g.err === 3 ? ' <small>(Timed out)</small>' : '')}</div>`;
 df.insertAdjacentHTML('afterbegin', `<button class="btn pri" data-gmre>Try again</button>`); return; }
 const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, ok = d - Math.min(g.acc || 0, 1500) <= rad;
 w.innerHTML = gmMap(o, g, ok) + (ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
