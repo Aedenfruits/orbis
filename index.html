@@ -950,7 +950,7 @@ VIEWS.team = async () => {
 const ids = isAdmin() ? S.emps.filter(e => e.active && e.id !== S.me.id).map(e => e.id) : S.team;
 const team = S.emps.filter(e => ids.includes(e.id) && e.active);
 const tab = S.tmTab || 'today', t = todayStr();
-const seg = `<div class="seg">${[['today', 'Today'], ['leave', 'Leave approvals'], ['fixes', 'Corrections'], ['extra', 'Extra breaks'], ...(S.me.access !== 'md' ? [['plans', 'Work plans']] : [])].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
+const seg = `<div class="seg">${[['today', 'Today'], ['leave', 'Leave approvals'], ['fixes', 'Corrections'], ['extra', 'Extra breaks'], ...(!isAdmin() ? [['plans', 'Work plans']] : [])].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
 let body = '';
 if (tab === 'today') {
 const [att, brk, lv] = await Promise.all([q(sb.from('attendance').select('*').eq('day', t)), q(sb.from('breaks').select('*').eq('day', t)), q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', t).gte('to_date', t))]);
@@ -1866,7 +1866,7 @@ dlg('Who has seen it', `<div class="grid2"><div><h4>✓ Seen</h4>${aud.filter(x 
 } catch (er) { toast(errMsg(er), true); }
 });
 VIEWS.people = async () => {
-const star = await starOfMonth(); const mode = isAdmin() ? (S.dirMode || 'list') : 'list', qy = (S.dirQ || '').toLowerCase(), off = S.dirOff || '';
+const star = await starOfMonth(); const mode = S.me?.access === 'md' ? (S.dirMode || 'list') : 'list', qy = (S.dirQ || '').toLowerCase(), off = S.dirOff || '';
 const emps = S.emps.filter(e => e.active && (!off || e.office === off) && (!qy || [e.name, e.code, e.dept, e.desig, e.office].join(' ').toLowerCase().includes(qy)));
 const isStar = e => star && star.emp && star.emp.id === e.id;
 const card = e => `<div class="card pcard">${avatarHTML(e)}<div class="grow"><b>${esc(e.name)}${isStar(e) ? ' <span title="Star of the month">⭐</span>' : ''}</b><div class="small muted">${esc(e.desig || '')}</div>
@@ -1876,7 +1876,7 @@ const kids = id => S.emps.filter(e => e.active && e.reports_to === id);
 const node = (e, depth) => depth > 8 ? '' : `<li><div class="onode">${avatarHTML(e, 'sm')}<div><b>${esc(e.name)}${isStar(e) ? ' ⭐' : ''}</b><small>${esc(e.desig || e.dept || '')}</small></div></div>${kids(e.id).length ? `<ul>${kids(e.id).map(k => node(k, depth + 1)).join('')}</ul>` : ''}</li>`;
 const roots = S.emps.filter(e => e.active && (!e.reports_to || !act.has(e.reports_to)));
 return `<div class="stack"><div class="row"><div><span class="eyebrow">Our people</span><h2>👥 Staff directory <span class="pink">${S.emps.filter(e => e.active).length}</span></h2></div>
-${isAdmin() ? `<div class="seg"><button class="${mode === 'list' ? 'on' : ''}" data-dmode="list">Contacts</button><button class="${mode === 'org' ? 'on' : ''}" data-dmode="org">Org chart</button></div>` : ''}</div>
+${S.me?.access === 'md' ? `<div class="seg"><button class="${mode === 'list' ? 'on' : ''}" data-dmode="list">Contacts</button><button class="${mode === 'org' ? 'on' : ''}" data-dmode="org">Org chart</button></div>` : ''}</div>
 ${mode === 'list' ? `<div class="grid2"><input id="dirQ" placeholder="🔍 Search name, department, designation" value="${esc(S.dirQ || '')}"><select id="dirOff"><option value="">All offices</option>${(C().offices || []).map(o => `<option ${o === off ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>
 <div class="pgrid">${emps.map(card).join('') || '<p class="muted">Nobody matches.</p>'}</div>`
 : `<div class="card scroll"><ul class="org">${roots.map(r => node(r, 0)).join('')}</ul></div><p class="small muted">Built from "Reports to" in Employees. Ask HR to set it if someone is in the wrong place.</p>`}</div>`;
@@ -3569,8 +3569,8 @@ Object.assign(ICP, { profile: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 2
 Object.assign(ICGRP, { profile: 'v', holidays: 't', letters: 'p' });
 const segTabs = (cur, tabs, attr) => `<div class="seg" style="margin-bottom:4px">${tabs.map(([k, l]) => `<button class="${cur === k ? 'on' : ''}" ${attr}="${k}">${l}</button>`).join('')}</div>`;
 const _pplV = VIEWS.people, _orgV = VIEWS.org;
-{ const _o = VIEWS.org; VIEWS.org = async () => isAdmin() ? _o() : VIEWS.people(); }
-VIEWS.people = async () => { if (!isAdmin()) return await _pplV(); const t = S.pplTab || 'dir', h = t === 'org' ? await _orgV() : await _pplV(); return `<div class="stack">${segTabs(t, [['dir', 'Directory'], ['org', 'Org chart']], 'data-ppl')}${h}</div>`; };
+{ const _o = VIEWS.org; VIEWS.org = async () => S.me?.access === 'md' ? _o() : VIEWS.people(); }
+VIEWS.people = async () => { if (S.me?.access !== 'md') return await _pplV(); const t = S.pplTab || 'dir', h = t === 'org' ? await _orgV() : await _pplV(); return `<div class="stack">${segTabs(t, [['dir', 'Directory'], ['org', 'Org chart']], 'data-ppl')}${h}</div>`; };
 const _helpV = VIEWS.help, _polV = VIEWS.policies;
 VIEWS.help = async () => { const t = S.helpTab || 'pol', h = t === 'ask' ? await _helpV() : await _polV(); return `<div class="stack narrow">${segTabs(t, [['pol', 'HR policies'], ['ask', 'Ask HR']], 'data-hlp')}${h}</div>`; };
 document.addEventListener('click', e => { const a = e.target.closest('[data-ppl]'); if (a) { S.pplTab = a.dataset.ppl; return render(); } const b = e.target.closest('[data-hlp]'); if (b) { S.helpTab = b.dataset.hlp; return render(); } });
@@ -3649,7 +3649,7 @@ VIEWS.team = async () => {
 const ids = teamIds(), team = S.emps.filter(e => ids.includes(e.id) && e.active);
 if (!S.tmTab) S.tmTab = (S.badge || {}).team ? 'inbox' : 'today';
 const tab = S.tmTab, pend = (S.badge || {}).team || 0;
-const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(S.me.access !== 'md' ? [['plans', 'Work plans']] : []), ['ttasks', 'Tasks'], ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['lb', 'Late & breaks'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
+const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(!isAdmin() ? [['plans', 'Work plans']] : []), ...(S.me.access !== 'hr' ? [['ttasks', 'Tasks']] : []), ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['lb', 'Late & breaks'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
 const on = ['leave', 'fixes', 'extra'].includes(tab) ? 'inbox' : tab;
 const seg = `<div class="seg">${tabs.map(([k, l]) => `<button class="${on === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
 if (['today', 'leave', 'fixes', 'extra', 'plans'].includes(tab)) {
@@ -3869,9 +3869,10 @@ render();
 });
 const _teamWP = VIEWS.team;
 VIEWS.team = async () => {
-if (S.me.access === 'md' && S.tmTab === 'plans') S.tmTab = 'today';
+if (isAdmin() && S.tmTab === 'plans') S.tmTab = 'today';
+if (S.me.access === 'hr' && S.tmTab === 'ttasks') S.tmTab = 'today';
 let h = await _teamWP();
-if (S.me.access === 'md') return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
+if (isAdmin()) return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
 if (S.tmTab !== 'plans') return h;
 const v = S.tmPlanV || 'day', sub = `<div class="seg sub"><button class="${v === 'day' ? 'on' : ''}" data-wpp="day">Day view</button><button class="${v === 'pend' ? 'on' : ''}" data-wpp="pend">Pending &amp; completed</button></div>`;
 if (v === 'day') return h.replace(/(<div class="seg">[\s\S]*?<\/div>)/, `$1${sub}`);
