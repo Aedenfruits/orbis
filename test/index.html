@@ -589,7 +589,7 @@ return renderFatal(new Error('Your login is not linked to an employee. Ask HR.')
 await INTRO;
 if (S.me.must_change_pw) await forcePw();
 const today = loadToday().catch(() => { });
-if (!S.splashed) { S.splashed = true; await splash(); }
+if (!S.splashed) { S.splashed = true; await Promise.race([today, new Promise(r => setTimeout(r, 2500))]); await splash(); }
 await today;
 route(); flushQueue(); autoBackup(); startReminders(); refreshBadges();
 }
