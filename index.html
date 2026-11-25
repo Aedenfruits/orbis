@@ -5219,4 +5219,17 @@ busyT = true; try { const before = JSON.stringify([S.today, S.breaks]); await lo
 document.addEventListener('visibilitychange', () => { if (!document.hidden) freshen(); });
 addEventListener('focus', () => freshen()); addEventListener('pageshow', () => freshen());
 setInterval(() => { if (S.view === 'punch') freshen(true); }, 120000); }
+{ let ch = null, tMe = 0, tTeam = 0;
+const reRender = async () => { if (document.querySelector('dialog[open]')) return; const y = scrollY; await render(); scrollTo(0, y); };
+const onChange = p => { const emp = (p.new || p.old || {}).employee_id; if (!S.me) return;
+if (emp === S.me.id) { clearTimeout(tMe); tMe = setTimeout(async () => { try { await loadToday(); if (S.view === 'punch' || S.view === 'my') reRender(); } catch { } }, 350); }
+else if (S.view === 'team' || S.view === 'insights') { clearTimeout(tTeam); tTeam = setTimeout(reRender, 1500); } };
+const rtStart = () => { if (ch || !S.me || !S.session || !sb.channel) return;
+try { ch = sb.channel('orbis-live-' + S.me.id)
+.on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, onChange)
+.on('postgres_changes', { event: '*', schema: 'public', table: 'breaks' }, onChange)
+.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(ch); } catch { } ch = null; setTimeout(rtStart, 15000); } }); } catch { ch = null; } };
+const _rr = render; render = async function () { const r = await _rr.apply(this, arguments); rtStart(); return r; };
+sb.auth.onAuthStateChange?.((ev) => { if (ev === 'SIGNED_OUT' && ch) { try { sb.removeChannel(ch); } catch { } ch = null; } });
+}
 </script></body></html>
