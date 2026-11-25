@@ -424,7 +424,40 @@ html,body{touch-action:manipulation}@media (max-width:760px){input,select,textar
 .tkch{display:flex;align-items:center;gap:10px}.tkch b{font-size:15.5px}.tkav{width:34px;height:34px;border-radius:50%;background:#2563eb;color:#fff;display:grid;place-items:center;font-weight:800;font-size:12.5px;flex:none}
 .tkc .tkbar{height:9px!important;margin:14px 0 12px!important}.tkbar .p{background:#ca8a04!important}.tkbar .d{background:#15803d!important}
 .tkn{font-size:13px!important;color:#334155!important}.tkn b{font-size:19px!important;margin-bottom:2px}.tkn .o{color:#ca8a04!important}.tkn .g{color:#15803d!important}.tkn .r{color:#dc2626!important}
-</style>
+.mubtn{position:fixed;top:calc(14px + env(safe-area-inset-top));right:14px;z-index:50;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:7px 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;backdrop-filter:blur(6px)}
+.wli{--w:min(46vw,250px);position:relative;width:var(--w);margin:18px auto 0;text-align:center}
+.wli svg{width:100%;height:auto;display:block;color:#fff;animation:inGlow 1.75s ease-in-out both,wliGlow 3.2s ease-in-out 1.75s infinite alternate}
+.wli svg{overflow:visible}.wli .lw{fill:#fff}.wli .pk{fill:#FF004D;stroke:#FF004D;stroke-width:5;stroke-linejoin:round;transform-box:fill-box;transform-origin:center;animation:inBlink .5s ease-in-out .05s 3,pkFly1 9s ease-in-out 1.8s infinite}
+.wli .pk2{animation:inBlink .5s ease-in-out .15s 3,pkFly2 9s ease-in-out 2.2s infinite}
+@keyframes pkFly1{0%,8%{transform:none}18%{transform:translate(-260%,220%) rotate(-140deg) scale(1.5)}30%{transform:translate(-520%,-120%) rotate(-300deg) scale(1.1)}42%{transform:translate(-120%,-330%) rotate(-460deg) scale(1.7)}54%{transform:translate(380%,-180%) rotate(-560deg) scale(1.2)}64%{transform:translate(160%,260%) rotate(-680deg) scale(1.5)}76%,100%{transform:rotate(-720deg)}}
+@keyframes pkFly2{0%,8%{transform:none}18%{transform:translate(300%,-200%) rotate(160deg) scale(1.5)}30%{transform:translate(560%,140%) rotate(320deg) scale(1.1)}42%{transform:translate(150%,360%) rotate(470deg) scale(1.7)}54%{transform:translate(-360%,200%) rotate(580deg) scale(1.2)}64%{transform:translate(-160%,-240%) rotate(670deg) scale(1.5)}76%,100%{transform:rotate(720deg)}}
+.wli .nm{margin-top:calc(var(--w)*.0827);font:800 calc(var(--w)*.1278)/1 Roboto,"Segoe UI",Inter,system-ui,sans-serif;letter-spacing:.42em;padding-left:.42em;color:#fff;animation:inName 1.2s ease-in-out .3s both,inName 3.6s ease-in-out 2s infinite}
+.wli .rg{position:absolute;left:calc(50% - var(--w)*.62);top:calc(50% - var(--w)*.62);width:calc(var(--w)*1.24);height:calc(var(--w)*1.24);border-radius:50%;border:2px dashed rgba(255,0,77,.45);transform:scale(0);opacity:0;pointer-events:none;animation:wliRing 1.1s cubic-bezier(.2,.9,.3,1) .35s forwards,inSpin 14s linear .35s infinite}
+@keyframes wliRing{0%{transform:scale(.2);opacity:0}60%{opacity:1}100%{transform:scale(1);opacity:.8}}
+.wli .rg i{position:absolute;top:6%;right:14%;width:10px;height:10px;border-radius:50%;background:#FF004D;box-shadow:0 0 14px #FF004D}
+@keyframes wliGlow{from{filter:drop-shadow(0 0 24px rgba(255,0,77,.7));transform:scale(1.08)}to{filter:drop-shadow(0 0 10px rgba(255,255,255,.35));transform:scale(1.03)}}
+.wl .wli+.tag{margin-top:18px!important}
+.wli{--w:min(44vw,240px)!important;margin:calc(var(--w)*.34) auto calc(var(--w)*.3)!important}
+.wli .tag{font-size:calc(var(--w)*.086)!important;margin:calc(var(--w)*.11) calc(var(--w)*-.5) 0!important;white-space:nowrap;display:flex;justify-content:center;gap:.28em;color:rgba(255,255,255,.88)!important;opacity:1;transform:none}
+@media (min-width:900px){.wl>.wli{grid-column:1;grid-row:1/4;align-self:center;justify-self:center;margin:0 auto!important}}
+.wli .rg{left:calc(50% - var(--w)*.68)!important;top:calc(50% - var(--w)*.68)!important;width:calc(var(--w)*1.36)!important;height:calc(var(--w)*1.36)!important}
+@media (min-width:900px){.wli{--w:min(30vw,300px)!important}}
+dialog.gmdlg{max-width:388px}
+.gmw{display:flex;flex-direction:column;gap:12px;align-items:center}
+.gmload{display:flex;gap:10px;align-items:center;padding:40px 0;color:var(--mut,#667)}
+.gmap{position:relative;overflow:hidden;border-radius:16px;background:#e8ecf3 repeating-linear-gradient(0deg,transparent 0 31px,#dde2ec 31px 32px),#e8ecf3;max-width:100%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.gmap img{position:absolute;width:256px;height:256px;max-width:none;pointer-events:none}
+.gmap svg{position:absolute;left:0;top:0}
+.gml{position:absolute;transform:translateX(-50%);font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#1e2a5a;color:#fff;white-space:nowrap}
+.gml.u{background:var(--c)}
+.gmc{position:absolute;right:4px;bottom:2px;font-size:9px;color:#555;background:rgba(255,255,255,.75);padding:0 4px;border-radius:4px;font-style:normal}
+.gmst{width:100%;border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.4}
+.gmst>b:first-child{display:block;font-size:16px;margin-bottom:3px}
+.gmst small{display:block;margin-top:6px;opacity:.8}
+.gmst.ok{background:#e9f8ee;color:#14532d}.gmst.bad{background:#fdecf1;color:#8a0f3c}
+.gmacc{font-size:12px;color:#8a6d00;background:#fff7d6;border-radius:10px;padding:6px 10px;width:100%}
+dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
+.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -536,7 +569,7 @@ if (it.k === 'bstart') S.breaks.push({ kind: it.kind, start_at: it.at, end_at: n
 if (it.k === 'bend') { const ob = S.breaks.find(x => !x.end_at); if (ob) ob.end_at = it.at; }
 }
 }
-const INTRO = (() => { const el = document.getElementById('intro'); if (!el || !el.classList.contains('go')) { el?.remove(); return Promise.resolve(); }
+const INTRO = (() => { const el = document.getElementById('intro'); try { window.__ibHTML = el?.querySelector('.ib')?.outerHTML || ''; } catch { } if (!el || !el.classList.contains('go')) { el?.remove(); return Promise.resolve(); }
 const left = Math.max(250, 1750 - (performance.now() - (window.__introT || 0)));
 return new Promise(r => setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 450); r(); }, left)); })();
 function onMobile() { const ua = navigator.userAgent || ''; return /Android|iPhone|iPad|iPod|Mobile|Windows Phone/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) || (matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 820); }
@@ -568,7 +601,7 @@ $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div>
 <button class="btn pri wide" type="submit">Sign in</button><div id="l_msg" class="msg">${msg ? esc(msg) : ''}</div>
 <p class="small muted">Forgot your password? Ask HR to reset it.</p></form>
 <p class="small muted center" id="fsWrap" style="display:none">First time setting up ORBIS? <a href="#" id="firstSetup">Create the first HR account</a></p></div>`;
-$('#loginF').onsubmit = async e => {
+$('#loginF').onsubmit = async e => { introUnlock();
 e.preventDefault(); const b = e.submitter; b.disabled = true; $('#l_msg').textContent = 'Signing in…';
 const em = codeToEmail($('#l_code').value), lp = $('#l_pw').value; let { error } = await sb.auth.signInWithPassword({ email: em, password: PW(lp) });
 b.disabled = false; if (error) { $('#l_msg').textContent = 'Wrong employee code or password.'; const cd = $('#loginF'); cd.classList.remove('shake'); void cd.offsetWidth; cd.classList.add('shake'); return; }
@@ -4593,4 +4626,60 @@ document.addEventListener('click', async e => {
 if (e.target.closest('#emSave')) { const v = $('#emIn').value.trim(); try { await rpc('set_my_email', { p_email: v }); toast(v ? '📧 Email saved — reminders will come here' : 'Email removed'); render(); } catch (er) { toast(errMsg(er), true); } }
 if (e.target.closest('#emTest')) { const b = e.target.closest('#emTest'); b.disabled = true; try { const { data, error } = await sb.functions.invoke('orbis-push', { body: { testmail: true } }); if (error) { let m = error.message; try { m = (await error.context.json()).error || m; } catch { } throw new Error(m); } toast(data?.mailed ? `📧 Test email sent to ${data.to}` : 'Could not send the email', !data?.mailed); } catch (er) { toast(errMsg(er), true); } finally { b.disabled = false; } }
 });
+const INTRO_MUSIC = location.pathname.startsWith('/test') ? '/test/intro.mp3' : '';
+{ const _spM = splash; splash = async function () {
+if (!INTRO_MUSIC) return _spM.apply(this, arguments);
+const au = S.introAu || new Audio(INTRO_MUSIC); S.introAu = null; au.volume = 0; au.loop = false; let fadeI;
+const fadeTo = (v, ms, then) => { clearInterval(fadeI); const st = au.volume, t0 = performance.now(); fadeI = setInterval(() => { const k = Math.min(1, (performance.now() - t0) / ms); au.volume = Math.max(0, Math.min(1, st + (v - st) * k)); if (k >= 1) { clearInterval(fadeI); then && then(); } }, 40); };
+const play = () => au.play().then(() => { fadeTo(0.55, 1200); setBtn(true); }).catch(() => setBtn(false));
+const setBtn = on => { const b = document.getElementById('muBtn'); if (b) { b.textContent = on ? '🔊' : '🔈 Music'; b.dataset.on = on ? '1' : ''; } };
+const p = _spM.apply(this, arguments);
+setTimeout(() => { const box = document.querySelector('.authbox.splash'); if (!box) return; box.insertAdjacentHTML('beforeend', '<button id="muBtn" class="mubtn" type="button" title="Music on / off">🔈 Music</button>');
+document.getElementById('muBtn').onclick = ev => { ev.stopPropagation(); if (ev.currentTarget.dataset.on) { fadeTo(0, 400, () => au.pause()); setBtn(false); lsSet('musicOff', true); } else { lsSet('musicOff', false); play(); } }; if (!lsGet('musicOff', false)) { play(); box.addEventListener('pointerdown', ev => { if (au.paused && !ev.target.closest('.gobtn,#muBtn') && !lsGet('musicOff', false)) play(); }); } }, 30);
+try { await p; } finally { fadeTo(0, 1500, () => { au.pause(); au.src = ''; }); }
+}; }
+function introUnlock() { if (!INTRO_MUSIC || S.introAu || lsGet('musicOff', false)) return; try { const a = new Audio(INTRO_MUSIC); a.volume = 0; a.muted = true; a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { }); S.introAu = a; } catch { } }
+{ const _spH = splash; splash = async function () { const p = _spH.apply(this, arguments);
+setTimeout(() => { const box = document.querySelector('.authbox.splash.wl'); if (!box || !window.__ibHTML || !location.pathname.startsWith('/test')) return; const lg = box.querySelector(':scope > .alg'), t = box.querySelector(':scope > .orbis-t'); if (!lg || !t) return;
+const w = document.createElement('div'); w.innerHTML = window.__ibHTML.replace('class="ib"', 'class="ib wli"'); const ib = w.firstElementChild; lg.replaceWith(ib); t.remove(); const tg = box.querySelector(':scope > .tag'); if (tg) ib.appendChild(tg); }, 0);
+return p; }; }
+function gmDist(a, b, c, d) { const R = 6371000, r = x => x * Math.PI / 180; return 2 * R * Math.asin(Math.sqrt(Math.sin(r(c - a) / 2) ** 2 + Math.cos(r(a)) * Math.cos(r(c)) * Math.sin(r(d - b) / 2) ** 2)); }
+function gmFmt(m) { return m >= 1000 ? (m / 1000).toFixed(m >= 10000 ? 0 : 1) + ' km' : Math.round(m) + ' m'; }
+function gmMap(o, u, ok) {
+const W = 340, H = 250, px = (lat, lng, z) => { const s = 256 * 2 ** z, x = (lng + 180) / 360 * s, sl = Math.sin(lat * Math.PI / 180); return [x, (0.5 - Math.log((1 + sl) / (1 - sl)) / (4 * Math.PI)) * s]; };
+let z = 18; for (; z > 3; z--) { const a = px(o.lat, o.lng, z), b = px(u.lat, u.lng, z), mpp = 156543.03 * Math.cos(o.lat * Math.PI / 180) / 2 ** z, rr = (o.radius || 100) / mpp; if (Math.abs(a[0] - b[0]) + 2 * rr < W - 70 && Math.abs(a[1] - b[1]) + 2 * rr < H - 70) break; }
+const a = px(o.lat, o.lng, z), b = px(u.lat, u.lng, z), cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2, x0 = cx - W / 2, y0 = cy - H / 2;
+const mpp = 156543.03 * Math.cos(o.lat * Math.PI / 180) / 2 ** z, rr = Math.max(8, (o.radius || 100) / mpp), ar = Math.min(400, (u.acc || 0) / mpp), n = 2 ** z;
+let tiles = ''; for (let tx = Math.floor(x0 / 256); tx <= Math.floor((x0 + W) / 256); tx++) for (let ty = Math.floor(y0 / 256); ty <= Math.floor((y0 + H) / 256); ty++) { if (ty < 0 || ty >= n) continue;
+tiles += `<img src="https://tile.openstreetmap.org/${z}/${((tx % n) + n) % n}/${ty}.png" style="left:${tx * 256 - x0}px;top:${ty * 256 - y0}px" alt="" onerror="this.remove()">`; }
+const O = [a[0] - x0, a[1] - y0], U = [b[0] - x0, b[1] - y0], col = ok ? '#16a34a' : '#e0115f';
+return `<div class="gmap" style="width:${W}px;height:${H}px">${tiles}<svg width="${W}" height="${H}">
+<circle cx="${O[0]}" cy="${O[1]}" r="${rr}" fill="rgba(22,163,74,.16)" stroke="#16a34a" stroke-width="2" stroke-dasharray="5 4"/>
+${ok ? '' : `<line x1="${O[0]}" y1="${O[1]}" x2="${U[0]}" y2="${U[1]}" stroke="#e0115f" stroke-width="2.5" stroke-dasharray="6 5"/>`}
+<g transform="translate(${O[0]},${O[1]})"><path d="M0 0c-7-9-11-14-11-19a11 11 0 0 1 22 0c0 5-4 10-11 19z" fill="#1e2a5a" stroke="#fff" stroke-width="2"/><circle cy="-19" r="4" fill="#fff"/></g>
+${ar > 10 ? `<circle cx="${U[0]}" cy="${U[1]}" r="${ar}" fill="rgba(37,99,235,.12)"/>` : ''}<circle cx="${U[0]}" cy="${U[1]}" r="9" fill="#2563eb" stroke="#fff" stroke-width="3"/></svg>
+<span class="gml o" style="left:${O[0]}px;top:${O[1] - 44}px">Office</span><span class="gml u" style="left:${U[0]}px;top:${U[1] + 14}px;--c:${col}">You</span><i class="gmc">© OpenStreetMap</i></div>`;
+}
+async function geoPunchDlg(g) {
+const o = C().geo || {}, out = !!(S.today?.in_at && !S.today?.out_at), verb = out ? 'Check out' : 'Check in';
+if (!o.lat) return toast('HR has not set the office location yet.', true);
+dlg('📍 ' + verb, `<div class="gmw"><div class="gmload"><span class="spin"></span>Finding your location…</div></div>`, '');
+$('#dlg').classList.add('gmdlg'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('gmdlg'), { once: true }); if (!$('#dlg').open) $('#dlg').showModal();
+if (!g) g = await new Promise(res => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => res({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }), er => res({ err: er.code }), { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }) : res({ err: 9 }));
+const w = $('#dlg .gmw'); if (!w) return; const df = $('#dlg .df');
+if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location. Turn on <b>Location (GPS)</b> on your phone and try again.'}</div>`;
+df.insertAdjacentHTML('afterbegin', `<button class="btn pri" data-gmre>Try again</button>`); return; }
+const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, ok = d - Math.min(g.acc || 0, 1500) <= rad;
+w.innerHTML = gmMap(o, g, ok) + (ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
+: `<div class="gmst bad"><b>You are not at the office</b>You are about <b>${gmFmt(d)}</b> away. Please go to the office to ${verb.toLowerCase()}.<small>On duty outside today? Use <b>On duty</b> instead.</small></div>`) + (g.acc > 80 ? `<div class="gmacc">GPS accuracy ±${gmFmt(g.acc)} — step near a window or outside for a better fix.</div>` : '');
+S._gmG = g;
+df.insertAdjacentHTML('afterbegin', ok ? `<button class="btn pri big" data-gmgo>${verb} now</button>` : `<button class="btn" data-gmre>Refresh location</button>`);
+}
+{ const _sa = stationAction; stationAction = async function (kind) {
+if (kind === 'punch' && phonePunch() && !S._gmPass) return geoPunchDlg();
+return _sa.apply(this, arguments); };
+const _gg = getGeo; getGeo = function (show) { if (S._gmPre) { const g = S._gmPre; S._gmPre = null; return Promise.resolve(g); } return _gg.apply(this, arguments); };
+document.addEventListener('click', async e => { const t = e.target.closest('[data-gmgo],[data-gmre]'); if (!t) return;
+if (t.hasAttribute('data-gmre')) { $('#dlg .df [data-gmre]')?.remove(); return geoPunchDlg(); }
+S._gmPre = S._gmG; S._gmPass = true; closeDlg(); try { await stationAction('punch'); } finally { S._gmPass = false; S._gmPre = null; } }); }
 </script></body></html>
