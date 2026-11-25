@@ -457,7 +457,7 @@ dialog.gmdlg{max-width:388px}
 .gmst.ok{background:#e9f8ee;color:#14532d}.gmst.bad{background:#fdecf1;color:#8a0f3c}
 .gmacc{font-size:12px;color:#8a6d00;background:#fff7d6;border-radius:10px;padding:6px 10px;width:100%}
 dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
-.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}.dsoff{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#f1f3f9;font-size:14px;font-weight:600}</style>
+.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}.dsoff{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#f1f3f9;font-size:14px;font-weight:600}.wmgr{opacity:.85}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -3679,6 +3679,8 @@ q(sb.from('appraisals').select('*')).catch(() => [])]);
 const since = addDays(t, -90), [rjL, rjF] = await Promise.all([q(sb.from('leave_requests').select('*').eq('status', 'rejected').gte('decided_at', since)).catch(() => []), q(sb.from('punch_fixes').select('*').eq('status', 'rejected').gte('decided_at', since)).catch(() => [])]);
 const mine = r => ids.includes(r.employee_id);
 const pd = r => mine(r) && r.status === 'pending', L = lv.filter(r => pd(r) && chainMine(r)), F = fx.filter(r => pd(r) && chainMine(r)), X = xb.filter(pd);
+const Wl = isAdmin() ? [...lv.filter(r => pd(r) && !chainMine(r)).map(r => ({ r, k: 'lv' })), ...fx.filter(r => pd(r) && !chainMine(r)).map(r => ({ r, k: 'fx' }))].sort((a, b) => String(a.r.created_at).localeCompare(String(b.r.created_at))) : [];
+const wBox = Wl.length ? `<div class="card"><div class="row"><h3>With reporting managers <span class="rjn" style="background:#eef1f8;color:#334">${Wl.length}</span></h3><span class="small muted">You can approve after the manager does</span></div><div class="stack" style="gap:8px">${Wl.map(({ r, k }) => `<div class="li ibx wmgr"><span class="ibk ${k}">${ico(k === 'lv' ? 'leave' : 'my')}</span><div class="grow"><b>${esc(empById(r.employee_id)?.name)} · ${k === 'lv' ? `${esc(ltName(r.type))} · ${lvDays(r)}` : r.kind === 'od' ? '🚗 On duty' : r.kind === 'brk' ? '☕ Break regularise' : 'Punch correction'}</b><small>${k === 'lv' ? fmtD(r.from_date) + (r.to_date !== r.from_date ? ' – ' + fmtD(r.to_date) : '') : fmtD(r.day)}${r.reason ? ' · ' + esc(r.reason) : ''} · asked ${ago(r.created_at)}</small></div>${chainBtns(r, k === 'lv' ? 'dl' : 'df')}</div>`).join('')}</div></div>` : '';
 S.aprAll = apr; const R = apr.filter(a => aprTodo(a) && a.employee_id !== S.me.id && (ids.includes(a.employee_id) || a.manager_id === S.me.id));
 S.certRows = Object.fromEntries(L.filter(l => l.cert_path).map(l => [l.id, l]));
 const clash = l => { const e = empById(l.employee_id); return near.filter(o => o.id !== l.id && o.employee_id !== l.employee_id && ids.includes(o.employee_id) && empById(o.employee_id)?.dept === e?.dept && overlap(l.from_date, l.to_date, o.from_date, o.to_date)); };
@@ -3694,6 +3696,7 @@ ${chainBtns(l, 'dl')}</div>`; })() })),
 const n = items.length;
 return `<div class="kpis"><div><b class="${n ? 'r' : 'g'}">${n}</b><small>Waiting for you</small></div><div><b>${L.length}</b><small>Leave</small></div><div><b>${F.length}</b><small>Corrections</small></div><div><b>${X.length}</b><small>Extra breaks</small></div><div><b>${R.length}</b><small>Reviews</small></div></div>
 <div class="card"><div class="row"><h3>Waiting for your decision</h3><span class="small muted">Oldest first</span></div>${n ? `<div class="stack" style="gap:8px">${items.map(i => i.h).join('')}</div>` : `<div class="allclear"><span class="ib" style="--ib:#e8f7ee">${ico('ok')}</span><b>All clear</b><span class="small muted">Nothing is waiting for you.</span></div>`}</div>
+${wBox}
 ${rejBox([...rjL, ...rjF].filter(mine).sort((a, b) => String(b.decided_at).localeCompare(String(a.decided_at))), 'mix')}
 <div class="row small" style="justify-content:flex-start;gap:8px"><span class="muted">Past decisions:</span><button class="btn sm" data-tm="leave">Leave</button><button class="btn sm" data-tm="fixes">Corrections</button><button class="btn sm" data-tm="extra">Extra breaks</button></div>`;
 }
