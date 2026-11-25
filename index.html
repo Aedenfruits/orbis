@@ -457,7 +457,7 @@ dialog.gmdlg{max-width:388px}
 .gmst.ok{background:#e9f8ee;color:#14532d}.gmst.bad{background:#fdecf1;color:#8a0f3c}
 .gmacc{font-size:12px;color:#8a6d00;background:#fff7d6;border-radius:10px;padding:6px 10px;width:100%}
 dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
-.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}</style>
+.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}.dsoff{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#f1f3f9;font-size:14px;font-weight:600}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -4437,18 +4437,19 @@ const { data, error } = await sb.storage.from(DOC_BUCKET).download(s.path); if (
 return { blob: new Blob([await unseal(k, await data.arrayBuffer())], { type: m.mime }), ...m };
 }
 const dkName = k => (DOC_KINDS.find(x => x[0] === k) || [k, k])[1];
+const dsOn = () => C().staffDocs === 'on';
 async function myDocsPage() {
 const [docs, subs] = await Promise.all([q(sb.from('emp_docs').select('id,kind,size,uploaded_at').eq('employee_id', S.me.id)).catch(() => []),
 q(sb.from('doc_submissions').select('*').eq('employee_id', S.me.id).order('created_at', { ascending: false })).catch(() => [])]);
 const onFile = DOC_KINDS.filter(([k]) => docs.some(d => d.kind === k)).length;
 return `<div class="stack narrow"><div><span class="eyebrow">Your records</span><h2>My documents</h2></div>
-<div class="card"><p class="small muted" style="margin-top:0">📎 Upload your documents here — a clear photo or PDF. They are <b>encrypted on your phone</b> before upload; only HR and the MD can open them. HR checks each one and adds it to your file.</p>
+<div class="card">${dsOn() ? '' : '<p class="dsoff">🔒 Document upload is turned off. HR will collect your documents directly.</p>'}<p class="small muted" style="margin-top:0;${dsOn() ? '' : 'display:none'}">📎 Upload your documents here — a clear photo or PDF. They are <b>encrypted on your phone</b> before upload; only HR and the MD can open them. HR checks each one and adds it to your file.</p>
 <div class="docprog"><b>${onFile}</b> of ${DOC_KINDS.length - 1} on file</div>
 <div class="stack" style="gap:8px">${DOC_KINDS.map(([k, n, i, tip]) => { const c = docs.filter(d => d.kind === k).length, ss = subs.filter(s => s.kind === k), pend = ss.filter(s => s.status === 'pending'), rej = ss.find(s => s.status !== 'approved') ; const lastRej = ss[0]?.status === 'rejected' ? ss[0] : null;
 return `<div class="docrow2"><span class="pi">${i}</span><div class="grow"><b>${n}</b>${tip ? `<div class="small muted">${tip}</div>` : ''}
 ${pend.map(s => `<div class="dsl"><span class="chip warn">⏳ With HR</span> <span class="small muted">sent ${fmtD(ymd(s.created_at))}</span> <button class="btn sm" data-dscancel="${s.id}">Cancel</button></div>`).join('')}
 ${lastRej ? `<div class="dsl"><span class="chip crit">✕ Not accepted</span> <span class="small">${esc(lastRej.note || '')}</span> — please upload again</div>` : ''}</div>
-<div class="dsr">${c ? `<span class="chip good">✓ ${c} on file</span>` : pend.length ? '' : '<span class="chip">Missing</span>'}<button class="btn sm ${c || pend.length ? '' : 'pri'}" data-dsup="${k}">+ Upload</button></div></div>`; }).join('')}</div></div></div>`;
+<div class="dsr">${c ? `<span class="chip good">✓ ${c} on file</span>` : pend.length || !dsOn() ? '' : '<span class="chip">Missing</span>'}${dsOn() ? `<button class="btn sm ${c || pend.length ? '' : 'pri'}" data-dsup="${k}">+ Upload</button>` : ''}</div></div>`; }).join('')}</div></div></div>`;
 }
 async function dsReviewCard() {
 let subs = []; try { subs = await q(sb.from('doc_submissions').select('*').eq('status', 'pending').order('created_at')); } catch { return ''; }
@@ -4463,6 +4464,7 @@ if (!isAdmin()) { let a = ''; try { a = await myAssetsCard(); } catch { } return
 const [h, rc] = await Promise.all([_dv(), dsReviewCard()]); return rc ? `<div style="margin-bottom:14px">${rc}</div>` + h : h; }; }
 document.addEventListener('click', async e => {
 const up = e.target.closest('[data-dsup]');
+if (up && !dsOn() && !isAdmin()) return toast('Document upload is turned off by HR.', true);
 if (up) { const kind = up.dataset.dsup; let i = document.getElementById('dsIn'); if (i) i.remove(); i = document.createElement('input'); i.type = 'file'; i.id = 'dsIn'; i.multiple = true; i.accept = 'image/*,application/pdf';
 i.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(i);
 i.addEventListener('change', async () => { const fs = [...(i.files || [])]; if (!fs.length) return; let ok = 0;
