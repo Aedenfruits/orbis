@@ -521,6 +521,15 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .chs i.dot{position:absolute;width:28%;height:28%;border-radius:50%;background:rgba(20,30,60,.35)}
 .chs i.cap{position:absolute;inset:6%;border-radius:50%;box-shadow:inset 0 0 0 4px rgba(225,29,72,.7)}
 .chs em{position:absolute;font-style:normal;font-size:9px;font-weight:700;opacity:.6}.chs em.rk{left:2px;top:1px}.chs em.fl{right:3px;bottom:0}
+.pbwrap.sqw{max-width:460px;margin:0 auto;background:#0f3d2e}
+.tfw{position:relative;max-width:380px;margin:10px auto 0}
+.tfb{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:8px;border-radius:14px;background:#cbd2e1;touch-action:none;user-select:none}
+.tft{aspect-ratio:1;border-radius:10px;background:#e7ebf3;display:grid;place-items:center;font-weight:800;transition:background .12s}
+.tfwin{grid-column:1/-1;text-align:center;font-weight:800;color:#16a34a}
+.ttb{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:330px;margin:6px auto 0}
+.ttc{aspect-ratio:1;border:0;border-radius:16px;background:#eef1f8;font-size:52px;font-weight:800;cursor:pointer;color:#1e2a5a;display:grid;place-items:center}
+.ttc.vX{color:#e0115f}.ttc.vO{color:#2563eb}.ttc.hl{background:#fde68a}.ttc:disabled{cursor:default}
+.sel.sm{padding:6px 10px;border-radius:10px;border:1px solid #dfe3ee;background:#fff;font:inherit}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -5231,5 +5240,124 @@ try { ch = sb.channel('orbis-live-' + S.me.id)
 .subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(ch); } catch { } ch = null; setTimeout(rtStart, 15000); } }); } catch { ch = null; } };
 const _rr = render; render = async function () { const r = await _rr.apply(this, arguments); rtStart(); return r; };
 sb.auth.onAuthStateChange?.((ev) => { if (ev === 'SIGNED_OUT' && ch) { try { sb.removeChannel(ch); } catch { } ch = null; } });
+}
+const EMOF = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+function gEndBox(el, title, score, sub, game, again, level = 1) {
+el.innerHTML = `<div class="pbt">${title}</div><div class="pbbig">${score.toLocaleString('en-IN')}</div>${sub ? `<p>${sub}</p>` : ''}<button class="btn pri big" data-gstart="${again}">↻ Play again</button><div class="small gsv" style="margin-top:10px;opacity:.8">${score > 0 ? 'Saving…' : ''}</div>`; el.style.display = 'flex';
+if (score > 0) gSave(game, score, level).then(r => { const s = el.querySelector('.gsv'); if (s) s.textContent = !r.saved ? 'Could not save (check internet)' : r.newBest ? '🎉 New personal best!' : `Your best: ${r.best.toLocaleString('en-IN')}`; });
+}
+function gSwipe(el, cb) { let sx = 0, sy = 0; el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+el.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+el.addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; cb(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'R' : 'L') : (dy > 0 ? 'D' : 'U')); }); }
+function gKeys(el, cb) { const kd = e => { if (!el.isConnected) return removeEventListener('keydown', kd); const m = { ArrowUp: 'U', ArrowDown: 'D', ArrowLeft: 'L', ArrowRight: 'R', w: 'U', s: 'D', a: 'L', d: 'R' }[e.key]; if (m) { e.preventDefault(); cb(m); } }; addEventListener('keydown', kd); }
+function snInit() {
+const cv = $('#snC'), wrap = $('#snWrap'); if (!cv || cv.dataset.on) return; cv.dataset.on = 1;
+const ctx = cv.getContext('2d'), N = 17; let W, cs, G = null, tm = 0;
+const fit = () => { const d = Math.min(2, devicePixelRatio || 1); W = Math.min(wrap.clientWidth, 460); cs = W / N; wrap.style.height = W + 'px'; cv.width = W * d; cv.height = W * d; cv.style.width = W + 'px'; cv.style.height = W + 'px'; ctx.setTransform(d, 0, 0, d, 0, 0); };
+fit();
+const FR = ['🍎', '🍊', '🍇', '🍓', '🍒', '🍋', '🍑', '🍍'];
+const food = () => { let p; do { p = [(Math.random() * N) | 0, (Math.random() * N) | 0]; } while (G.s.some(q => q[0] === p[0] && q[1] === p[1])); G.f = p; G.fe = FR[(Math.random() * FR.length) | 0]; };
+const reset = () => { G = { s: [[8, 8], [7, 8], [6, 8]], d: 'R', nd: 'R', sc: 0, n: 0, over: false, sp: 150 }; food(); };
+const draw = () => {
+ctx.fillStyle = '#0f3d2e'; ctx.fillRect(0, 0, W, W);
+for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) if ((x + y) % 2) { ctx.fillStyle = '#124a37'; ctx.fillRect(x * cs, y * cs, cs, cs); }
+ctx.fillStyle = '#000'; ctx.font = `${cs * 0.85}px ${EMOF}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(G.fe, G.f[0] * cs + cs / 2, G.f[1] * cs + cs / 2 + 1);
+G.s.forEach(([x, y], i) => { ctx.fillStyle = i ? `hsl(${330 - i * 2},80%,${58 - Math.min(20, i)}%)` : '#ff4d8d'; const r = cs * 0.42; ctx.beginPath(); ctx.arc(x * cs + cs / 2, y * cs + cs / 2, i ? r * 0.9 : r, 0, 6.283); ctx.fill(); });
+const [hx, hy] = G.s[0]; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(hx * cs + cs / 2 - cs * .14, hy * cs + cs / 2 - cs * .1, cs * .09, 0, 6.283); ctx.arc(hx * cs + cs / 2 + cs * .14, hy * cs + cs / 2 - cs * .1, cs * .09, 0, 6.283); ctx.fill();
+ctx.fillStyle = '#fff'; ctx.font = 'bold 16px DM Sans,system-ui'; ctx.textAlign = 'left'; ctx.fillText(G.sc, 10, 16); };
+const tick = () => { if (!cv.isConnected) return clearTimeout(tm); if (G.over) return; if (document.hidden) { tm = setTimeout(tick, 300); return; }
+G.d = G.nd; const [hx, hy] = G.s[0], v = { U: [0, -1], D: [0, 1], L: [-1, 0], R: [1, 0] }[G.d], nh = [hx + v[0], hy + v[1]];
+if (nh[0] < 0 || nh[1] < 0 || nh[0] >= N || nh[1] >= N || G.s.some((q, i) => i < G.s.length - 1 && q[0] === nh[0] && q[1] === nh[1])) { G.over = true; draw(); navigator.vibrate?.(150); return gEndBox($('#snOv'), 'Game over', G.sc, `${G.n} fruits eaten`, 'snake', 'snake', 1); }
+G.s.unshift(nh); if (nh[0] === G.f[0] && nh[1] === G.f[1]) { G.n++; G.sc += 10 + Math.floor(G.n / 5) * 5; G.sp = Math.max(70, 150 - G.n * 3); food(); } else G.s.pop();
+draw(); tm = setTimeout(tick, G.sp); };
+const turn = d => { if (!G || G.over) return; const opp = { U: 'D', D: 'U', L: 'R', R: 'L' }; if (d !== opp[G.d]) G.nd = d; };
+gSwipe(wrap, turn); gKeys(wrap, turn);
+wrap.addEventListener('click', e => { if (!e.target.closest('[data-gstart="snake"]')) return; reset(); $('#snOv').style.display = 'none'; clearTimeout(tm); draw(); tm = setTimeout(tick, 400); });
+reset(); draw();
+}
+function tfInit() {
+const box = $('#tfB'); if (!box || box.dataset.on) return; box.dataset.on = 1;
+let g, sc, over, won;
+const empty = () => { const e = []; g.forEach((r, i) => r.forEach((v, j) => { if (!v) e.push([i, j]); })); return e; };
+const add = () => { const e = empty(); if (!e.length) return; const [i, j] = e[(Math.random() * e.length) | 0]; g[i][j] = Math.random() < 0.9 ? 2 : 4; };
+const reset = () => { g = [...Array(4)].map(() => [0, 0, 0, 0]); sc = 0; over = false; won = false; add(); add(); draw(); };
+const slide = row => { const a = row.filter(Boolean), out = []; for (let i = 0; i < a.length; i++) { if (a[i] === a[i + 1]) { out.push(a[i] * 2); sc += a[i] * 2; if (a[i] * 2 === 2048) won = true; i++; } else out.push(a[i]); } while (out.length < 4) out.push(0); return out; };
+const move = d => { if (over) return; const before = JSON.stringify(g);
+for (let k = 0; k < 4; k++) { let line = d === 'L' || d === 'R' ? g[k].slice() : g.map(r => r[k]); if (d === 'R' || d === 'D') line.reverse(); line = slide(line); if (d === 'R' || d === 'D') line.reverse();
+if (d === 'L' || d === 'R') g[k] = line; else line.forEach((v, i) => g[i][k] = v); }
+if (JSON.stringify(g) !== before) { add(); draw(); }
+if (!empty().length && !g.some((r, i) => r.some((v, j) => v === r[j + 1] || v === g[i + 1]?.[j]))) { over = true; draw(); const best = Math.max(...g.flat()); gEndBox($('#tfOv'), 'No more moves', sc, `Biggest tile: ${best}`, '2048', '2048', best); } };
+const col = v => ({ 2: '#fde68a', 4: '#fcd34d', 8: '#fb923c', 16: '#f97316', 32: '#ef4444', 64: '#e11d48', 128: '#c026d3', 256: '#9333ea', 512: '#6366f1', 1024: '#2563eb', 2048: '#16a34a' }[v] || '#0f766e');
+const draw = () => { if (!box.isConnected) return; $('#tfS').textContent = sc.toLocaleString('en-IN');
+box.innerHTML = g.flat().map(v => `<div class="tft" style="${v ? `background:${col(v)};color:${v <= 4 ? '#5b3b00' : '#fff'};font-size:${v >= 1024 ? 22 : v >= 128 ? 26 : 30}px` : ''}">${v || ''}</div>`).join('') + (won ? '<div class="tfwin">🎉 2048! Keep going</div>' : ''); };
+gSwipe(box, move); gKeys(box, move);
+$('#tfWrap').addEventListener('click', e => { if (e.target.closest('[data-gstart="2048"],#tfNew')) { $('#tfOv').style.display = 'none'; reset(); } });
+reset();
+}
+function tttInit() {
+const box = $('#tB'); if (!box || box.dataset.on) return; box.dataset.on = 1;
+const L = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+let b, streak = 0, best = 0, done = false, lv = 'med';
+const win = s => { for (const [a, c, d] of L) if (s[a] && s[a] === s[c] && s[a] === s[d]) return { w: s[a], line: [a, c, d] }; return s.every(Boolean) ? { w: 'D' } : null; };
+const mm = (s, me) => { const r = win(s); if (r) return { v: r.w === 'O' ? 10 : r.w === 'X' ? -10 : 0 }; let bestM = null;
+for (let i = 0; i < 9; i++) if (!s[i]) { s[i] = me; const v = mm(s, me === 'O' ? 'X' : 'O').v; s[i] = null; if (!bestM || (me === 'O' ? v > bestM.v : v < bestM.v)) bestM = { v, i }; } return bestM; };
+const ai = () => { const free = b.map((v, i) => v ? -1 : i).filter(i => i >= 0); const rnd = { easy: 0.6, med: 0.25, hard: 0 }[lv]; return Math.random() < rnd ? free[(Math.random() * free.length) | 0] : mm(b.slice(), 'O').i; };
+const st = t => { const el = $('#tS'); if (el) el.innerHTML = t; };
+const draw = (hl = []) => { box.innerHTML = b.map((v, i) => `<button class="ttc ${v ? 'v' + v : ''} ${hl.includes(i) ? 'hl' : ''}" data-tt="${i}" ${v || done ? 'disabled' : ''}>${v === 'X' ? '✕' : v === 'O' ? '◯' : ''}</button>`).join(''); $('#tStreak').textContent = streak; };
+const finish = async r => { done = true; draw(r.line || []);
+if (r.w === 'X') { streak++; st(`🎉 <b>You win!</b> Streak ${streak} — next game is on`); }
+else if (r.w === 'D') st('🤝 Draw — streak kept');
+else { st(`😵 Computer wins. Final streak: <b>${streak}</b>`); if (streak > 0) { const pts = streak * 100 * ({ easy: 1, med: 2, hard: 3 }[lv]); gSave('ttt', pts, streak).then(x => st(`😵 Computer wins. Streak ${streak} → <b>${pts} points</b>${x.newBest ? ' · 🎉 new best' : ''}`)); } streak = 0; }
+$('#tNext').hidden = false; };
+const newRound = () => { b = Array(9).fill(null); done = false; $('#tNext').hidden = true; st('Your turn — you are ✕'); draw(); };
+box.addEventListener('click', async e => { const c = e.target.closest('[data-tt]'); if (!c || done) return; const i = +c.dataset.tt; if (b[i]) return; b[i] = 'X'; draw();
+let r = win(b); if (r) return finish(r); st('🤖 Thinking…'); await new Promise(x => setTimeout(x, 380)); b[ai()] = 'O'; draw(); r = win(b); if (r) return finish(r); st('Your turn — you are ✕'); });
+$('#tNext').addEventListener('click', newRound);
+$('#tLv').addEventListener('change', e => { lv = e.target.value; streak = 0; newRound(); });
+newRound();
+}
+function fbInit() {
+const cv = $('#fbC'), wrap = $('#fbWrap'); if (!cv || cv.dataset.on) return; cv.dataset.on = 1;
+const ctx = cv.getContext('2d'); let W, H, G = null, raf = 0;
+const fit = () => { const d = Math.min(2, devicePixelRatio || 1); W = wrap.clientWidth; H = Math.round(Math.min(600, Math.max(420, innerHeight * 0.6))); wrap.style.height = H + 'px'; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(d, 0, 0, d, 0, 0); };
+fit();
+const reset = () => { G = { y: H / 2, v: 0, p: [], sc: 0, t: 0, over: false, started: false, last: performance.now() }; };
+const flap = () => { if (!G || G.over) return; G.started = true; G.v = -H * 0.62; };
+const step = now => { raf = requestAnimationFrame(step); if (!cv.isConnected) return cancelAnimationFrame(raf); const dt = Math.min(0.033, (now - G.last) / 1000); G.last = now;
+if (!G.over && G.started && !document.hidden) { G.t += dt; G.v += H * 1.9 * dt; G.y += G.v * dt;
+const gap = Math.max(H * 0.27, H * 0.36 - G.sc * 2), sp = W * 0.42 + G.sc * 2;
+if (!G.p.length || G.p[G.p.length - 1].x < W - Math.max(W * 0.55, 210)) G.p.push({ x: W + 30, g: H * 0.18 + Math.random() * (H * 0.64 - gap), gap, ok: false });
+for (const p of G.p) { p.x -= sp * dt; if (!p.ok && p.x + 26 < W * 0.28) { p.ok = true; G.sc++; } }
+G.p = G.p.filter(p => p.x > -60);
+const bx = W * 0.28, by = G.y, r = 14;
+if (by > H - 28 - r || by < r || G.p.some(p => bx + r > p.x && bx - r < p.x + 52 && (by - r < p.g || by + r > p.g + p.gap))) { G.over = true; navigator.vibrate?.(150); gEndBox($('#fbOv'), 'Ouch!', G.sc * 10, `${G.sc} crates passed`, 'flappy', 'flappy', G.sc); } }
+draw(); };
+const draw = () => { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#7dd3fc'); g.addColorStop(1, '#e0f2fe'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+ctx.fillStyle = 'rgba(255,255,255,.8)'; for (let i = 0; i < 4; i++) { const cx = ((i * 150 - G.t * 20) % (W + 120) + W + 120) % (W + 120) - 60; ctx.beginPath(); ctx.arc(cx, 60 + i * 37, 22, 0, 6.283); ctx.arc(cx + 22, 55 + i * 37, 18, 0, 6.283); ctx.fill(); }
+for (const p of G.p) { ctx.fillStyle = '#b45309'; ctx.fillRect(p.x, 0, 52, p.g); ctx.fillRect(p.x, p.g + p.gap, 52, H - p.g - p.gap); ctx.fillStyle = '#92400e'; ctx.fillRect(p.x - 4, p.g - 14, 60, 14); ctx.fillRect(p.x - 4, p.g + p.gap, 60, 14);
+ctx.strokeStyle = 'rgba(0,0,0,.15)'; for (let y = 0; y < H; y += 22) { ctx.beginPath(); ctx.moveTo(p.x, y); ctx.lineTo(p.x + 52, y); ctx.stroke(); } }
+ctx.fillStyle = '#65a30d'; ctx.fillRect(0, H - 28, W, 28);
+ctx.save(); ctx.translate(W * 0.28, G.y); ctx.rotate(Math.max(-0.5, Math.min(0.9, G.v / H))); ctx.fillStyle = '#000'; ctx.font = `30px ${EMOF}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.scale(-1, 1); ctx.fillText('🐝', 0, 0); ctx.restore();
+ctx.fillStyle = '#0f172a'; ctx.font = 'bold 30px DM Sans,system-ui'; ctx.textAlign = 'center'; ctx.fillText(G.sc, W / 2, 46);
+if (!G.started && !G.over) { ctx.font = 'bold 16px DM Sans,system-ui'; ctx.fillText('Tap to fly 🐝', W / 2, H * 0.62); } };
+cv.addEventListener('pointerdown', e => { e.preventDefault(); flap(); });
+const kd = e => { if (!cv.isConnected) return removeEventListener('keydown', kd); if (e.code === 'Space' || e.key === 'ArrowUp') { e.preventDefault(); flap(); } }; addEventListener('keydown', kd);
+wrap.addEventListener('click', e => { if (!e.target.closest('[data-gstart="flappy"]')) return; e.stopPropagation(); reset(); $('#fbOv').style.display = 'none'; cancelAnimationFrame(raf); G.last = performance.now(); raf = requestAnimationFrame(step); });
+reset(); draw();
+}
+{ const _gv2 = VIEWS.games;
+GAMES.push(['snake', '🐍', 'Fruit Snake', 'Eat the fruit, grow longer, don’t crash'], ['2048', '🔢', '2048', 'Swipe to merge tiles — reach 2048'], ['ttt', '❌', 'Tic-Tac-Toe', 'Beat the computer — build a win streak'], ['flappy', '🐝', 'Flappy Bee', 'Tap to fly through the crates']);
+VIEWS.games = async () => { const g = S.game, back = `<button class="btn sm" data-game="">‹ All games</button>`;
+if (['snake', '2048', 'ttt', 'flappy'].includes(g)) { const fab = $('#astb'); if (fab) { fab.style.display = 'none'; const off = () => { if (S.view !== 'games') { fab.style.display = ''; S.game = null; removeEventListener('hashchange', off); } }; addEventListener('hashchange', off); } }
+const head = (e, t, ey = 'Break time') => `<div class="pgh"><div>${back}<div class="eyebrow">${ey}</div><h2>${e} ${t}</h2></div></div>`;
+if (g === 'snake') { setTimeout(() => { snInit(); gBoard('snake'); }, 30);
+return `<div class="stack">${head('🐍', 'Fruit Snake')}<div class="card pbcard"><div class="pbwrap sqw" id="snWrap"><canvas id="snC"></canvas><div class="pbov" id="snOv"><div class="pbt">🐍 Fruit Snake</div><p>Eat the fruit to grow. Don't hit the walls or yourself!</p><p class="small">Phone: swipe · Computer: arrow keys</p><button class="btn pri big" data-gstart="snake">▶ Play</button><div class="small" style="margin-top:10px;opacity:.8">Your best: <b>${gBest('snake')}</b></div></div></div></div>${gLbCard('Longest snakes')}</div>`; }
+if (g === '2048') { setTimeout(() => { tfInit(); gBoard('2048'); }, 30);
+return `<div class="stack">${head('🔢', '2048')}<div class="card" id="tfWrap"><div class="row"><span>Score <b id="tfS">0</b></span><button class="btn sm" id="tfNew">↻ New game</button></div><p class="small muted">Swipe (or arrow keys) — equal numbers merge. Reach 2048!</p><div class="tfw"><div class="tfb" id="tfB"></div><div class="pbov" id="tfOv" style="display:none;border-radius:14px"></div></div></div>${gLbCard('2048 leaders')}</div>`; }
+if (g === 'ttt') { setTimeout(() => { tttInit(); gBoard('ttt'); }, 30);
+return `<div class="stack">${head('❌', 'Tic-Tac-Toe')}<div class="card"><div class="row"><span>Win streak: <b id="tStreak">0</b></span><select id="tLv" class="sel sm"><option value="easy">Easy ×1</option><option value="med" selected>Medium ×2</option><option value="hard">Hard ×3</option></select></div><div id="tS" class="chst" style="margin-top:8px"></div><div class="ttb" id="tB"></div><div class="center" style="margin-top:12px"><button class="btn pri" id="tNext" hidden>Next game ▶</button></div><p class="small muted center">Win games in a row to build a streak. When the computer beats you, your streak is scored (streak × 100 × level).</p></div>${gLbCard('Unbeaten streaks')}</div>`; }
+if (g === 'flappy') { setTimeout(() => { fbInit(); gBoard('flappy'); }, 30);
+return `<div class="stack">${head('🐝', 'Flappy Bee')}<div class="card pbcard"><div class="pbwrap" id="fbWrap"><canvas id="fbC"></canvas><div class="pbov" id="fbOv"><div class="pbt">🐝 Flappy Bee</div><p>Tap to flap. Fly through the gaps between the crates!</p><p class="small">Phone: tap · Computer: space or ↑</p><button class="btn pri big" data-gstart="flappy">▶ Play</button><div class="small" style="margin-top:10px;opacity:.8">Your best: <b>${gBest('flappy')}</b></div></div></div></div>${gLbCard('Top flyers')}</div>`; }
+return _gv2(); };
 }
 </script></body></html>
