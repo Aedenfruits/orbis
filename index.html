@@ -492,14 +492,7 @@ body.auth,body.kiosk,.authbox.splash.wl{min-height:100dvh}
 const SB_URL = 'https://yeiqyroqjvmwbecbgyvb.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InllaXF5cm9xanZtd2JlY2JneXZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUxNjUyMTEsImV4cCI6MjExMDc0MTIxMX0.LzXUkHQqNBgSuz2bchdIYe0KhL_iF3v9n0Luxbb-euo';
 const EMAIL_DOMAIN = 'staff.aedenfruits.com';
-function tFetch(u, o = {}) { const url = String(u?.url || u), ms = /\/storage\/v1\//.test(url) ? 120000 : /\/functions\/v1\//.test(url) ? 40000 : 20000;
-if (o.signal) return fetch(u, o); const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
-return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); }
-const sbLock = (() => { const q = {}; return async (name, _t, fn) => { const prev = q[name] || Promise.resolve(); let rel; const cur = new Promise(r => rel = r); q[name] = prev.then(() => cur);
-await Promise.race([prev, new Promise(r => setTimeout(r, 8000))]); try { return await fn(); } finally { rel(); } }; })();
-const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: 'orbis.auth', lock: sbLock }, global: { fetch: tFetch } });
-setTimeout(() => { const ap = document.getElementById('app'); if (ap && ap.querySelector('.bootld') && !document.getElementById('bootRetry')) {
-document.body.insertAdjacentHTML('beforeend', `<div id="bootRetry" style="position:fixed;left:50%;bottom:12%;transform:translateX(-50%);text-align:center;z-index:999999;color:#fff;font:600 14px DM Sans,system-ui">Taking longer than usual — check your internet.<br><button style="margin-top:12px;padding:12px 26px;border-radius:99px;border:0;background:#e0115f;color:#fff;font:700 15px DM Sans,system-ui" onclick="location.reload()">Tap to retry</button></div>`); } }, 15000);
+const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: 'orbis.auth' } });
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pad = n => String(n).padStart(2, '0');
@@ -587,11 +580,7 @@ async function boot() {
 const { data } = await sb.auth.getSession(); S.session = data.session;
 sb.auth.onAuthStateChange((_e, s) => { S.session = s; });
 if (!S.session) { await INTRO; return renderLogin(); }
-try { await loadCore(); } catch (e) {
-const authBad = /JWT|No suitable key|wrong key type|invalid.*token|token.*expired|401|not authorized|refresh token/i.test(String(e?.message || e) + ' ' + (e?.code || '') + ' ' + (e?.status || ''));
-if (!authBad) return renderFatal(e);
-try { const { error } = await sb.auth.refreshSession(); if (error) throw error; await loadCore(); }
-catch { try { await sb.auth.signOut({ scope: 'local' }); } catch { } try { localStorage.removeItem('orbis.auth'); } catch { } S.session = null; await INTRO; return renderLogin(); } }
+try { await loadCore(); } catch (e) { return renderFatal(e); }
 if (!S.me) {
 let need = false; try { need = await rpc('needs_setup'); } catch { }
 if (need) return renderSetup();
@@ -702,12 +691,11 @@ document.body.className = 'app';
 const v = VIEWS[S.view] || VIEWS.punch;
 const navY = document.querySelector('nav.side')?.scrollTop || S.navY || 0; S.navY = navY;
 const LOADH = '<div class="loading"><div class="ldorb"><span class="ldr"><i></i></span><b>' + LOGO + '</b></div><div class="skel"><i></i><i></i><i></i></div></div>', prevMain = $('#main') && S.me ? $('#main').innerHTML : '';
-clearTimeout(S.ldT); try { $('#app').innerHTML = shell(prevMain && !prevMain.includes('class="loading"') ? prevMain : LOADH); if (prevMain) { $('#main').classList.add('stale'); S.ldT = setTimeout(() => { const m = $('#main'); if (m?.classList.contains('stale')) { m.innerHTML = LOADH; m.classList.remove('stale'); } }, 700); } { const ns = document.querySelector('nav.side'); if (ns) { ns.scrollTop = navY; ns.addEventListener('scroll', () => { S.navY = ns.scrollTop; }, { passive: true }); const on = ns.querySelector('a.on'); if (on && (on.offsetTop < ns.scrollTop || on.offsetTop + on.offsetHeight > ns.scrollTop + ns.clientHeight)) on.scrollIntoView({ block: 'nearest' }); } } const rid = S.rid = (S.rid || 0) + 1; const html = await v(); if (rid !== S.rid) return; clearTimeout(S.ldT); $('#main').classList.remove('stale'); $('#main').innerHTML = html; $('#main').scrollTop = 0;
+clearTimeout(S.ldT); try { $('#app').innerHTML = shell(prevMain && !prevMain.includes('class="loading"') ? prevMain : LOADH); if (prevMain) { $('#main').classList.add('stale'); S.ldT = setTimeout(() => { const m = $('#main'); if (m?.classList.contains('stale')) { m.innerHTML = LOADH; m.classList.remove('stale'); } }, 700); } { const ns = document.querySelector('nav.side'); if (ns) { ns.scrollTop = navY; ns.addEventListener('scroll', () => { S.navY = ns.scrollTop; }, { passive: true }); const on = ns.querySelector('a.on'); if (on && (on.offsetTop < ns.scrollTop || on.offsetTop + on.offsetHeight > ns.scrollTop + ns.clientHeight)) on.scrollIntoView({ block: 'nearest' }); } } const html = await v(); clearTimeout(S.ldT); $('#main').classList.remove('stale'); $('#main').innerHTML = html; $('#main').scrollTop = 0;
 if (S.view === 'punch' && S.me && !S.me.photo_at) $('#main').insertAdjacentHTML('afterbegin', `<div class="card phnudge"><span class="ava ib" style="--ib:#ffeef3">${ico('photo')}</span><div class="grow"><b>Add your photo</b><div class="small muted">It goes on your Aeden ID card. Takes 10 seconds.</div></div><button class="btn pri sm" data-photo="${S.me.id}">Add photo</button></div>`);
 if (S.view === 'punch' && (S.badge || {}).news) $('#main').insertAdjacentHTML('afterbegin', `<a class="card phnudge" href="#news" style="text-decoration:none;color:inherit"><span class="ava ib" style="--ib:#ffeef3">${ico('news')}</span><div class="grow"><b>${S.badge.news} new announcement${S.badge.news > 1 ? 's' : ''}</b><div class="small muted">Tap to read</div></div><span class="btn sm">Open</span></a>`);
 after(); fillAvatars(); paintBadges(); }
-catch (e) { clearTimeout(S.ldT); const m = $('#main'); if (!m) return; m.classList.remove('stale'); const net = isNetErr(e) || e?.name === 'AbortError' || /abort|fetch|network/i.test(String(e?.message || e));
-m.innerHTML = `<div class="card" style="text-align:center"><h3>${net ? 'Slow or no internet' : 'Something went wrong'}</h3><p class="muted">${net ? 'ORBIS could not load this page. Check your internet and try again.' : esc(errMsg(e))}</p><button class="btn pri" onclick="render()">Try again</button></div>`; }
+catch (e) { $('#main').innerHTML = `<div class="card"><h3>Something went wrong</h3><p>${esc(errMsg(e))}</p></div>`; }
 }
 let afterFns = [];
 function after() { const f = afterFns; afterFns = []; f.forEach(x => { try { x(); } catch (e) { console.error(e); } }); }
