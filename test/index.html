@@ -5212,4 +5212,11 @@ if (S.game === 'chess') { setTimeout(() => { chInit(); gBoard('chess'); }, 30);
 return `<div class="stack"><div class="pgh"><div>${back}<div class="eyebrow">Break time</div><h2>♞ Chess</h2></div></div><div class="card"><div id="chBox"></div></div>${gLbCard('Chess masters')}</div>`; }
 return _gv(); };
 }
+{ let lastT = Date.now(), busyT = false;
+const freshen = async force => {
+if (busyT || !S.me || !S.session || document.hidden) return; if (!force && Date.now() - lastT < 20000) return;
+busyT = true; try { const before = JSON.stringify([S.today, S.breaks]); await loadToday(); lastT = Date.now(); if (JSON.stringify([S.today, S.breaks]) !== before && S.view === 'punch' && !document.querySelector('dialog[open]')) { const y = scrollY; await render(); scrollTo(0, y); } } catch { } finally { busyT = false; } };
+document.addEventListener('visibilitychange', () => { if (!document.hidden) freshen(); });
+addEventListener('focus', () => freshen()); addEventListener('pageshow', () => freshen());
+setInterval(() => { if (S.view === 'punch') freshen(true); }, 120000); }
 </script></body></html>
