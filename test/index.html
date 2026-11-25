@@ -4728,6 +4728,8 @@ document.addEventListener('click', async e => { const t = e.target.closest('[dat
 if (t.hasAttribute('data-gmre')) { $('#dlg .df [data-gmre]')?.remove(); return geoPunchDlg(); }
 S._gmPre = S._gmG; S._gmPass = true; closeDlg(); try { await stationAction('punch'); } finally { S._gmPass = false; S._gmPre = null; } }); }
 const IS_TEST = () => location.pathname.startsWith('/test');
+{ const me = MGROUPS.find(g => g[0] === 'Me'); if (me && !me[1].includes('games')) { const i = me[1].indexOf('board'); me[1].splice(i >= 0 ? i + 1 : me[1].length, 0, 'games'); } }
+ICP.games = '<rect x="2.5" y="7" width="19" height="10" rx="5"/><path d="M7.5 10.5v3M6 12h3"/><circle class="a" cx="15.5" cy="11" r=".9"/><circle class="a" cx="17.5" cy="13" r=".9"/>';
 { const _ng = navList; navList = function () { const n = _ng(); if (IS_TEST() && !n.some(x => x[0] === 'games')) { const i = n.findIndex(x => x[0] === 'board'); n.splice(i >= 0 ? i + 1 : n.length, 0, ['games', 'Games', '🎮']); } return n; }; }
 const PB = { best: () => { try { return +localStorage.getItem('orbis.pb.best') || 0; } catch { return 0; } } };
 VIEWS.games = async () => {
