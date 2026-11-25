@@ -457,7 +457,20 @@ dialog.gmdlg{max-width:388px}
 .gmst.ok{background:#e9f8ee;color:#14532d}.gmst.bad{background:#fdecf1;color:#8a0f3c}
 .gmacc{font-size:12px;color:#8a6d00;background:#fff7d6;border-radius:10px;padding:6px 10px;width:100%}
 dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
-.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}.dsoff{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#f1f3f9;font-size:14px;font-weight:600}.wmgr{opacity:.85}.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
+.gmload .spin{width:18px;height:18px;border-radius:50%;border:3px solid #dde2ec;border-top-color:#e0115f;animation:gmsp .8s linear infinite}@keyframes gmsp{to{transform:rotate(360deg)}}.dsoff{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#f1f3f9;font-size:14px;font-weight:600}.wmgr{opacity:.85}.pbcard{padding:0;overflow:hidden}
+.pbwrap{position:relative;width:100%;touch-action:none;user-select:none;-webkit-user-select:none;background:#13183a}
+.pbwrap canvas{display:block}
+.pbov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;color:#fff;background:rgba(10,12,35,.72);backdrop-filter:blur(3px)}
+.pbov p{margin:8px 0;line-height:1.5;opacity:.92}.pbov .small{opacity:.75}
+.pbt{font-size:26px;font-weight:800;letter-spacing:.02em}
+.pbbig{font-size:54px;font-weight:800;color:#ff7aa8;line-height:1.1;margin:6px 0}
+.pbov .btn.big{margin-top:14px;padding:12px 34px;font-size:17px}
+.pblr{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--bg2,#f4f5fb)}
+.pblr.me{outline:2px solid #e0115f}
+.pbrk{width:26px;text-align:center;font-weight:800}
+.pbsc{min-width:64px;text-align:right}
+.av.sm{width:30px;height:30px;font-size:12px}
+.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -4714,4 +4727,111 @@ const _gg = getGeo; getGeo = function (show) { if (S._gmPre) { const g = S._gmPr
 document.addEventListener('click', async e => { const t = e.target.closest('[data-gmgo],[data-gmre]'); if (!t) return;
 if (t.hasAttribute('data-gmre')) { $('#dlg .df [data-gmre]')?.remove(); return geoPunchDlg(); }
 S._gmPre = S._gmG; S._gmPass = true; closeDlg(); try { await stationAction('punch'); } finally { S._gmPass = false; S._gmPre = null; } }); }
+const IS_TEST = () => location.pathname.startsWith('/test');
+{ const _ng = navList; navList = function () { const n = _ng(); if (IS_TEST() && !n.some(x => x[0] === 'games')) { const i = n.findIndex(x => x[0] === 'board'); n.splice(i >= 0 ? i + 1 : n.length, 0, ['games', 'Games', '🎮']); } return n; }; }
+const PB = { best: () => { try { return +localStorage.getItem('orbis.pb.best') || 0; } catch { return 0; } } };
+VIEWS.games = async () => {
+setTimeout(pbInit, 30); { const fab = $('#astb'); if (fab) { fab.style.display = 'none'; const off = () => { if (S.view !== 'games') { fab.style.display = ''; removeEventListener('hashchange', off); } }; addEventListener('hashchange', off); } }
+return `<div class="stack"><div class="pgh"><div><div class="eyebrow">Break time</div><h2>🎮 Pest Blaster</h2></div></div>
+<div class="card pbcard"><div class="pbwrap" id="pbWrap"><canvas id="pbC"></canvas>
+<div class="pbov" id="pbOv"><div class="pbt">🪲 Pest Blaster</div><p>Pests are attacking the fruit crates!<br>Blast the <b>pests</b> 🪰🐛🪲 — <b>don't hit the fruit</b> 🍎🍊🍇</p>
+<p class="small">Phone: drag to move · Computer: mouse or ← → keys<br>Grab 🧴 for triple spray · 3 pests reach the crates = game over</p>
+<button class="btn pri big" id="pbGo">▶ Play</button><div class="small" style="margin-top:10px;opacity:.8">Your best: <b id="pbBest">${PB.best()}</b></div></div></div></div>
+<div class="card"><div class="row"><h3>🏆 This week's top blasters</h3><span class="small muted">Resets every Monday</span></div><div id="pbLb" class="stack" style="gap:6px"><div class="muted small">Loading…</div></div></div></div>`;
+};
+async function pbBoard() {
+const el = $('#pbLb'); if (!el) return;
+try {
+const mon = monOf(todayStr()), since = new Date(mon + 'T00:00:00+05:30').toISOString();
+const rows = await q(sb.from('game_scores').select('employee_id,score,level').eq('game', 'pest').gte('played_at', since).order('score', { ascending: false }).limit(300));
+const best = new Map(); for (const r of rows || []) if (!best.has(r.employee_id)) best.set(r.employee_id, r);
+const top = [...best.values()].slice(0, 10);
+el.innerHTML = top.length ? top.map((r, i) => { const e = empById(r.employee_id); const me = r.employee_id === S.me.id;
+return `<div class="pblr ${me ? 'me' : ''}"><span class="pbrk">${['🥇', '🥈', '🥉'][i] || i + 1}</span><span class="av sm" data-ava="${r.employee_id}">${esc(initials(e?.name))}</span><b class="grow">${esc(e?.name || 'Someone')}${me ? ' (you)' : ''}</b><span class="small muted">L${r.level}</span><b class="pbsc">${r.score.toLocaleString('en-IN')}</b></div>`; }).join('')
+: '<div class="muted small">No scores this week yet — be the first!</div>';
+if (typeof fillAvatars === 'function') fillAvatars();
+} catch { el.innerHTML = '<div class="muted small">Leaderboard could not load.</div>'; }
+}
+function pbInit() {
+const cv = $('#pbC'), wrap = $('#pbWrap'); if (!cv || cv.dataset.on) return; cv.dataset.on = 1; pbBoard();
+const ctx = cv.getContext('2d'); let W = 0, H = 0, dpr = 1;
+const fit = () => { dpr = Math.min(2, window.devicePixelRatio || 1); W = wrap.clientWidth; H = Math.round(Math.min(640, Math.max(420, window.innerHeight * 0.62))); wrap.style.height = H + 'px'; cv.width = W * dpr; cv.height = H * dpr; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+fit(); addEventListener('resize', fit);
+const PESTS = [{ e: '🪰', hp: 1, pts: 10, sp: 1.15, wob: 1.6 }, { e: '🐛', hp: 1, pts: 15, sp: 0.8, wob: 0.6 }, { e: '🪲', hp: 2, pts: 30, sp: 0.7, wob: 0.3 }, { e: '🦗', hp: 1, pts: 20, sp: 1.4, wob: 2.2 }];
+const FRUITS = ['🍎', '🍊', '🍇', '🥭', '🍐', '🥝', '🍒'];
+let G = null, raf = 0, keys = {};
+const reset = () => { G = { p: { x: W / 2, tx: W / 2 }, shots: [], foes: [], fx: [], score: 0, lives: 3, lvl: 1, kills: 0, combo: 0, t: 0, spawn: 0, fire: 0, triple: 0, shake: 0, over: false, last: performance.now() }; };
+const say = (x, y, txt, c) => G.fx.push({ k: 'txt', x, y, txt, c, life: 0.9 });
+const burst = (x, y, c) => { for (let i = 0; i < 12; i++) { const a = Math.random() * 6.283, s = 60 + Math.random() * 160; G.fx.push({ k: 'p', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5 + Math.random() * 0.3, c }); } };
+const spawn = () => {
+const r = Math.random(), x = 24 + Math.random() * (W - 48), spd = (55 + G.lvl * 9) * (0.85 + Math.random() * 0.3);
+if (r < 0.2 + Math.min(0.1, G.lvl * 0.01)) G.foes.push({ k: 'fruit', e: FRUITS[(Math.random() * FRUITS.length) | 0], x, y: -20, vy: spd * 0.9, ph: Math.random() * 6, hp: 1, r: 17 });
+else if (r < 0.235 && !G.triple) G.foes.push({ k: 'power', e: '🧴', x, y: -20, vy: spd * 0.8, ph: 0, hp: 1, r: 16 });
+else { const p = PESTS[Math.min(PESTS.length - 1, (Math.random() * Math.min(PESTS.length, 1 + G.lvl)) | 0)]; G.foes.push({ k: 'pest', ...p, x, bx: x, y: -20, vy: spd * p.sp, ph: Math.random() * 6, r: 16, hit: 0 }); }
+};
+const mult = () => G.combo >= 25 ? 3 : G.combo >= 10 ? 2 : 1;
+const step = now => {
+raf = requestAnimationFrame(step); if (!cv.isConnected) { cancelAnimationFrame(raf); removeEventListener('resize', fit); return; }
+const dt = Math.min(0.05, (now - G.last) / 1000); G.last = now; if (G.paused) return draw();
+if (!G.over) {
+G.t += dt;
+if (keys.ArrowLeft) G.p.tx -= 520 * dt; if (keys.ArrowRight) G.p.tx += 520 * dt;
+G.p.tx = Math.max(22, Math.min(W - 22, G.p.tx)); G.p.x += (G.p.tx - G.p.x) * Math.min(1, dt * 18);
+G.fire -= dt; if (G.fire <= 0) { G.fire = 0.16; const y = H - 62; G.shots.push({ x: G.p.x, y, vx: 0 }); if (G.triple > 0) { G.shots.push({ x: G.p.x, y, vx: -140 }, { x: G.p.x, y, vx: 140 }); } }
+if (G.triple > 0) G.triple -= dt;
+G.spawn -= dt; if (G.spawn <= 0) { spawn(); G.spawn = Math.max(0.28, 1.05 - G.lvl * 0.07) * (0.7 + Math.random() * 0.6); }
+for (const s of G.shots) { s.y -= 640 * dt; s.x += s.vx * dt; }
+G.shots = G.shots.filter(s => s.y > -10 && s.x > -10 && s.x < W + 10);
+for (const f of G.foes) { f.ph += dt * 3; f.y += f.vy * dt; if (f.k === 'pest') f.x = f.bx + Math.sin(f.ph) * 22 * f.wob; f.hit = Math.max(0, (f.hit || 0) - dt); }
+for (const s of G.shots) for (const f of G.foes) {
+if (f.dead || s.dead) continue; if ((s.x - f.x) ** 2 + (s.y - f.y) ** 2 > (f.r + 4) ** 2) continue;
+s.dead = 1;
+if (f.k === 'pest') { f.hp--; f.hit = 0.12; if (f.hp <= 0) { f.dead = 1; G.combo++; G.kills++; const pts = f.pts * mult(); G.score += pts; say(f.x, f.y, '+' + pts, '#16a34a'); burst(f.x, f.y, '#84cc16'); if (G.kills % 20 === 0) { G.lvl++; say(W / 2, H / 2, 'LEVEL ' + G.lvl, '#e0115f'); } } }
+else if (f.k === 'fruit') { f.dead = 1; G.score = Math.max(0, G.score - 25); G.combo = 0; say(f.x, f.y, '−25 fruit!', '#e0115f'); burst(f.x, f.y, '#f97316'); G.shake = 0.25; navigator.vibrate?.(60); }
+else if (f.k === 'power') { f.dead = 1; G.triple = 7; say(f.x, f.y, 'TRIPLE SPRAY!', '#2563eb'); burst(f.x, f.y, '#60a5fa'); }
+}
+for (const f of G.foes) if (!f.dead && f.y > H - 40) { f.dead = 1;
+if (f.k === 'pest') { G.lives--; G.combo = 0; G.shake = 0.35; say(f.x, H - 70, 'Crate hit!', '#e0115f'); navigator.vibrate?.(120); if (G.lives <= 0) end(); }
+else if (f.k === 'fruit') { G.score += 5; say(f.x, H - 70, '+5 saved', '#0ea5e9'); } }
+G.foes = G.foes.filter(f => !f.dead); G.shots = G.shots.filter(s => !s.dead);
+}
+for (const p of G.fx) { p.life -= dt; if (p.k === 'p') { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; } else p.y -= 40 * dt; }
+G.fx = G.fx.filter(p => p.life > 0); G.shake = Math.max(0, G.shake - dt);
+draw();
+};
+const draw = () => {
+ctx.save(); if (G.shake) ctx.translate((Math.random() - 0.5) * 10 * G.shake * 3, (Math.random() - 0.5) * 10 * G.shake * 3);
+const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#13183a'); g.addColorStop(1, '#2a1640'); ctx.fillStyle = g; ctx.fillRect(-10, -10, W + 20, H + 20);
+ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 0; i < 30; i++) { const sx = (i * 97.3) % W, sy = ((i * 53.7) + G.t * (8 + i % 5 * 4)) % H; ctx.fillRect(sx, sy, 1.5, 1.5); }
+ctx.font = '24px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+for (let x = 16; x < W; x += 34) ctx.fillText('📦', x, H - 20);
+for (const s of G.shots) { ctx.fillStyle = G.triple > 0 ? '#60a5fa' : '#a3e635'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(s.x - 2.5, s.y - 9, 5, 14, 3) : ctx.rect(s.x - 2.5, s.y - 9, 5, 14); ctx.fill(); }
+ctx.font = '30px serif';
+for (const f of G.foes) { ctx.save(); ctx.translate(f.x, f.y); if (f.k === 'pest') ctx.rotate(Math.sin(f.ph * 2) * 0.25); if (f.hit) ctx.globalAlpha = 0.5; ctx.fillText(f.e, 0, 0); ctx.restore(); }
+const px = G.p.x, py = H - 50; ctx.fillStyle = '#e0115f'; ctx.beginPath(); ctx.moveTo(px, py - 22); ctx.lineTo(px + 18, py + 12); ctx.lineTo(px - 18, py + 12); ctx.closePath(); ctx.fill();
+ctx.fillStyle = '#fff'; ctx.fillRect(px - 3, py - 30, 6, 12); if (G.triple > 0) { ctx.strokeStyle = 'rgba(96,165,250,.7)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py - 2, 26, 0, 6.283); ctx.stroke(); }
+for (const p of G.fx) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); if (p.k === 'p') { ctx.fillStyle = p.c; ctx.fillRect(p.x - 2, p.y - 2, 4, 4); } else { ctx.font = 'bold 18px DM Sans,system-ui'; ctx.fillStyle = p.c; ctx.fillText(p.txt, p.x, p.y); } }
+ctx.globalAlpha = 1; ctx.restore();
+ctx.font = 'bold 17px DM Sans,system-ui'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(G.score.toLocaleString('en-IN'), 14, 22);
+ctx.font = '13px DM Sans,system-ui'; ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillText('Level ' + G.lvl + (mult() > 1 ? '  ·  combo x' + mult() : ''), 14, 42);
+ctx.textAlign = 'right'; ctx.font = '18px serif'; ctx.fillText('❤️'.repeat(Math.max(0, G.lives)) + '🖤'.repeat(Math.max(0, 3 - G.lives)), W - 12, 22);
+};
+const end = async () => {
+G.over = true; const best = Math.max(PB.best(), G.score); try { localStorage.setItem('orbis.pb.best', best); } catch { }
+const ov = $('#pbOv'); if (!ov) return;
+ov.innerHTML = `<div class="pbt">Game over</div><div class="pbbig">${G.score.toLocaleString('en-IN')}</div><p>Level ${G.lvl} · ${G.kills} pests blasted${G.score >= best && G.score > 0 ? '<br><b>🎉 New personal best!</b>' : `<br>Your best: <b>${best.toLocaleString('en-IN')}</b>`}</p><button class="btn pri big" id="pbGo">↻ Play again</button><div class="small" id="pbSave" style="margin-top:10px;opacity:.8">Saving score…</div>`;
+ov.style.display = 'flex';
+try { if (G.score > 0) { await q(sb.from('game_scores').insert({ employee_id: S.me.id, game: 'pest', score: G.score, level: G.lvl })); } const s = $('#pbSave'); if (s) s.textContent = G.score > 0 ? 'Score saved ✓' : ''; pbBoard(); }
+catch { const s = $('#pbSave'); if (s) s.textContent = 'Could not save score (check internet)'; }
+};
+const start = () => { reset(); const ov = $('#pbOv'); if (ov) ov.style.display = 'none'; cancelAnimationFrame(raf); G.last = performance.now(); raf = requestAnimationFrame(step); };
+const move = e => { if (!G) return; const r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; G.p.tx = t.clientX - r.left; };
+cv.addEventListener('pointermove', move); cv.addEventListener('pointerdown', move);
+cv.addEventListener('touchmove', e => { move(e); e.preventDefault(); }, { passive: false });
+const kd = e => { if (!cv.isConnected) return removeEventListener('keydown', kd); if (['ArrowLeft', 'ArrowRight'].includes(e.key)) { keys[e.key] = 1; e.preventDefault(); } };
+const ku = e => { keys[e.key] = 0; }; addEventListener('keydown', kd); addEventListener('keyup', ku);
+document.addEventListener('visibilitychange', () => { if (G) G.paused = document.hidden; });
+wrap.addEventListener('click', e => { if (e.target.closest('#pbGo')) start(); });
+reset(); G.over = true; draw();
+}
 </script></body></html>
