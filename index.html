@@ -3870,7 +3870,7 @@ const _teamWP = VIEWS.team;
 VIEWS.team = async () => {
 if (S.me.access === 'md' && S.tmTab === 'plans') S.tmTab = 'today';
 let h = await _teamWP();
-if (S.me.access !== 'staff') return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
+if (isAdmin()) return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
 if (S.tmTab !== 'plans') return h;
 const v = S.tmPlanV || 'day', sub = `<div class="seg sub"><button class="${v === 'day' ? 'on' : ''}" data-wpp="day">Day view</button><button class="${v === 'pend' ? 'on' : ''}" data-wpp="pend">Pending &amp; completed</button></div>`;
 if (v === 'day') return h.replace(/(<div class="seg">[\s\S]*?<\/div>)/, `$1${sub}`);
