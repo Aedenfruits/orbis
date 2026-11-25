@@ -587,7 +587,11 @@ async function boot() {
 const { data } = await sb.auth.getSession(); S.session = data.session;
 sb.auth.onAuthStateChange((_e, s) => { S.session = s; });
 if (!S.session) { await INTRO; return renderLogin(); }
-try { await loadCore(); } catch (e) { return renderFatal(e); }
+try { await loadCore(); } catch (e) {
+const authBad = /JWT|No suitable key|wrong key type|invalid.*token|token.*expired|401|not authorized|refresh token/i.test(String(e?.message || e) + ' ' + (e?.code || '') + ' ' + (e?.status || ''));
+if (!authBad) return renderFatal(e);
+try { const { error } = await sb.auth.refreshSession(); if (error) throw error; await loadCore(); }
+catch { try { await sb.auth.signOut({ scope: 'local' }); } catch { } try { localStorage.removeItem('orbis.auth'); } catch { } S.session = null; await INTRO; return renderLogin(); } }
 if (!S.me) {
 let need = false; try { need = await rpc('needs_setup'); } catch { }
 if (need) return renderSetup();
