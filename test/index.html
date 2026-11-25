@@ -530,6 +530,12 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .ttc{aspect-ratio:1;border:0;border-radius:16px;background:#eef1f8;font-size:52px;font-weight:800;cursor:pointer;color:#1e2a5a;display:grid;place-items:center}
 .ttc.vX{color:#e0115f}.ttc.vO{color:#2563eb}.ttc.hl{background:#fde68a}.ttc:disabled{cursor:default}
 .sel.sm{padding:6px 10px;border-radius:10px;border:1px solid #dfe3ee;background:#fff;font:inherit}
+.mdpad{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#0f172a}
+.mdpad>div{display:flex;gap:10px}
+.mdpad button{width:66px;height:58px;border-radius:16px;border:0;background:#334155;color:#fff;font-size:24px;font-weight:800;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.mdpad button.j{width:120px;background:#e0115f;font-size:20px}
+.mdpad button.on{filter:brightness(1.3);transform:scale(.95)}
+@media(hover:hover) and (pointer:fine){.mdpad{display:none}}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -5359,5 +5365,106 @@ return `<div class="stack">${head('❌', 'Tic-Tac-Toe')}<div class="card"><div c
 if (g === 'flappy') { setTimeout(() => { fbInit(); gBoard('flappy'); }, 30);
 return `<div class="stack">${head('🐝', 'Flappy Bee')}<div class="card pbcard"><div class="pbwrap" id="fbWrap"><canvas id="fbC"></canvas><div class="pbov" id="fbOv"><div class="pbt">🐝 Flappy Bee</div><p>Tap to flap. Fly through the gaps between the crates!</p><p class="small">Phone: tap · Computer: space or ↑</p><button class="btn pri big" data-gstart="flappy">▶ Play</button><div class="small" style="margin-top:10px;opacity:.8">Your best: <b>${gBest('flappy')}</b></div></div></div></div>${gLbCard('Top flyers')}</div>`; }
 return _gv2(); };
+}
+function mdInit() {
+const cv = $('#mdC'), wrap = $('#mdWrap'); if (!cv || cv.dataset.on) return; cv.dataset.on = 1;
+const ctx = cv.getContext('2d'); let W, H, K, raf = 0, G = null; const keys = { L: 0, R: 0, J: 0 };
+const ROWS = 15;
+const fit = () => { const d = Math.min(2, devicePixelRatio || 1); W = wrap.clientWidth; H = Math.round(Math.min(560, Math.max(380, innerHeight * 0.56))); K = H / ROWS; wrap.style.height = H + 'px'; cv.width = W * d; cv.height = H * d; cv.style.width = W + 'px'; cv.style.height = H + 'px'; ctx.setTransform(d, 0, 0, d, 0, 0); };
+fit(); addEventListener('resize', fit);
+const FR = ['🍎', '🍊', '🍇', '🍓', '🍒', '🍑', '🍍', '🍋'];
+const build = lvl => {
+const L = 120 + lvl * 30, grid = [...Array(ROWS)].map(() => new Uint8Array(L)), en = [], fr = [];
+let x = 0; const ground = (a, b) => { for (let i = a; i < b && i < L; i++) { grid[13][i] = 1; grid[14][i] = 1; } };
+ground(0, 14); x = 14;
+while (x < L - 14) {
+const seg = 6 + ((Math.random() * 9) | 0); ground(x, x + seg);
+if (Math.random() < 0.35 + lvl * 0.05 && seg > 5) en.push({ x: x + seg / 2, y: 13, vx: (Math.random() < .5 ? -1 : 1) * (1.6 + lvl * 0.25), dead: 0, k: 'bug' });
+if (Math.random() < 0.6) { const py = Math.random() < .5 ? 9 : 10, px = x + 1 + ((Math.random() * Math.max(1, seg - 4)) | 0), pl = 2 + ((Math.random() * 3) | 0);
+for (let i = 0; i < pl; i++) grid[py][px + i] = 2; for (let i = 0; i < pl; i++) fr.push({ x: px + i + 0.5, y: py - 1 + 0.5, e: FR[(Math.random() * FR.length) | 0] });
+if (Math.random() < 0.35) { const qy = py - 4, qx = px + pl + 1; for (let i = 0; i < 2; i++) { grid[qy][qx + i] = 2; fr.push({ x: qx + i + 0.5, y: qy - 0.5, e: '⭐', big: 1 }); } } }
+else for (let i = 0; i < 3; i++) fr.push({ x: x + 2 + i + 0.5, y: 11.5 - (i === 1 ? 1 : 0), e: FR[(Math.random() * FR.length) | 0] });
+if (Math.random() < 0.3) { const sx = x + seg - 2, h = 1 + ((Math.random() * 2) | 0); for (let j = 0; j < h; j++) grid[12 - j][sx] = 2; }
+x += seg; const gap = Math.random() < 0.75 ? 2 + ((Math.random() * (lvl > 2 ? 3 : 2)) | 0) : 0; x += gap;
+if (gap >= 3 && Math.random() < 0.6) { grid[10][x - gap + 1] = 2; } }
+ground(x, L);
+return { L, grid, en, fr, flag: L - 6 };
+};
+const solid = (tx, ty) => { if (tx < 0) return true; if (ty < 0 || ty >= ROWS || tx >= G.lv.L) return false; return G.lv.grid[ty][tx] > 0; };
+const reset = full => { if (full) G = { lvl: 1, lives: 5, score: 0, fruits: 0, stomps: 0, over: false };
+G.lv = build(G.lvl); G.p = { x: 2, y: 11, vx: 0, vy: 0, w: 0.7, h: 0.85, on: false, face: 1, inv: 0 }; G.cam = 0; G.t = 0; G.chk = 2; G.won = 0; G.fx = []; G.last = performance.now(); };
+const respawn = () => { G.lives--; navigator.vibrate?.(140); if (G.lives <= 0) return end(); G.p.x = G.chk; G.p.y = 5; G.p.vx = G.p.vy = 0; G.p.inv = 1.6; };
+const end = () => { G.over = true; gEndBox($('#mdOv'), 'Game over', G.score, `Reached level ${G.lvl} · ${G.fruits} fruits · ${G.stomps} bugs stomped`, 'mario', 'mango', G.lvl); };
+const say = (x, y, t, c) => G.fx.push({ x, y, t, c, life: 0.8 });
+const phys = dt => { const p = G.p, acc = p.on ? 55 : 30, max = 7.5;
+if (keys.L) { p.vx -= acc * dt; p.face = -1; } if (keys.R) { p.vx += acc * dt; p.face = 1; }
+if (!keys.L && !keys.R) p.vx *= p.on ? Math.pow(0.0005, dt) : Math.pow(0.3, dt);
+p.vx = Math.max(-max, Math.min(max, p.vx));
+if (keys.J && p.on) { p.vy = -15.5; p.on = false; } if (!keys.J && p.vy < -6) p.vy = -6;
+p.vy = Math.min(22, p.vy + 42 * dt);
+p.x += p.vx * dt; const l = Math.floor(p.x - p.w / 2), r = Math.floor(p.x + p.w / 2 - 1e-6), tp = Math.floor(p.y - p.h), bt = Math.floor(p.y - 1e-6);
+for (let ty = tp; ty <= bt; ty++) { if (p.vx > 0 && solid(r, ty)) { p.x = r - p.w / 2; p.vx = 0; } else if (p.vx < 0 && solid(l, ty)) { p.x = l + 1 + p.w / 2; p.vx = 0; } }
+p.y += p.vy * dt; p.on = false; const l2 = Math.floor(p.x - p.w / 2 + 0.05), r2 = Math.floor(p.x + p.w / 2 - 0.05);
+if (p.vy > 0) { const ty = Math.floor(p.y); for (let tx = l2; tx <= r2; tx++) if (solid(tx, ty)) { p.y = ty; p.vy = 0; p.on = true; break; } }
+else if (p.vy < 0) { const ty = Math.floor(p.y - p.h); for (let tx = l2; tx <= r2; tx++) if (solid(tx, ty)) { p.y = ty + 1 + p.h; p.vy = 0; break; } }
+if (p.y > ROWS + 2) respawn();
+if (p.x > G.chk + 30) G.chk = Math.floor(p.x / 30) * 30 + 2; };
+const step = now => { raf = requestAnimationFrame(step); if (!cv.isConnected) { cancelAnimationFrame(raf); removeEventListener('resize', fit); return; }
+const dt = Math.min(0.033, (now - G.last) / 1000); G.last = now;
+if (!G.over && !document.hidden) { G.t += dt;
+if (G.won) { G.won -= dt; G.p.vx = 4; G.p.x += 4 * dt; if (G.won <= 0) { G.lvl++; const keep = { lvl: G.lvl, lives: G.lives, score: G.score, fruits: G.fruits, stomps: G.stomps, over: false }; Object.assign(G, keep); reset(false); } }
+else { phys(dt); const p = G.p; p.inv = Math.max(0, p.inv - dt);
+for (const e of G.lv.en) { if (e.dead) { e.dead -= dt; continue; }
+const nx = e.x + e.vx * dt, ahead = Math.floor(nx + Math.sign(e.vx) * 0.4); if (solid(ahead, Math.floor(e.y - 0.5)) || !solid(ahead, Math.floor(e.y + 0.2))) e.vx *= -1; else e.x = nx;
+if (Math.abs(e.x - p.x) < 0.75 && Math.abs((e.y - 0.4) - (p.y - p.h / 2)) < 0.8) {
+if (p.vy > 0 && p.y < e.y - 0.25) { e.dead = 0.4; e.gone = 1; p.vy = -11; G.score += 50; G.stomps++; say(e.x, e.y - 1, '+50', '#16a34a'); }
+else if (!p.inv && Math.abs(e.x - p.x) < 0.6 && p.y > e.y - 0.3) respawn(); } }
+G.lv.en = G.lv.en.filter(e => !(e.gone && e.dead <= 0));
+for (const f of G.lv.fr) if (!f.got && Math.abs(f.x - p.x) < 0.7 && Math.abs(f.y - (p.y - p.h / 2)) < 0.8) { f.got = 1; const v = f.big ? 50 : 10; G.score += v; G.fruits++; say(f.x, f.y - 0.6, '+' + v, f.big ? '#eab308' : '#e0115f'); }
+if (p.x >= G.lv.flag) { G.won = 1.6; const bonus = 200 + G.lvl * 100 + Math.max(0, Math.round(120 - G.t)) * 5; G.score += bonus; say(p.x, p.y - 2, `LEVEL CLEAR +${bonus}`, '#e0115f'); } } }
+for (const f of G.fx) { f.life -= dt; f.y -= 1.5 * dt; } G.fx = G.fx.filter(f => f.life > 0);
+G.cam += ((G.p.x - W / K * 0.4) - G.cam) * Math.min(1, dt * 8); G.cam = Math.max(0, Math.min(G.lv.L - W / K, G.cam));
+draw(); };
+const draw = () => { const cam = G.cam * K;
+const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#60a5fa'); g.addColorStop(1, '#dbeafe'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+ctx.fillStyle = '#86efac'; for (let i = -1; i < W / 160 + 2; i++) { const hx = i * 160 - (cam * 0.3) % 160; ctx.beginPath(); ctx.ellipse(hx, H * 0.86, 120, 70, 0, Math.PI, 0); ctx.fill(); }
+ctx.fillStyle = 'rgba(255,255,255,.85)'; for (let i = -1; i < W / 220 + 2; i++) { const cx = i * 220 - (cam * 0.15) % 220 + 40; ctx.beginPath(); ctx.arc(cx, 50 + (i % 2) * 30, 18, 0, 6.283); ctx.arc(cx + 20, 44 + (i % 2) * 30, 22, 0, 6.283); ctx.arc(cx + 42, 52 + (i % 2) * 30, 15, 0, 6.283); ctx.fill(); }
+const x0 = Math.floor(G.cam), x1 = Math.ceil(G.cam + W / K) + 1;
+for (let ty = 0; ty < ROWS; ty++) for (let tx = x0; tx < x1 && tx < G.lv.L; tx++) { const v = G.lv.grid[ty][tx]; if (!v) continue; const X = tx * K - cam, Y = ty * K;
+if (v === 1) { ctx.fillStyle = ty === 13 && !(G.lv.grid[12][tx]) ? '#16a34a' : '#92400e'; ctx.fillRect(X, Y, K + 0.5, K + 0.5); if (ty === 13 && !(G.lv.grid[12][tx])) { ctx.fillStyle = '#92400e'; ctx.fillRect(X, Y + K * 0.35, K + 0.5, K * 0.65 + 0.5); } }
+else { ctx.fillStyle = '#d97706'; ctx.fillRect(X + 1, Y + 1, K - 2, K - 2); ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2; ctx.strokeRect(X + 2, Y + 2, K - 4, K - 4); ctx.beginPath(); ctx.moveTo(X + 3, Y + 3); ctx.lineTo(X + K - 3, Y + K - 3); ctx.moveTo(X + K - 3, Y + 3); ctx.lineTo(X + 3, Y + K - 3); ctx.stroke(); } }
+const fx = G.lv.flag * K - cam; ctx.fillStyle = '#334155'; ctx.fillRect(fx, 4 * K, 4, 9 * K); ctx.fillStyle = '#e0115f'; ctx.beginPath(); ctx.moveTo(fx + 4, 4 * K); ctx.lineTo(fx + 4 + K * 1.6, 4.6 * K); ctx.lineTo(fx + 4, 5.2 * K); ctx.fill();
+ctx.fillStyle = '#fff'; ctx.font = `bold ${K * 0.45}px DM Sans,system-ui`; ctx.textAlign = 'center'; ctx.fillText('A', fx + K * 0.75, 4.75 * K);
+ctx.fillStyle = '#000'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+for (const f of G.lv.fr) { if (f.got) continue; const X = f.x * K - cam; if (X < -K || X > W + K) continue; ctx.font = `${K * (f.big ? 0.85 : 0.75)}px ${EMOF}`; ctx.fillText(f.e, X, f.y * K + Math.sin(G.t * 4 + f.x) * 3); }
+for (const e of G.lv.en) { const X = e.x * K - cam; if (X < -K || X > W + K) continue; ctx.save(); ctx.translate(X, (e.y - 0.45) * K); if (e.gone) ctx.scale(1.2, 0.35); else ctx.scale(e.vx > 0 ? -1 : 1, 1); ctx.font = `${K * 0.95}px ${EMOF}`; ctx.fillText('🪲', 0, 0); ctx.restore(); }
+const p = G.p, PX = p.x * K - cam, PY = (p.y - p.h / 2) * K, R = K * 0.46;
+if (!(p.inv && Math.floor(G.t * 12) % 2)) { ctx.save(); ctx.translate(PX, PY); const sq = p.on ? 1 : 1 + Math.min(0.12, Math.abs(p.vy) * 0.008);
+ctx.scale(p.face / sq, sq); const mg = ctx.createRadialGradient(-R * 0.3, -R * 0.4, R * 0.2, 0, 0, R * 1.1); mg.addColorStop(0, '#fde047'); mg.addColorStop(1, '#f97316');
+ctx.fillStyle = mg; ctx.beginPath(); ctx.ellipse(0, 0, R * 0.92, R, -0.25, 0, 6.283); ctx.fill();
+ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.ellipse(R * 0.15, -R * 1.05, R * 0.42, R * 0.16, -0.5, 0, 6.283); ctx.fill();
+ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(R * 0.28, -R * 0.2, R * 0.2, 0, 6.283); ctx.fill(); ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(R * 0.34, -R * 0.18, R * 0.1, 0, 6.283); ctx.fill();
+ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(R * 0.3, R * 0.2, R * 0.22, 0.2, 2.2); ctx.stroke();
+ctx.fillStyle = '#e0115f'; const run = p.on && Math.abs(p.vx) > 0.5 ? Math.sin(G.t * 18) * R * 0.25 : 0; ctx.fillRect(-R * 0.45 + run, R * 0.85, R * 0.35, R * 0.22); ctx.fillRect(R * 0.1 - run, R * 0.85, R * 0.35, R * 0.22); ctx.restore(); }
+for (const f of G.fx) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = f.c; ctx.font = `bold ${K * 0.5}px DM Sans,system-ui`; ctx.fillText(f.t, f.x * K - cam, f.y * K); } ctx.globalAlpha = 1;
+ctx.textAlign = 'left'; ctx.fillStyle = '#0f172a'; ctx.font = `bold 16px DM Sans,system-ui`; ctx.fillText(`⭐ ${G.score.toLocaleString('en-IN')}`, 12, 20); ctx.fillText(`Level ${G.lvl}`, 12, 42);
+ctx.textAlign = 'right'; ctx.font = `18px ${EMOF}`; ctx.fillText('❤️'.repeat(Math.max(0, G.lives)), W - 12, 20); };
+const kmap = { ArrowLeft: 'L', a: 'L', ArrowRight: 'R', d: 'R', ArrowUp: 'J', w: 'J', ' ': 'J' };
+const kd = e => { if (!cv.isConnected) return removeEventListener('keydown', kd); const k = kmap[e.key]; if (k) { keys[k] = 1; e.preventDefault(); } };
+const ku = e => { const k = kmap[e.key]; if (k) keys[k] = 0; }; addEventListener('keydown', kd); addEventListener('keyup', ku);
+($('#mdCard') || wrap).querySelectorAll('[data-mdk]').forEach(b => { const k = b.dataset.mdk, on = e => { e.preventDefault(); keys[k] = 1; b.classList.add('on'); }, off = e => { e.preventDefault(); keys[k] = 0; b.classList.remove('on'); };
+b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off); b.addEventListener('contextmenu', e => e.preventDefault()); });
+wrap.addEventListener('click', e => { if (!e.target.closest('[data-gstart="mango"]')) return; reset(true); $('#mdOv').style.display = 'none'; cancelAnimationFrame(raf); G.last = performance.now(); raf = requestAnimationFrame(step); });
+const wd = setInterval(() => { if (!cv.isConnected) return clearInterval(wd); if (G && !G.over && !document.hidden && performance.now() - G.last > 600) { cancelAnimationFrame(raf); G.last = performance.now(); raf = requestAnimationFrame(step); } }, 500);
+reset(true); G.over = true; draw();
+}
+{ const _gv3 = VIEWS.games;
+GAMES.push(['mario', '🥭', 'Mango Dash', 'Run, jump, stomp bugs — reach the flag']);
+VIEWS.games = async () => { if (S.game !== 'mario') return _gv3();
+const fab = $('#astb'); if (fab) { fab.style.display = 'none'; const off = () => { if (S.view !== 'games') { fab.style.display = ''; S.game = null; removeEventListener('hashchange', off); } }; addEventListener('hashchange', off); }
+setTimeout(() => { mdInit(); gBoard('mario'); }, 30);
+return `<div class="stack"><div class="pgh"><div><button class="btn sm" data-game="">‹ All games</button><div class="eyebrow">Break time</div><h2>🥭 Mango Dash</h2></div></div>
+<div class="card pbcard" id="mdCard"><div class="pbwrap" id="mdWrap"><canvas id="mdC"></canvas>
+<div class="pbov" id="mdOv"><div class="pbt">🥭 Mango Dash</div><p>Run and jump through the crate world!<br>Collect fruit 🍎 and stars ⭐, <b>jump on bugs</b> 🪲 to stomp them, reach the <b>Aeden flag</b>.</p><p class="small">Phone: ◀ ▶ to run, ⤒ to jump · Computer: arrow keys + space</p><button class="btn pri big" data-gstart="mango">▶ Play</button><div class="small" style="margin-top:10px;opacity:.8">Your best: <b>${gBest('mario')}</b></div></div></div><div class="mdpad"><div><button data-mdk="L">◀</button><button data-mdk="R">▶</button></div><button data-mdk="J" class="j">⤒ Jump</button></div></div>${gLbCard('Mango Dash heroes')}</div>`; };
 }
 </script></body></html>
