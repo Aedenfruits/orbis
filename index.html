@@ -4856,10 +4856,10 @@ const draw = () => {
 ctx.save(); if (G.shake) ctx.translate((Math.random() - 0.5) * 10 * G.shake * 3, (Math.random() - 0.5) * 10 * G.shake * 3);
 const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#13183a'); g.addColorStop(1, '#2a1640'); ctx.fillStyle = g; ctx.fillRect(-10, -10, W + 20, H + 20);
 ctx.fillStyle = 'rgba(255,255,255,.5)'; for (let i = 0; i < 30; i++) { const sx = (i * 97.3) % W, sy = ((i * 53.7) + G.t * (8 + i % 5 * 4)) % H; ctx.fillRect(sx, sy, 1.5, 1.5); }
-ctx.font = '24px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ctx.font = '24px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 for (let x = 16; x < W; x += 34) ctx.fillText('📦', x, H - 20);
 for (const s of G.shots) { ctx.fillStyle = G.triple > 0 ? '#60a5fa' : '#a3e635'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(s.x - 2.5, s.y - 9, 5, 14, 3) : ctx.rect(s.x - 2.5, s.y - 9, 5, 14); ctx.fill(); }
-ctx.font = '30px serif';
+ctx.font = '30px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 for (const f of G.foes) { ctx.save(); ctx.translate(f.x, f.y); if (f.k === 'pest') ctx.rotate(Math.sin(f.ph * 2) * 0.25); if (f.hit) ctx.globalAlpha = 0.5; ctx.fillText(f.e, 0, 0); ctx.restore(); }
 const px = G.p.x, py = H - 50; ctx.fillStyle = '#e0115f'; ctx.beginPath(); ctx.moveTo(px, py - 22); ctx.lineTo(px + 18, py + 12); ctx.lineTo(px - 18, py + 12); ctx.closePath(); ctx.fill();
 ctx.fillStyle = '#fff'; ctx.fillRect(px - 3, py - 30, 6, 12); if (G.triple > 0) { ctx.strokeStyle = 'rgba(96,165,250,.7)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py - 2, 26, 0, 6.283); ctx.stroke(); }
@@ -4867,7 +4867,7 @@ for (const p of G.fx) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); 
 ctx.globalAlpha = 1; ctx.restore();
 ctx.font = 'bold 17px DM Sans,system-ui'; ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.fillText(G.score.toLocaleString('en-IN'), 14, 22);
 ctx.font = '13px DM Sans,system-ui'; ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillText('Level ' + G.lvl + (mult() > 1 ? '  ·  combo x' + mult() : ''), 14, 42);
-ctx.textAlign = 'right'; ctx.font = '18px serif'; ctx.fillText('❤️'.repeat(Math.max(0, G.lives)) + '🖤'.repeat(Math.max(0, 3 - G.lives)), W - 12, 22);
+ctx.textAlign = 'right'; ctx.font = '18px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.fillText('❤️'.repeat(Math.max(0, G.lives)) + '🖤'.repeat(Math.max(0, 3 - G.lives)), W - 12, 22);
 };
 const end = async () => {
 G.over = true; const best = Math.max(PB.best(), G.score); try { localStorage.setItem('orbis.pb.best', best); } catch { }
@@ -4973,10 +4973,10 @@ draw(now);
 const draw = () => {
 const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#3b1d0f'); g.addColorStop(1, '#5a2e14'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; for (let x = 0; x < W; x += 46) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '44px serif';
+ctx.fillStyle = '#000'; ctx.globalAlpha = 1; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '44px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 for (const it of G.items) { ctx.save(); ctx.translate(it.x, it.y); ctx.rotate(it.rot); ctx.fillText(it.e, 0, 0); ctx.restore(); }
 if (trail.length > 1) { ctx.lineCap = 'round'; for (let i = 1; i < trail.length; i++) { ctx.strokeStyle = `rgba(255,255,255,${i / trail.length})`; ctx.lineWidth = 2 + 6 * i / trail.length; ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke(); } }
-for (const p of G.fx) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); if (p.k === 'h') { ctx.globalAlpha = Math.min(1, p.life * 1.5); ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.beginPath(); ctx.rect(p.side < 0 ? -30 : 0, -30, 30, 60); ctx.clip(); ctx.font = '44px serif'; ctx.fillText(p.e, 0, 0); ctx.restore(); } else if (p.k === 'p') { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.283); ctx.fill(); } else { ctx.font = `bold ${p.big ? 26 : 18}px DM Sans,system-ui`; ctx.fillStyle = p.c; ctx.fillText(p.t, p.x, p.y); } }
+for (const p of G.fx) { ctx.globalAlpha = Math.max(0, Math.min(1, p.life * 2)); if (p.k === 'h') { ctx.globalAlpha = Math.min(1, p.life * 1.5); ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.beginPath(); ctx.rect(p.side < 0 ? -30 : 0, -30, 30, 60); ctx.clip(); ctx.fillStyle = '#000'; ctx.font = '44px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; ctx.fillText(p.e, 0, 0); ctx.restore(); } else if (p.k === 'p') { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 6.283); ctx.fill(); } else { ctx.font = `bold ${p.big ? 26 : 18}px DM Sans,system-ui`; ctx.fillStyle = p.c; ctx.fillText(p.t, p.x, p.y); } }
 ctx.globalAlpha = 1; if (G.flash) { ctx.fillStyle = `rgba(255,0,60,${G.flash})`; ctx.fillRect(0, 0, W, H); }
 ctx.textAlign = 'left'; ctx.font = 'bold 18px DM Sans,system-ui'; ctx.fillStyle = '#fff'; ctx.fillText(G.score.toLocaleString('en-IN'), 14, 22);
 ctx.textAlign = 'right'; ctx.fillStyle = G.left < 10 ? '#ff7aa8' : '#fff'; ctx.fillText('⏱ ' + Math.ceil(G.left) + 's', W - 14, 22);
