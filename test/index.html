@@ -497,7 +497,7 @@ if (o.signal) return fetch(u, o); const ac = new AbortController(), t = setTimeo
 return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); }
 const sbLock = (() => { const q = {}; return async (name, _t, fn) => { const prev = q[name] || Promise.resolve(); let rel; const cur = new Promise(r => rel = r); q[name] = prev.then(() => cur);
 await Promise.race([prev, new Promise(r => setTimeout(r, 8000))]); try { return await fn(); } finally { rel(); } }; })();
-const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: 'orbis.auth', lock: sbLock }, global: { fetch: tFetch } });
+const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: 'orbistest.auth' }, global: { fetch: tFetch } });
 setTimeout(() => { const ap = document.getElementById('app'); if (ap && ap.querySelector('.bootld') && !document.getElementById('bootRetry')) {
 document.body.insertAdjacentHTML('beforeend', `<div id="bootRetry" style="position:fixed;left:50%;bottom:12%;transform:translateX(-50%);text-align:center;z-index:999999;color:#fff;font:600 14px DM Sans,system-ui">Taking longer than usual — check your internet.<br><button style="margin-top:12px;padding:12px 26px;border-radius:99px;border:0;background:#e0115f;color:#fff;font:700 15px DM Sans,system-ui" onclick="location.reload()">Tap to retry</button></div>`); } }, 15000);
 const $ = (s, r = document) => r.querySelector(s);
