@@ -586,7 +586,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const EMAIL_DOMAIN = 'staff.aedenfruits.com';
 function tFetch(u, o = {}) { const url = String(u?.url || u), ms = /\/storage\/v1\//.test(url) ? 120000 : /\/functions\/v1\//.test(url) ? 40000 : 20000;
 { const m = String(o.method || 'GET').toUpperCase(), rd = url.match(/\/rpc\/([a-z_]+)/); if (m !== 'GET' && m !== 'HEAD' && /\/rest\/v1\//.test(url) && !(rd && typeof RPC_READ !== 'undefined' && RPC_READ.has(rd[1]))) QC.lastWrite = Date.now(); }
-if (o.signal) return fetch(u, o); const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+if (o.signal || /\/auth\/v1\//.test(url)) return fetch(u, o); const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
 return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); }
 const sbLock = (() => { const q = {}; return async (name, _t, fn) => { const prev = q[name] || Promise.resolve(); let rel; const cur = new Promise(r => rel = r); q[name] = prev.then(() => cur);
 await Promise.race([prev, new Promise(r => setTimeout(r, 8000))]); try { return await fn(); } finally { rel(); } }; })();
@@ -721,7 +721,7 @@ try { await loadCore(); } catch (e) {
 const authBad = /JWT|No suitable key|wrong key type|invalid.*token|token.*expired|401|not authorized|refresh token/i.test(String(e?.message || e) + ' ' + (e?.code || '') + ' ' + (e?.status || ''));
 if (!authBad) return renderFatal(e);
 try { const { error } = await sb.auth.refreshSession(); if (error) throw error; await loadCore(); }
-catch { try { await sb.auth.signOut({ scope: 'local' }); } catch { } try { localStorage.removeItem('orbis.auth'); } catch { } S.session = null; await INTRO; return renderLogin(); } }
+catch (e2) { if (!navigator.onLine || /fetch|network|load failed|timed? ?out|abort|5\d\d|retryable/i.test(String(e2?.message || e2) + ' ' + (e2?.status || '') + ' ' + (e2?.name || ''))) return renderFatal(e2); try { await sb.auth.signOut({ scope: 'local' }); } catch { } try { localStorage.removeItem('orbis.auth'); } catch { } S.session = null; await INTRO; return renderLogin(); } }
 if (!S.me) {
 let need = false; try { need = await rpc('needs_setup'); } catch { }
 if (need) return renderSetup();
@@ -771,7 +771,7 @@ toast('Welcome! You are the first HR user.'); location.hash = 'employees'; boot(
 };
 }
 function renderSetup() { renderSignupFirst(); }
-function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><button class="btn" onclick="signOut()">Sign out</button></div></div>`; }
+function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><div class="row" style="justify-content:center;gap:8px"><button class="btn pri" onclick="location.reload()">↻ Try again</button><button class="btn" onclick="signOut()">Sign out</button></div></div></div>`; }
 async function signOut() { qcClear(); clearInterval(S.remI); S.badge = {}; S.dek = null; clearTimeout(S.vaultT); await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
 function orbisTitle() {
 const L = 'ORBIS'.split('').map((c, i) => `<span class="ch${i === 0 ? ' o' : ''}" style="--i:${i}">${c}</span>`).join('');
@@ -4053,7 +4053,7 @@ try { await q(sb.from('active_sessions').upsert({ employee_id: S.me.id, kind: se
 let sessBusy = false;
 async function sessCheck() {
 if (sessOff() || sessBusy || !navigator.onLine) return; sessBusy = true;
-try { const mine = lsGet(sessKey(), ''); const r = await q(sb.from('active_sessions').select('sid,device').eq('employee_id', S.me.id).eq('kind', sessKind()).maybeSingle());
+try { const mine = lsGet(sessKey(), ''); const { data: r, error: re } = await sb.from('active_sessions').select('sid,device').eq('employee_id', S.me.id).eq('kind', sessKind()).maybeSingle(); if (re) return;
 if (!r || !mine) { S.freshLogin = true; await sessClaim(); return; }
 if (r.sid !== mine) { const k = sessKind(); lsSet(sessKey(), ''); await signOut(); renderLogin(`You were signed out because your account was opened on another ${k === 'mobile' ? 'phone' : 'computer'}${r.device ? ` (${r.device})` : ''}. Each person can use ORBIS on one phone and one computer.`); }
 } catch { } finally { sessBusy = false; }

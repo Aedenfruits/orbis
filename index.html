@@ -546,7 +546,10 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .rdt td,.rdt th{white-space:nowrap}.rdt tr.rdd td{background:#f4f6fb;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#667}
 .rst{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12.5px;font-weight:700}
 .rst.grn{background:#e9f8ee;color:#15803d}.rst.amb{background:#fff4e0;color:#b45309}.rst.pur{background:#f1ebff;color:#6d28d9}.rst.blu{background:#e8f0ff;color:#1d4ed8}.rst.red{background:#fdecf1;color:#be123c}.rst.mut{background:#eef0f5;color:#667}
-.rdnav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.rdnav .rdin{width:150px}</style>
+.rdnav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.rdnav .rdin{width:150px}.tp12{display:flex;align-items:center;gap:4px}.tp12 select{flex:1;min-width:0;padding-left:8px;padding-right:4px}.tp12 b{color:var(--mut,#888)}
+@media(max-width:640px){.wpadd .grid3{grid-template-columns:1fr 1fr}.wpadd .grid3 label.grow{grid-column:1/-1}.wpadd .grid3 label:not(.grow){grid-column:1/-1}}
+.wp .wpm{flex:1;min-width:0;overflow-wrap:anywhere}@media(max-width:640px){.wp select[data-wst]{max-width:118px}}
+</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -583,7 +586,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const EMAIL_DOMAIN = 'staff.aedenfruits.com';
 function tFetch(u, o = {}) { const url = String(u?.url || u), ms = /\/storage\/v1\//.test(url) ? 120000 : /\/functions\/v1\//.test(url) ? 40000 : 20000;
 { const m = String(o.method || 'GET').toUpperCase(), rd = url.match(/\/rpc\/([a-z_]+)/); if (m !== 'GET' && m !== 'HEAD' && /\/rest\/v1\//.test(url) && !(rd && typeof RPC_READ !== 'undefined' && RPC_READ.has(rd[1]))) QC.lastWrite = Date.now(); }
-if (o.signal) return fetch(u, o); const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+if (o.signal || /\/auth\/v1\//.test(url)) return fetch(u, o); const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
 return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); }
 const sbLock = (() => { const q = {}; return async (name, _t, fn) => { const prev = q[name] || Promise.resolve(); let rel; const cur = new Promise(r => rel = r); q[name] = prev.then(() => cur);
 await Promise.race([prev, new Promise(r => setTimeout(r, 8000))]); try { return await fn(); } finally { rel(); } }; })();
@@ -718,7 +721,7 @@ try { await loadCore(); } catch (e) {
 const authBad = /JWT|No suitable key|wrong key type|invalid.*token|token.*expired|401|not authorized|refresh token/i.test(String(e?.message || e) + ' ' + (e?.code || '') + ' ' + (e?.status || ''));
 if (!authBad) return renderFatal(e);
 try { const { error } = await sb.auth.refreshSession(); if (error) throw error; await loadCore(); }
-catch { try { await sb.auth.signOut({ scope: 'local' }); } catch { } try { localStorage.removeItem('orbis.auth'); } catch { } S.session = null; await INTRO; return renderLogin(); } }
+catch (e2) { if (!navigator.onLine || /fetch|network|load failed|timed? ?out|abort|5\d\d|retryable/i.test(String(e2?.message || e2) + ' ' + (e2?.status || '') + ' ' + (e2?.name || ''))) return renderFatal(e2); try { await sb.auth.signOut({ scope: 'local' }); } catch { } try { localStorage.removeItem('orbis.auth'); } catch { } S.session = null; await INTRO; return renderLogin(); } }
 if (!S.me) {
 let need = false; try { need = await rpc('needs_setup'); } catch { }
 if (need) return renderSetup();
@@ -768,7 +771,7 @@ toast('Welcome! You are the first HR user.'); location.hash = 'employees'; boot(
 };
 }
 function renderSetup() { renderSignupFirst(); }
-function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><button class="btn" onclick="signOut()">Sign out</button></div></div>`; }
+function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><div class="row" style="justify-content:center;gap:8px"><button class="btn pri" onclick="location.reload()">↻ Try again</button><button class="btn" onclick="signOut()">Sign out</button></div></div></div>`; }
 async function signOut() { qcClear(); clearInterval(S.remI); S.badge = {}; S.dek = null; clearTimeout(S.vaultT); await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
 function orbisTitle() {
 const L = 'ORBIS'.split('').map((c, i) => `<span class="ch${i === 0 ? ' o' : ''}" style="--i:${i}">${c}</span>`).join('');
@@ -1014,6 +1017,14 @@ if (S.cert && isSick(typ)) { row.cert_path = await certUpload(id); row.cert_chec
 await q(sb.from('leave_requests').insert(row)); S.cert = null; toast('Leave request sent'); render(); } catch (e) { btn.disabled = false; toast(errMsg(e), true); } };
 }
 document.addEventListener('click', async e => { const b = e.target.closest('[data-lcancel]'); if (!b) return; try { await rpc('cancel_leave', { p_id: b.dataset.lcancel }); toast('Request cancelled'); render(); } catch (er) { toast(errMsg(er), true); } });
+const t12 = v => { if (!v || !/^\d{1,2}:\d{2}/.test(v)) return esc(v || ''); let [H, M] = v.split(':').map(Number); H = H % 24; return `${H % 12 || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`; };
+function tp12(id, v) { let [H, M] = (v || '09:00').split(':').map(Number); H = (H || 0) % 24; M = M || 0; const h = H % 12 || 12, ap = H < 12 ? 'AM' : 'PM';
+const ms = [...new Set([...Array(12).keys()].map(i => i * 5).concat(M))].sort((x, y) => x - y);
+return `<span class="tp12" data-tpfor="${id}"><input type="hidden" id="${id}" value="${pad(H)}:${pad(M)}"><select data-tp="h" aria-label="Hour">${[...Array(12)].map((_, i) => i + 1).map(x => `<option ${x === h ? 'selected' : ''}>${x}</option>`).join('')}</select><b>:</b><select data-tp="m" aria-label="Minutes">${ms.map(x => `<option value="${x}" ${x === M ? 'selected' : ''}>${pad(x)}</option>`).join('')}</select><select data-tp="ap" aria-label="AM or PM"><option ${ap === 'AM' ? 'selected' : ''}>AM</option><option ${ap === 'PM' ? 'selected' : ''}>PM</option></select></span>`; }
+function tpSet(id, v) { const w = document.querySelector(`[data-tpfor="${id}"]`); if (w) w.outerHTML = tp12(id, v); }
+document.addEventListener('change', e => { const s = e.target.closest('[data-tp]'); if (!s) return; const w = s.closest('.tp12'); const g = k => w.querySelector(`[data-tp="${k}"]`).value;
+let H = Number(g('h')) % 12; if (g('ap') === 'PM') H += 12; const v = `${pad(H)}:${pad(Number(g('m')))}`; const id = w.dataset.tpfor; document.getElementById(id).value = v;
+if (id === 'wp_f') { const to = $('#wp_t'); if (to && to.value <= v) tpSet('wp_t', addMinHM(v, 60)); } });
 const WST = { plan: ['Planned', '', '🗓'], on: ['Ongoing', 'warn', '🔄'], done: ['Done', 'good', '✅'], not: ['Not done', 'crit', '❌'] };
 async function getPlan(emp, day) { const r = await q(sb.from('work_plans').select('*').eq('employee_id', emp).eq('day', day).maybeSingle()); return (r?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); }
 const planQ = { n: 0, p: {} };
@@ -4042,7 +4053,7 @@ try { await q(sb.from('active_sessions').upsert({ employee_id: S.me.id, kind: se
 let sessBusy = false;
 async function sessCheck() {
 if (sessOff() || sessBusy || !navigator.onLine) return; sessBusy = true;
-try { const mine = lsGet(sessKey(), ''); const r = await q(sb.from('active_sessions').select('sid,device').eq('employee_id', S.me.id).eq('kind', sessKind()).maybeSingle());
+try { const mine = lsGet(sessKey(), ''); const { data: r, error: re } = await sb.from('active_sessions').select('sid,device').eq('employee_id', S.me.id).eq('kind', sessKind()).maybeSingle(); if (re) return;
 if (!r || !mine) { S.freshLogin = true; await sessClaim(); return; }
 if (r.sid !== mine) { const k = sessKind(); lsSet(sessKey(), ''); await signOut(); renderLogin(`You were signed out because your account was opened on another ${k === 'mobile' ? 'phone' : 'computer'}${r.device ? ` (${r.device})` : ''}. Each person can use ORBIS on one phone and one computer.`); }
 } catch { } finally { sessBusy = false; }
