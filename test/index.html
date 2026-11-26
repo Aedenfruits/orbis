@@ -558,6 +558,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .rbk.over{display:inline-block;padding:3px 10px;border-radius:99px;background:#ffe4ea;color:#c8103e;font-weight:700}
 #nfpops{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 14px);z-index:2147482000;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 24px))}.nfpop{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:13px 14px;border-radius:18px;border:1px solid rgba(224,22,100,.25);background:#fff;color:#1d1b2e;font:inherit;box-shadow:0 14px 40px rgba(29,43,83,.25);cursor:pointer;animation:nfpIn .35s cubic-bezier(.2,.9,.3,1.2)}.nfpop.out{opacity:0;transform:translateY(-10px);transition:.3s}.nfpi{font-size:22px;line-height:1.1}.nfpt{flex:1;min-width:0}.nfpt b{display:block;font-size:14.5px}.nfpt small{display:block;color:#6b7280;font-size:12.5px;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.nfpx{color:#9ca3af;font-size:13px;padding:2px 4px}@keyframes nfpIn{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}@media(max-width:640px){#nfpops{left:12px;right:12px;width:auto}}
 .tkrd{font-weight:600}.tkrd.ok{color:#15803d}.tkrd.no{color:#c2410c}
+.geot{display:block;font-size:11.5px;color:#2563eb;text-decoration:none;white-space:nowrap;margin-top:2px}.geot:hover{text-decoration:underline}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1217,6 +1218,7 @@ dlg(id ? 'Edit employee' : 'Add employee', `<div class="grid2"><label>Employee c
 <label>Access level<select id="e_acc"><option value="" ${!x.access ? 'selected' : ''}>Employee — own data (+ team if manager)</option><option value="hr" ${x.access === 'hr' ? 'selected' : ''}>HR — all employees</option><option value="md" ${x.access === 'md' ? 'selected' : ''}>MD / Director — all employees</option>${x.access === 'dev' || isDev() ? `<option value="dev" ${x.access === 'dev' ? 'selected' : ''}>ORBIS Developer — everything</option>` : ''}</select></label></div>
 <label>Email for reminders <span class="small muted">(personal or company)</span><input type="email" id="e_em" placeholder="name@gmail.com"></label>
 <label class="chk"><input type="checkbox" id="e_np" ${x.no_punch ? 'checked' : ''}> No punching needed (directors / MD) — always counted present, not shown as late or absent</label>
+<label class="chk"><input type="checkbox" id="e_fld" ${x.field_punch ? 'checked' : ''}> 🚗 Field staff — can check in / out from anywhere (salesman, fleet, outside duty). Their location is saved and shown to HR</label>
 ${id ? `<label class="chk"><input type="checkbox" id="e_active" ${x.active ? 'checked' : ''}> Active (untick when the person leaves)</label>` : ''}
 <div class="card soft"><b>${id ? (x.auth_uid ? 'Reset password' : 'Create login') : 'Login password'}</b><p class="small muted">They sign in with their employee code and this password.${id && x.auth_uid ? ' Leave empty to keep the current password.' : ''}</p><input id="e_pw" type="text" placeholder="e.g. 123456 — they must change it at first login" autocomplete="off"></div>`,
 `<button class="btn pri" data-emp="save" data-id="${id || ''}">Save</button>`);
@@ -1224,7 +1226,7 @@ if (id) q(sb.from('emp_email').select('email').eq('employee_id', id)).then(r => 
 }
 if (a === 'save') {
 const v = k => $('#' + k)?.value?.trim() ?? ''; const pw = $('#e_pw').value;
-const row = { name: v('e_name'), desig: v('e_desig'), dept: v('e_dept'), office: v('e_office'), join_date: v('e_join') || null, reports_to: v('e_mgr') || null, access: v('e_acc'), bio_id: v('e_bio') || null, shift: v('e_shift') === 'gen' ? null : v('e_shift'), ...($('#e_shul')?.checked ? { shift_locked: false, shift_locked_at: null } : {}), no_punch: !!$('#e_np')?.checked };
+const row = { name: v('e_name'), desig: v('e_desig'), dept: v('e_dept'), office: v('e_office'), join_date: v('e_join') || null, reports_to: v('e_mgr') || null, access: v('e_acc'), bio_id: v('e_bio') || null, shift: v('e_shift') === 'gen' ? null : v('e_shift'), ...($('#e_shul')?.checked ? { shift_locked: false, shift_locked_at: null } : {}), no_punch: !!$('#e_np')?.checked, field_punch: !!$('#e_fld')?.checked };
 { const wo = woRead('e_wo'), co = Array.isArray(C().weekOff) && C().weekOff.length ? C().weekOff : [0]; row.week_off = !wo.length || wo.join() === co.join() ? null : wo; }
 if (!row.name) return toast('Enter the name', true);
 if (id && $('#e_active')) row.active = $('#e_active').checked;
@@ -4883,8 +4885,8 @@ if (!g) g = await gmLocate();
 const w = $('#dlg .gmw'); if (!w) return; const df = $('#dlg .df');
 if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location yet. Make sure <b>Location</b> is ON, step near a window or outside, then tap <b>Try again</b>.' + (g.err === 2 ? ' <small>(Phone could not get a position)</small>' : g.err === 3 ? ' <small>(Timed out)</small>' : '')}</div>`;
 df.insertAdjacentHTML('afterbegin', `<button class="btn pri" data-gmre>Try again</button>`); return; }
-const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, ok = d - Math.min(g.acc || 0, 1500) <= rad;
-w.innerHTML = gmMap(o, g, ok) + (ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
+const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, inA = d - Math.min(g.acc || 0, 1500) <= rad, fld = !!S.me?.field_punch && !inA, ok = inA || fld;
+w.innerHTML = gmMap(o, g, ok) + (fld ? `<div class="gmst ok"><b>🚗 Field duty — you can ${verb.toLowerCase()} from here</b>You are about ${gmFmt(d)} from the office. Your location will be saved and shown to HR.</div>` : ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
 : `<div class="gmst bad"><b>You are not at the office</b>You are about <b>${gmFmt(d)}</b> away. Please go to the office to ${verb.toLowerCase()}.<small>On duty outside today? Use <b>On duty</b> instead.</small></div>`) + (g.acc > 80 ? `<div class="gmacc">GPS accuracy ±${gmFmt(g.acc)} — step near a window or outside for a better fix.</div>` : '');
 S._gmG = g;
 df.insertAdjacentHTML('afterbegin', ok ? `<button class="btn pri big" data-gmgo>${verb} now</button>` : `<button class="btn" data-gmre>Refresh location</button>`);
@@ -5590,6 +5592,8 @@ const h = holOn(ds, e.office); if (h) return { k: 'h', t: 'Holiday · ' + h.name
 if (ds > todayStr()) return { k: 'f', t: '—', c: 'mut' };
 return { k: 'a', t: ds === todayStr() ? 'Not checked in' : 'Absent', c: 'red' };
 }
+const geoFld = g => { if (!g || !g.lat || !(g.field || (g.dist > 300))) return ''; const km = g.dist >= 1000 ? (g.dist / 1000).toFixed(1) + ' km' : Math.round(g.dist) + ' m';
+return `<a class="geot" href="https://www.google.com/maps?q=${g.lat},${g.lng}" target="_blank" rel="noopener" title="Open in Google Maps">📍 ${km} away</a>`; };
 const regFilt = e => (!S.regDeptF || (e.dept || 'Other') === S.regDeptF) && (!S.regLocF || (e.office || '') === S.regLocF);
 const regFiltBar = () => { const act = S.emps.filter(e => e.active), dp = [...new Set(act.map(e => e.dept || 'Other'))].sort(), lc = [...new Set(act.map(e => e.office).filter(Boolean))].sort();
 return `<div class="regflt"><label><span>Department</span><select id="regDeptF"><option value="">All departments</option>${dp.map(d => `<option ${S.regDeptF === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label><label><span>Location</span><select id="regLocF"><option value="">All locations</option>${lc.map(d => `<option ${S.regLocF === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>${S.regDeptF || S.regLocF ? '<button class="btn sm" id="regFClr">✕ Clear</button>' : ''}</div>`; };
@@ -5626,7 +5630,7 @@ ${show.map(r => { const dh = r.e.dept !== lastDept ? `<tr class="rdd"><td colspa
 return `${dh}<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.code)}${r.e.desig ? ' · ' + esc(r.e.desig) : ''}</div></div></div></td>
 <td>${(() => { const s = shiftOf(r.e, ds); return s ? `<b class="rsh">${esc(s.name)}</b><div class="small muted">${brT12(s.start)} – ${brT12(s.end)}${r.e.shift_locked ? ' · 🔒' : ''}</div>` : '—'; })()}</td>
 <td><span class="rst ${r.st.c}">${esc(r.st.t)}</span>${r.place ? `<div class="small muted">${esc(r.place)}</div>` : ''}</td>
-<td>${r.a?.in_at ? hm(r.a.in_at) : '—'}</td><td>${r.a?.out_at ? hm(r.a.out_at) : r.a?.in_at ? '<span class="small muted">working</span>' : '—'}</td>
+<td>${r.a?.in_at ? hm(r.a.in_at) + geoFld(r.a.in_geo) : '—'}</td><td>${r.a?.out_at ? hm(r.a.out_at) + geoFld(r.a.out_geo) : r.a?.in_at ? '<span class="small muted">working</span>' : '—'}</td>
 <td>${r.bm ? `<span class="rbk ${r.bm > brCfg().reduce((s, b) => s + b.min, 0) ? 'over' : ''}">${r.bm >= 60 ? `${Math.floor(r.bm / 60)}h ${r.bm % 60}m` : r.bm + ' min'}</span>` : '—'}</td><td>${r.a?.in_at ? hmz(r.wk) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Nobody in this list.</td></tr>'}
 </tbody></table></div><p class="small muted">Tap a box to filter. Orange = late (after shift start + grace). ${fmtD(ds)}.</p></div>`;
 };
