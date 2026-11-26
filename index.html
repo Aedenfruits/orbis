@@ -791,7 +791,7 @@ toast('Welcome! You are the first HR user.'); location.hash = 'employees'; boot(
 }
 function renderSetup() { renderSignupFirst(); }
 function renderFatal(e) { document.body.className = 'auth'; $('#app').innerHTML = `<div class="authbox"><div class="alg w big">${LOGO}</div><div class="card"><h3>Can't open ORBIS</h3><p>${esc(errMsg(e))}</p><div class="row" style="justify-content:center;gap:8px"><button class="btn pri" onclick="location.reload()">↻ Try again</button><button class="btn" onclick="signOut()">Sign out</button></div></div></div>`; }
-async function signOut() { qcClear(); clearInterval(S.remI); S.badge = {}; S.dek = null; clearTimeout(S.vaultT); await sb.auth.signOut(); S.me = null; location.hash = ''; renderLogin(); }
+async function signOut() { qcClear(); clearInterval(S.remI); S.badge = {}; S.dek = null; clearTimeout(S.vaultT); try { await sb.auth.signOut({ scope: 'local' }); } catch { } S.me = null; location.hash = ''; renderLogin(); }
 function orbisTitle() {
 const L = 'ORBIS'.split('').map((c, i) => `<span class="ch${i === 0 ? ' o' : ''}" style="--i:${i}">${c}</span>`).join('');
 return `<h1 class="orbis-t" aria-label="ORBIS">${L}</h1><p class="tag"><span class="tw" style="--i:0">Everything.</span> <span class="tw cn" style="--i:1">Connected.</span></p>`;
