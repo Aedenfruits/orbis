@@ -4881,15 +4881,16 @@ const o = C().geo || {}, out = !!(S.today?.in_at && !S.today?.out_at), verb = ou
 if (!o.lat) return toast('HR has not set the office location yet.', true);
 dlg('📍 ' + verb, `<div class="gmw"><div class="gmload"><span class="spin"></span>Finding your location… (up to 15 sec)</div></div>`, '');
 $('#dlg').classList.add('gmdlg'); $('#dlg').addEventListener('close', () => $('#dlg').classList.remove('gmdlg'), { once: true }); if (!$('#dlg').open) $('#dlg').showModal();
-if (!g) g = await gmLocate();
+if (!g) { const [loc, fd] = await Promise.all([gmLocate(), S.me?.field_punch ? sb.from('field_days').select('purpose').eq('employee_id', S.me.id).eq('day', todayStr()).maybeSingle().then(r => r.data, () => null) : Promise.resolve(null)]); g = loc; S.fieldToday = fd; }
 const w = $('#dlg .gmw'); if (!w) return; const df = $('#dlg .df');
 if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location yet. Make sure <b>Location</b> is ON, step near a window or outside, then tap <b>Try again</b>.' + (g.err === 2 ? ' <small>(Phone could not get a position)</small>' : g.err === 3 ? ' <small>(Timed out)</small>' : '')}</div>`;
 df.insertAdjacentHTML('afterbegin', `<button class="btn pri" data-gmre>Try again</button>`); return; }
-const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, inA = d - Math.min(g.acc || 0, 1500) <= rad, fld = !!S.me?.field_punch && !inA, ok = inA || fld;
-w.innerHTML = gmMap(o, g, ok) + (fld ? `<div class="gmst ok"><b>🚗 Field duty — you can ${verb.toLowerCase()} from here</b>You are about ${gmFmt(d)} from the office. Your location will be saved and shown to HR.</div>` : ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
+const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, inA = d - Math.min(g.acc || 0, 1500) <= rad, fld = !!S.me?.field_punch && !inA, ok = inA || (fld && !!S.fieldToday);
+w.innerHTML = gmMap(o, g, ok) + (fld && S.fieldToday ? `<div class="gmst ok"><b>🚗 Field duty today — you can ${verb.toLowerCase()} from here</b>${esc(S.fieldToday.purpose)} · about ${gmFmt(d)} from the office. Your location is saved and shown to HR.</div>`
+: fld ? `<div class="gmst"><b>🚗 Going out for work today?</b>You are about ${gmFmt(d)} from the office. Write where you are going — your manager and HR will see it with your location.<input id="fdPurp" maxlength="120" placeholder="e.g. Customer visit – Lulu Kochi / Bank – Axis Edappally" style="margin-top:8px;width:100%"></div>` : ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
 : `<div class="gmst bad"><b>You are not at the office</b>You are about <b>${gmFmt(d)}</b> away. Please go to the office to ${verb.toLowerCase()}.<small>On duty outside today? Use <b>On duty</b> instead.</small></div>`) + (g.acc > 80 ? `<div class="gmacc">GPS accuracy ±${gmFmt(g.acc)} — step near a window or outside for a better fix.</div>` : '');
 S._gmG = g;
-df.insertAdjacentHTML('afterbegin', ok ? `<button class="btn pri big" data-gmgo>${verb} now</button>` : `<button class="btn" data-gmre>Refresh location</button>`);
+df.insertAdjacentHTML('afterbegin', ok ? `<button class="btn pri big" data-gmgo>${verb} now</button>` : fld ? `<button class="btn pri big" id="fdGo">🚗 Start field duty & ${verb.toLowerCase()}</button>` : `<button class="btn" data-gmre>Refresh location</button>`);
 }
 { const _sa = stationAction; stationAction = async function (kind) {
 if (kind === 'punch' && phonePunch() && !S._gmPass) return geoPunchDlg();
@@ -5764,4 +5765,9 @@ setInterval(() => { if (!lch && S.me && !document.hidden) liveRender(); }, 60000
 setInterval(() => { if (S.me && !document.hidden && ['tasks', 'team', 'register', 'news', 'plan'].includes(S.view)) liveRender(); }, 15000);
 sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && lch) { try { sb.removeChannel(lch); } catch { } lch = null; } });
 }
+document.addEventListener('click', async e => { const b = e.target.closest('#fdGo'); if (!b) return; const p = ($('#fdPurp')?.value || '').trim();
+if (p.length < 3) { toast('Write where you are going', true); $('#fdPurp')?.focus(); return; }
+b.disabled = true; try { await rpc('go_field', { p_purpose: p }); S.fieldToday = { purpose: p }; const gm = document.createElement('button'); gm.setAttribute('data-gmgo', ''); gm.hidden = true; $('#dlg .df').append(gm); gm.click(); }
+catch (er) { b.disabled = false; toast(errMsg(er), true); } });
+{ const _rdd = regDayData; regDayData = async function (ds) { const rows = await _rdd(ds); try { const fd = await q(sb.from('field_days').select('employee_id,purpose').eq('day', ds)); const M = new Map((fd || []).map(x => [x.employee_id, x.purpose])); rows.forEach(r => { if (M.has(r.e.id)) r.place = '🚗 Field: ' + M.get(r.e.id) + (r.place ? ' · ' + r.place : ''); }); } catch { } return rows; }; }
 </script></body></html>
