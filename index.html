@@ -597,7 +597,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const EMAIL_DOMAIN = 'staff.aedenfruits.com';
 function tFetch(u, o = {}) { const url = String(u?.url || u), ms = /\/storage\/v1\//.test(url) ? 120000 : /\/functions\/v1\//.test(url) ? 40000 : 20000;
 { const m = String(o.method || 'GET').toUpperCase(), rd = url.match(/\/rpc\/([a-z_]+)/); if (m !== 'GET' && m !== 'HEAD' && /\/rest\/v1\//.test(url) && !(rd && typeof RPC_READ !== 'undefined' && RPC_READ.has(rd[1]))) QC.lastWrite = Date.now(); }
-if (o.signal || /\/auth\/v1\//.test(url)) return fetch(u, o); const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
+if (o.signal) return fetch(u, o); if (/\/auth\/v1\//.test(url)) { const ac2 = new AbortController(), t2 = setTimeout(() => ac2.abort(), 45000); return fetch(u, { ...o, signal: ac2.signal }).finally(() => clearTimeout(t2)); } const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
 return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); }
 const authFresh = (() => { let p = null, last = 0; return () => { if (p) return p; if (Date.now() - last < 20000) return Promise.resolve(); p = sb.auth.getSession().catch(() => { }).finally(() => { last = Date.now(); p = null; }); return p; }; })();
 const sbLock = (() => { const q = {}; return async (name, _t, fn) => { const prev = q[name] || Promise.resolve(); let rel; const cur = new Promise(r => rel = r); q[name] = prev.then(() => cur);
@@ -634,7 +634,8 @@ function toast(t, bad) { const el = $('#toast'); el.textContent = t; el.classNam
 const lsGet = (k, d) => { try { const v = localStorage.getItem('orbis.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem('orbis.' + k, JSON.stringify(v)); } catch { } };
 const RPC_READ = new Set(['my_ip', 'my_team', 'off_this_week', 'my_access', 'me', 'leaderboard', 'push_public_key', 'needs_setup', 'device_public', 'device_info', 'poll_results', 'plan_visible', 'pw_changed', 'approval_chain', 'flow_chain', 'can_see', 'is_admin', 'in_team', 'team_ids', 'station_check', 'chain_step']);
-async function rpc(fn, args) { if (!RPC_READ.has(fn)) QC.lastWrite = Date.now(); const { data, error } = await sb.rpc(fn, args || {}); if (error) throw error; return data; }
+async function rpc(fn, args) { if (!RPC_READ.has(fn)) { QC.lastWrite = Date.now(); const { data, error } = await sb.rpc(fn, args || {}); if (error) throw error; return data; }
+const b = sb.rpc(fn, args || {}); return q({ method: 'GET', url: 'rpc:' + fn + ':' + JSON.stringify(args || {}), then: (r, j) => b.then(r, j) }); }
 /* ---- fast on slow internet: saved copy of what this phone already loaded ----
 fast network → fresh data as always; slow (>1.2 s) or offline → saved copy instantly, fresh data swapped in when it arrives;
 right after any change (check-in, leave, approval…) → always wait for fresh data for 20 s */
@@ -659,7 +660,7 @@ const isGet = p && p.method === 'GET' && p.url && S.me;
 if (!isGet) { const { data, error } = await p; if (p && p.method && p.method !== 'GET') QC.lastWrite = Date.now(); if (error) throw error; return data; }
 const key = qcKey(String(p.url)), cached = Date.now() - QC.lastWrite > 20000 ? qcGet(key) : null;
 const net = (async () => { const { data, error } = await p; if (error) throw error; qcSet(key, data); return data; })();
-if (!cached) return net;
+if (!cached) return Promise.race([net, new Promise((_, no) => setTimeout(() => no(new Error('Request timed out')), 20000))]);
 const fast = net.then(d => ({ d }), e => ({ e }));
 const r = await Promise.race([fast, new Promise(res => setTimeout(() => res(null), 1200))]);
 if (r) { if (r.e) { if (qcNetErr(r.e)) { qcPill(true); return cached.d; } throw r.e; } return r.d; }
@@ -5350,7 +5351,7 @@ addEventListener('focus', () => freshen()); addEventListener('pageshow', () => f
 setInterval(() => { if (S.view === 'punch') freshen(true); }, 120000); }
 { let ch = null, tMe = 0, tTeam = 0;
 const reRender = async () => { if (document.querySelector('dialog[open]')) return; const y = scrollY; await render(); scrollTo(0, y); };
-const onChange = p => { const emp = (p.new || p.old || {}).employee_id; if (!S.me) return; try { QC.lastWrite = Date.now(); } catch { }
+const onChange = p => { const emp = (p.new || p.old || {}).employee_id; if (!S.me) return;
 if (emp === S.me.id) { clearTimeout(tMe); tMe = setTimeout(async () => { try { await loadToday(); if (['punch', 'my', 'register', 'regularise', 'fix'].includes(S.view)) reRender(); } catch { } }, 350); }
 else if (['team', 'insights', 'register'].includes(S.view)) { clearTimeout(tTeam); tTeam = setTimeout(reRender, 1500); } };
 const rtStart = () => { if (ch || !S.me || !S.session || !sb.channel) return;
@@ -5706,7 +5707,7 @@ const u = a.dataset.u, hs = u.includes('#') ? u.slice(u.indexOf('#') + 1) : ''; 
 if (e.target.closest('[data-nfall]')) { const t = new Date().toISOString(); (S.nf || []).forEach(n => { if (!n.read_at) n.read_at = t; }); try { await q(sb.from('notifications').update({ read_at: t }).eq('employee_id', S.me.id).is('read_at', null)); } catch { } render(); return; }
 if (e.target.closest('[data-nfmore]')) { S.nfAll = !S.nfAll; render(); } });
 let nch = null; const nfRt = () => { if (nch || !S.me || !S.session || !sb.channel) return;
-try { nch = sb.channel('orbis-nf-' + S.me.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `employee_id=eq.${S.me.id}` }, async () => { try { QC.lastWrite = Date.now(); } catch { } await nfLoad(); if (S.view === 'news' && !document.querySelector('dialog[open]')) { const y = scrollY; await render(); scrollTo(0, y); } }).subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(nch); } catch { } nch = null; setTimeout(nfRt, 15000); } }); } catch { nch = null; } };
+try { nch = sb.channel('orbis-nf-' + S.me.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `employee_id=eq.${S.me.id}` }, async () => { await nfLoad(); if (S.view === 'news' && !document.querySelector('dialog[open]')) { const y = scrollY; await render(); scrollTo(0, y); } }).subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(nch); } catch { } nch = null; setTimeout(nfRt, 15000); } }); } catch { nch = null; } };
 const _rrNf = render; render = async function () { const r = await _rrNf.apply(this, arguments); nfRt(); return r; };
 sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && nch) { try { sb.removeChannel(nch); } catch { } nch = null; } });
 }
@@ -5756,12 +5757,12 @@ catch (er) { b.disabled = false; toast(errMsg(er), true); } });
 { const LIVE_T = ['tasks', 'task_comments', 'leave_requests', 'announcements', 'announcement_reads', 'work_plans', 'plan_reviews', 'extra_breaks', 'employees', 'wishes', 'appraisals', 'tickets', 'ticket_msgs', 'polls', 'poll_votes', 'advances', 'holidays', 'app_settings', 'punch_fixes', 'attendance', 'breaks'];
 let lch = null, tmr = 0, pend = false, hidden = false;
 const busy = () => !!document.querySelector('dialog[open]') || !!document.activeElement?.matches?.('input,textarea,select,[contenteditable]') || S.busy || S.brPick;
-async function liveRender() { if (!S.me || document.hidden) { pend = true; return; } if (busy()) { pend = true; return; } try { await authFresh(); } catch { }
-pend = false; try { QC.lastWrite = Date.now(); } catch { }
+let lastLive = 0; async function liveRender() { if (!S.me || document.hidden) { pend = true; return; } if (Date.now() - lastLive < 5000) { clearTimeout(liveRender.t); liveRender.t = setTimeout(liveRender, 5000 - (Date.now() - lastLive)); return; } lastLive = Date.now(); if (busy()) { pend = true; return; } try { await authFresh(); } catch { }
+pend = false;
 try { if (typeof refreshBadges === 'function') refreshBadges(); } catch { }
 if (['games'].includes(S.view)) return; const y = scrollY; try { await render(); scrollTo(0, y); } catch { } }
 const kick = p => { const t = p?.table; if (t === 'employees' || t === 'app_settings' || t === 'holidays') { S.coreStale = true; }
-clearTimeout(tmr); tmr = setTimeout(async () => { if (S.coreStale && !busy()) { S.coreStale = false; try { QC.lastWrite = Date.now(); await loadCore(); } catch { } } liveRender(); }, 1200); };
+clearTimeout(tmr); tmr = setTimeout(async () => { if (S.coreStale && !busy()) { S.coreStale = false; try { await loadCore(); } catch { } } liveRender(); }, 1200); };
 const liveRt = () => { if (lch || !S.me || !S.session || !sb.channel) return;
 try { let c = sb.channel('orbis-all-' + S.me.id); LIVE_T.forEach(t => { c = c.on('postgres_changes', { event: '*', schema: 'public', table: t }, kick); });
 const me = c; lch = c; c.subscribe(st => { if ((st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') && lch === me) { lch = null; setTimeout(() => { try { sb.removeChannel(me); } catch { } }, 0); setTimeout(liveRt, 10000); } }); } catch { lch = null; } };
