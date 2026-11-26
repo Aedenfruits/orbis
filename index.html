@@ -4068,6 +4068,12 @@ if (r.sid !== mine) { const k = sessKind(); lsSet(sessKey(), ''); await signOut(
 const _bootSess = boot; boot = async function () { const r = await _bootSess.apply(this, arguments); sessClaim(); return r; };
 setInterval(() => { if (document.visibilityState === 'visible') sessCheck(); }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sessCheck(); });
+{ const u = new URL(location.href), hs = location.hash;
+if (u.searchParams.has('n')) { u.searchParams.delete('n'); history.replaceState(null, '', u.pathname + u.search + hs); }
+else if (hs && hs !== '#punch' && !/access_token|type=|error|code=/.test(hs)) history.replaceState(null, '', u.pathname + u.search + '#punch'); }
+{ let hidAt = 0; document.addEventListener('visibilitychange', () => {
+if (document.visibilityState === 'hidden') { hidAt = Date.now(); return; }
+if (hidAt && Date.now() - hidAt > 10 * 60000 && S.me && S.view !== 'punch' && !document.querySelector('dialog[open], .dlg.open, .ovl')) location.hash = 'punch'; hidAt = 0; }); }
 boot();
 {
 const _sa = stationAction;

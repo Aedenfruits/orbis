@@ -1,4 +1,4 @@
-const C = 'orbis-v77'; let pending = false;
+const C = 'orbis-v78'; let pending = false;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-s-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { let had = false; for (const k of await caches.keys()) if (k !== C) { had = true; await caches.delete(k); } await self.clients.claim();
   /* an older version was running: reload open windows once so they show the newest ORBIS */
@@ -36,7 +36,7 @@ self.addEventListener('push', e => {
   e.waitUntil(self.registration.showNotification(d.title || 'ORBIS', { body: d.body || '', icon: '/icon-orbis-s-192.png', badge: '/icon-orbis-192.png', tag: d.tag || undefined, renotify: !!d.tag, data: { url: d.url || '/#punch' }, vibrate: [120, 60, 120] }));
 });
 self.addEventListener('notificationclick', e => {
-  e.notification.close(); const url = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin).href;
+  e.notification.close(); const U = new URL((e.notification.data && e.notification.data.url) || '/', self.location.origin); U.searchParams.set('n', '1'); const url = U.href;
   e.waitUntil((async () => {
     const all = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const c of all) if (c.url.startsWith(self.location.origin)) { await c.focus(); try { await c.navigate(url); } catch { } return; }
