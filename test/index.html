@@ -546,7 +546,10 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .rdt td,.rdt th{white-space:nowrap}.rdt tr.rdd td{background:#f4f6fb;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#667}
 .rst{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12.5px;font-weight:700}
 .rst.grn{background:#e9f8ee;color:#15803d}.rst.amb{background:#fff4e0;color:#b45309}.rst.pur{background:#f1ebff;color:#6d28d9}.rst.blu{background:#e8f0ff;color:#1d4ed8}.rst.red{background:#fdecf1;color:#be123c}.rst.mut{background:#eef0f5;color:#667}
-.rdnav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.rdnav .rdin{width:150px}.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
+.rdnav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.rdnav .rdin{width:150px}.tp12{display:flex;align-items:center;gap:4px}.tp12 select{flex:1;min-width:0;padding-left:8px;padding-right:4px}.tp12 b{color:var(--mut,#888)}
+.wp .wpt{width:auto;min-width:66px;white-space:nowrap}@media(max-width:640px){.wpadd .grid3{grid-template-columns:1fr 1fr}.wpadd .grid3 label.grow{grid-column:1/-1}.wpadd .grid3 label:not(.grow){grid-column:1/-1}}
+.wp .wpm{flex:1;min-width:0;overflow-wrap:anywhere}@media(max-width:640px){.wp select[data-wst]{max-width:118px}}
+.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -1014,6 +1017,14 @@ if (S.cert && isSick(typ)) { row.cert_path = await certUpload(id); row.cert_chec
 await q(sb.from('leave_requests').insert(row)); S.cert = null; toast('Leave request sent'); render(); } catch (e) { btn.disabled = false; toast(errMsg(e), true); } };
 }
 document.addEventListener('click', async e => { const b = e.target.closest('[data-lcancel]'); if (!b) return; try { await rpc('cancel_leave', { p_id: b.dataset.lcancel }); toast('Request cancelled'); render(); } catch (er) { toast(errMsg(er), true); } });
+const t12 = v => { if (!v || !/^\d{1,2}:\d{2}/.test(v)) return esc(v || ''); let [H, M] = v.split(':').map(Number); H = H % 24; return `${H % 12 || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`; };
+function tp12(id, v) { let [H, M] = (v || '09:00').split(':').map(Number); H = (H || 0) % 24; M = M || 0; const h = H % 12 || 12, ap = H < 12 ? 'AM' : 'PM';
+const ms = [...new Set([...Array(12).keys()].map(i => i * 5).concat(M))].sort((x, y) => x - y);
+return `<span class="tp12" data-tpfor="${id}"><input type="hidden" id="${id}" value="${pad(H)}:${pad(M)}"><select data-tp="h" aria-label="Hour">${[...Array(12)].map((_, i) => i + 1).map(x => `<option ${x === h ? 'selected' : ''}>${x}</option>`).join('')}</select><b>:</b><select data-tp="m" aria-label="Minutes">${ms.map(x => `<option value="${x}" ${x === M ? 'selected' : ''}>${pad(x)}</option>`).join('')}</select><select data-tp="ap" aria-label="AM or PM"><option ${ap === 'AM' ? 'selected' : ''}>AM</option><option ${ap === 'PM' ? 'selected' : ''}>PM</option></select></span>`; }
+function tpSet(id, v) { const w = document.querySelector(`[data-tpfor="${id}"]`); if (w) w.outerHTML = tp12(id, v); }
+document.addEventListener('change', e => { const s = e.target.closest('[data-tp]'); if (!s) return; const w = s.closest('.tp12'); const g = k => w.querySelector(`[data-tp="${k}"]`).value;
+let H = Number(g('h')) % 12; if (g('ap') === 'PM') H += 12; const v = `${pad(H)}:${pad(Number(g('m')))}`; const id = w.dataset.tpfor; document.getElementById(id).value = v;
+if (id === 'wp_f') { const to = $('#wp_t'); if (to && to.value <= v) tpSet('wp_t', addMinHM(v, 60)); } });
 const WST = { plan: ['Planned', '', '🗓'], on: ['Ongoing', 'warn', '🔄'], done: ['Done', 'good', '✅'], not: ['Not done', 'crit', '❌'] };
 async function getPlan(emp, day) { const r = await q(sb.from('work_plans').select('*').eq('employee_id', emp).eq('day', day).maybeSingle()); return (r?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); }
 const planQ = { n: 0, p: {} };
@@ -1024,7 +1035,7 @@ const job = prev.catch(() => { }).then(() => q(sb.from('work_plans').upsert({ em
 planQ.p[day] = job; try { await job; } finally { planQ.n--; }
 }
 const planIdle = () => !planQ.n;
-function planRow(it, ed, day) { const [t, c, ic] = WST[it.st || 'plan']; return `<div class="wp st-${it.st || 'plan'} ${it.urgent ? 'urg' : ''}"><div class="wpt"><b>${esc(it.from)}</b><small>${esc(it.to)}</small></div><div class="wpm"><div>${it.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(it.task)}</div>${it.note ? `<small>📝 ${esc(it.note)}</small>` : ''}${it.carry ? '<small>↪ carried from yesterday</small>' : ''}</div>
+function planRow(it, ed, day) { const [t, c, ic] = WST[it.st || 'plan']; return `<div class="wp st-${it.st || 'plan'} ${it.urgent ? 'urg' : ''}"><div class="wpt"><b>${t12(it.from)}</b><small>${t12(it.to)}</small></div><div class="wpm"><div>${it.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(it.task)}</div>${it.note ? `<small>📝 ${esc(it.note)}</small>` : ''}${it.carry ? '<small>↪ carried from yesterday</small>' : ''}</div>
 ${ed ? `<select data-wst="${it.id}" data-d="${day}">${Object.entries(WST).map(([k, v]) => `<option value="${k}" ${(it.st || 'plan') === k ? 'selected' : ''}>${v[2]} ${v[0]}</option>`).join('')}</select><button class="btn sm" data-wdel="${it.id}" data-d="${day}">✕</button>` : `<span class="chip ${c}">${ic} ${t}</span>`}</div>`; }
 const planSum = it => { const m = it.reduce((s, i) => s + Math.max(0, toMin(i.to) - toMin(i.from)), 0); return `<span class="small muted">${it.length} tasks · ${hmm(m)} · ✅ ${it.filter(x => x.st === 'done').length} · 🔄 ${it.filter(x => x.st === 'on').length} · ❌ ${it.filter(x => x.st === 'not').length}</span>`; };
 const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
@@ -1036,7 +1047,7 @@ afterFns.push(() => { const k = $('#wp_k'); if (k) k.onkeydown = e => { if (e.ke
 return `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</span><h2>Today · ${fmtD(t)}</h2><p class="small muted">Seen only by you, your department head / managers and the MD.</p></div>
 ${iy.length ? `<div class="card"><div class="row"><h3>Yesterday — update status</h3>${planSum(iy)}</div><div class="stack" style="gap:6px">${iy.map(i => planRow(i, true, y)).join('')}</div>${open.length ? `<div class="right"><button class="btn sm" id="wp_carry">↪ Move ${open.length} unfinished to today</button></div>` : ''}</div>` : ''}
 <div class="card"><div class="row"><h3>Today's plan</h3>${it.length ? planSum(it) : ''}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, true, t)).join('')}</div>` : '<p class="small muted">No tasks yet — plan your day hour by hour.</p>'}
-<div class="wpadd"><div class="grid3"><label>From<input type="time" id="wp_f" value="${last}"></label><label>To<input type="time" id="wp_t" value="${addMinHM(last, 60)}"></label><label class="grow">Work<input id="wp_k" maxlength="140" placeholder="e.g. Bank entry"></label></div>
+<div class="wpadd"><div class="grid3"><label>From${tp12('wp_f', last)}</label><label>To${tp12('wp_t', addMinHM(last, 60))}</label><label class="grow">Work<input id="wp_k" maxlength="140" placeholder="e.g. Bank entry"></label></div>
 <div class="row"><label class="chk"><input type="checkbox" id="wp_u"> ⚡ Emergency / urgent work</label><button class="btn pri" id="wp_add">+ Add to plan</button></div></div></div>${rvc}</div>`;
 };
 document.addEventListener('click', async e => {
@@ -3980,7 +3991,7 @@ return { pend: pend.sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || a.
 const wpAge = n => n <= 0 ? 'today' : n === 1 ? 'since yesterday' : `${n} days pending`;
 const wpPendRow = (i, mine) => `<div class="wp st-${i.st || 'plan'} ${i.urgent ? 'urg' : ''}"><div class="wpt"><b>${fmtD(i.day).slice(0, -5)}</b><small class="${i.age >= 3 ? 'red' : ''}">${wpAge(i.age)}</small></div><div class="wpm"><div>${i.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(i.task)}</div><small>${WST[i.st || 'plan'][2]} ${WST[i.st || 'plan'][0]} · ${esc(i.from)}–${esc(i.to)}</small></div>
 ${mine ? `<div class="hstack">${i.age > 0 ? `<button class="btn sm" data-wpmv="${i.id}" data-d="${i.day}">↪ Today</button>` : ''}<button class="btn sm good" data-wpdn="${i.id}" data-d="${i.day}">✓ Done</button></div>` : ''}</div>`;
-const wpDoneList = L => { const by = {}; L.forEach(i => (by[i.day] = by[i.day] || []).push(i)); return Object.entries(by).map(([d, x]) => `<div class="grp">${d === todayStr() ? 'Today' : fmtD(d)} <span class="chip good">${x.length}</span></div><div class="stack" style="gap:4px">${x.map(i => `<div class="wpd">${ico('ok')}<span>${esc(i.task)}</span><small class="muted">${esc(i.from)}–${esc(i.to)}</small></div>`).join('')}</div>`).join(''); };
+const wpDoneList = L => { const by = {}; L.forEach(i => (by[i.day] = by[i.day] || []).push(i)); return Object.entries(by).map(([d, x]) => `<div class="grp">${d === todayStr() ? 'Today' : fmtD(d)} <span class="chip good">${x.length}</span></div><div class="stack" style="gap:4px">${x.map(i => `<div class="wpd">${ico('ok')}<span>${esc(i.task)}</span><small class="muted">${t12(i.from)}–${t12(i.to)}</small></div>`).join('')}</div>`).join(''); };
 const _planV2 = VIEWS.plan;
 VIEWS.plan = async () => {
 const t = todayStr(), tab = S.wpTab || 'today';
