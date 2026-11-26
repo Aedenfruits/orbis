@@ -2739,7 +2739,7 @@ async function pushTurnOn(b) {
 if (!pushOK()) return toast(isIOS() ? '📱 On iPhone: tap Share → Add to Home Screen, open ORBIS from the home screen, then turn on notifications.' : 'This browser can\'t show notifications. Use Chrome or Edge.', true);
 if (Notification.permission === 'denied') return toast('Notifications are blocked for aedenorbis.com. Allow them in your browser or phone settings, then try again.', true);
 if (b) b.disabled = true;
-try { const p = await pushSubscribe(true); if (p !== 'granted') return toast('Notifications stay off', true); const n = await pushTest(); toast(n ? '🔔 Notifications on — a test notification is on its way' : '🔔 Notifications on'); }
+try { const p = await pushSubscribe(true); if (p !== 'granted') return toast('Notifications stay off', true); let n = 0; try { n = await pushTest(); } catch { } toast(n ? '🔔 Notifications on — a test notification is on its way' : '🔔 Notifications on'); render?.(); }
 catch (er) { toast('Could not turn on notifications: ' + errMsg(er), true); } finally { if (b) b.disabled = false; }
 }
 function pushCard() {
