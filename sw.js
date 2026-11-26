@@ -1,8 +1,8 @@
-const C = 'orbis-v112'; let pending = false;
+const C = 'orbis-v113'; let pending = false;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-s-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { let had = false; for (const k of await caches.keys()) if (k !== C) { had = true; await caches.delete(k); } await self.clients.claim();
-  /* an older version was running: reload open windows once so they show the newest ORBIS */
-  if (had) for (const w of await self.clients.matchAll({ type: 'window' })) { try { await w.navigate(w.url); } catch { } } })()); });
+  /* an older version was running: tell open windows; the page refreshes quietly at a safe moment (no intro / welcome screen) */
+  if (had) for (const w of await self.clients.matchAll({ type: 'window' })) { try { w.postMessage({ orbis: 'update' }); } catch { } } })()); });
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return; const u = new URL(r.url);
   if (u.origin === location.origin && u.pathname.startsWith('/test')) return; /* the TEST copy is never cached */
