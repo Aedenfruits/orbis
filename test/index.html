@@ -5722,4 +5722,7 @@ const _rrPop = render; render = async function () { const r = await _rrPop.apply
 sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && pch) { try { sb.removeChannel(pch); } catch { } pch = null; } });
 window.__popShow = popShow;
 }
+{ const _pvX = VIEWS.punch; VIEWS.punch = async () => { const h = await _pvX();
+if (!S.me?.no_punch && S.today?.in_at && !S.today?.out_at) afterFns.push(() => { const pb = document.querySelector('.punch .pbb'); if (pb && !document.getElementById('xOpen')) pb.insertAdjacentHTML('afterend', '<button class="pbod" id="xOpen">⏱ Need more break time? Request extra break</button>'); });
+return h; }; }
 </script></body></html>
