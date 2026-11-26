@@ -551,6 +551,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .wp .wpm{flex:1;min-width:0;overflow-wrap:anywhere}@media(max-width:640px){.wp select[data-wst]{max-width:118px}}
 .regflt{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}.regflt label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted,#6b7280);min-width:180px;flex:0 1 220px}.regflt select{padding:9px 12px;border-radius:12px;border:1px solid var(--line,#e5e7eb);background:var(--surface,#fff);color:inherit;font:inherit;font-size:14px}
 .anh{display:flex;gap:12px;align-items:center;min-width:0}.anh>div:last-child{min-width:0}.anav{width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#1D2B53;color:#fff;font-weight:700;flex:0 0 auto}
+.nfl{display:flex;flex-direction:column;gap:6px;margin-top:6px}.nfi{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:14px;text-decoration:none;color:inherit;border:1px solid var(--line,#eee)}.nfi:hover{background:rgba(29,43,83,.04)}.nfi.un{background:#fff3f7;border-color:#f8c6d8}.nfi b{display:block;font-size:14px}.nfi small{display:block;color:var(--muted,#6b7280);font-size:12.5px;margin-top:2px}.nfx{font-size:20px;line-height:1.2}.nft{font-size:11.5px;color:var(--muted,#6b7280);white-space:nowrap}.nfi.un .nft{color:#e01664;font-weight:700}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -687,11 +688,12 @@ q(sb.from('app_settings').select('data').eq('id', 1).maybeSingle())
 ]);
 S.emps = emps || []; S.settings = set?.data || {};
 S.me = S.emps.find(e => e.auth_uid === uid) || null;
-if (S.me) { try { S.team = (await rpc('my_team')) || []; } catch { S.team = []; } S.team = S.team.filter(id => id && id !== S.me.id); }
-await loadHolidays();
-const tok = lsGet('device', null);
-S.device = null;
-if (tok) { try { const d = await rpc('device_info', { p_token: tok }); if (d) S.device = { ...d, token: tok }; } catch { } }
+const tok = lsGet('device', null); S.device = null;
+await Promise.all([
+S.me ? rpc('my_team').then(r => r || [], () => []).then(r => { S.team = r.filter(id => id && id !== S.me.id); }) : Promise.resolve(),
+loadHolidays(),
+tok ? rpc('device_info', { p_token: tok }).then(d => { if (d) S.device = { ...d, token: tok }; }, () => { }) : Promise.resolve()]);
+if (S.me) lsSet('meCache', { uid, me: { id: S.me.id, name: S.me.name, bday: S.me.bday || null, auth_uid: uid } });
 }
 async function loadToday() {
 if (!S.me) return;
@@ -719,6 +721,8 @@ async function boot() {
 const { data } = await sb.auth.getSession(); S.session = data.session;
 sb.auth.onAuthStateChange((_e, s) => { S.session = s; });
 if (!S.session) { await INTRO; return renderLogin(); }
+let early = null; { const mc = lsGet('meCache', null);
+if (mc && mc.uid === S.session.user.id && mc.me?.name && !S.splashed && !matchMedia('(prefers-reduced-motion: reduce)').matches) { S.splashed = true; S.me = mc.me; early = INTRO.then(() => splash()); } }
 try { await loadCore(); } catch (e) {
 const authBad = /JWT|No suitable key|wrong key type|invalid.*token|token.*expired|401|not authorized|refresh token/i.test(String(e?.message || e) + ' ' + (e?.code || '') + ' ' + (e?.status || ''));
 if (!authBad) return renderFatal(e);
@@ -729,9 +733,9 @@ let need = false; try { need = await rpc('needs_setup'); } catch { }
 if (need) return renderSetup();
 return renderFatal(new Error('Your login is not linked to an employee. Ask HR.'));
 }
-await INTRO;
-if (S.me.must_change_pw) await forcePw();
 const today = loadToday().catch(() => { });
+await INTRO; if (early) await early;
+if (S.me.must_change_pw) await forcePw();
 if (!S.splashed) { S.splashed = true; await Promise.race([today, new Promise(r => setTimeout(r, 1200))]); await splash(); }
 await Promise.race([today, new Promise(r => setTimeout(r, 1500))]);
 route(); flushQueue(); autoBackup(); startReminders(); refreshBadges();
