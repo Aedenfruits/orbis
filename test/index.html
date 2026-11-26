@@ -938,7 +938,7 @@ if (kind === 'punch' && PF() === 'phone' && !onMobile()) return toast('📱 Chec
 if (!ph && (!S.device || !tok)) return toast(noDevMsg(), true);
 S.busy = true;
 try {
-if (ph) { const g = await getGeo(true); if (!g) throw new Error(geoErr()); const r = await rpc('punch_phone', { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc }); celebrate(r.kind, r.at); }
+if (ph) { const g = await getGeo(true); if (!g) throw new Error(geoErr()); const pl = S._gmPlace || null; S._gmPlace = null; const r = await rpc('punch_phone', { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc, ...(pl ? { p_place: pl } : {}) }); celebrate(r.kind, r.at); }
 else if (kind === 'punch') { const gm = C().geo?.mode || 'off'; let g = gm !== 'off' && C().geo?.lat ? await getGeo(gm === 'block') : null; if (gm === 'block' && C().geo?.lat && !g) throw new Error(geoErr()); let r; try { r = await rpc('punch', { p_token: tok, ...(g ? { p_lat: g.lat, p_lng: g.lng, p_acc: g.acc } : {}) }); } catch (er) { if (g || !/Turn on location/i.test(errMsg(er))) throw er; try { const st = await q(sb.from('app_settings').select('data').eq('id', 1).single()); S.settings = st.data; } catch { } g = await getGeo(true); if (!g) throw new Error(geoErr()); r = await rpc('punch', { p_token: tok, p_lat: g.lat, p_lng: g.lng, p_acc: g.acc }); } celebrate(r.kind, r.at); }
 if (kind === 'bstart') { await rpc('break_start', { p_token: tok, p_kind: arg }); toast('☕ Break started — enjoy!'); }
 if (kind === 'bend') { await rpc('break_end', { p_token: tok }); toast('Welcome back! Work timer resumed.'); }
@@ -4886,8 +4886,8 @@ const w = $('#dlg .gmw'); if (!w) return; const df = $('#dlg .df');
 if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location yet. Make sure <b>Location</b> is ON, step near a window or outside, then tap <b>Try again</b>.' + (g.err === 2 ? ' <small>(Phone could not get a position)</small>' : g.err === 3 ? ' <small>(Timed out)</small>' : '')}</div>`;
 df.insertAdjacentHTML('afterbegin', `<button class="btn pri" data-gmre>Try again</button>`); return; }
 const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, inA = d - Math.min(g.acc || 0, 1500) <= rad, fld = !!S.me?.field_punch && !inA, ok = inA || (fld && !!S.fieldToday);
-w.innerHTML = gmMap(o, g, ok) + (fld && S.fieldToday ? `<div class="gmst ok"><b>🚗 Field duty today — you can ${verb.toLowerCase()} from here</b>${esc(S.fieldToday.purpose)} · about ${gmFmt(d)} from the office. Your location is saved and shown to HR.</div>`
-: fld ? `<div class="gmst"><b>🚗 Going out for work today?</b>You are about ${gmFmt(d)} from the office. Write where you are going — your manager and HR will see it with your location.<input id="fdPurp" maxlength="120" placeholder="e.g. Customer visit – Lulu Kochi / Bank – Axis Edappally" style="margin-top:8px;width:100%"></div>` : ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
+w.innerHTML = gmMap(o, g, ok) + (fld && S.fieldToday ? `<div class="gmst ok"><b>🚗 Field duty today — you can ${verb.toLowerCase()} from here</b>${esc(S.fieldToday.purpose)} · about ${gmFmt(d)} from the office. Your location is saved and shown to HR.<label style="display:block;margin-top:10px;font-weight:600">📍 Where are you now? <span style="color:#e01664">*</span><input id="fdPlace" maxlength="120" placeholder="Type the place — e.g. Lulu Mall, Edappally" style="margin-top:6px;width:100%;font-weight:400"></label></div>`
+: fld ? `<div class="gmst"><b>🚗 Going out for work today?</b>You are about ${gmFmt(d)} from the office. Write where you are going — your manager and HR will see it with your location.<label style="display:block;margin-top:8px;font-weight:600">Purpose <span style="color:#e01664">*</span><input id="fdPurp" maxlength="120" placeholder="e.g. Customer visit / Bank / Port" style="margin-top:6px;width:100%;font-weight:400"></label><label style="display:block;margin-top:10px;font-weight:600">📍 Where are you now? <span style="color:#e01664">*</span><input id="fdPlace" maxlength="120" placeholder="Type the place — e.g. Lulu Mall, Edappally" style="margin-top:6px;width:100%;font-weight:400"></label></div>` : ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
 : `<div class="gmst bad"><b>You are not at the office</b>You are about <b>${gmFmt(d)}</b> away. Please go to the office to ${verb.toLowerCase()}.<small>On duty outside today? Use <b>On duty</b> instead.</small></div>`) + (g.acc > 80 ? `<div class="gmacc">GPS accuracy ±${gmFmt(g.acc)} — step near a window or outside for a better fix.</div>` : '');
 S._gmG = g;
 df.insertAdjacentHTML('afterbegin', ok ? `<button class="btn pri big" data-gmgo>${verb} now</button>` : fld ? `<button class="btn pri big" id="fdGo">🚗 Start field duty & ${verb.toLowerCase()}</button>` : `<button class="btn" data-gmre>Refresh location</button>`);
@@ -4898,6 +4898,7 @@ return _sa.apply(this, arguments); };
 const _gg = getGeo; getGeo = function (show) { if (S._gmPre) { const g = S._gmPre; S._gmPre = null; return Promise.resolve(g); } return _gg.apply(this, arguments); };
 document.addEventListener('click', async e => { const t = e.target.closest('[data-gmgo],[data-gmre]'); if (!t) return;
 if (t.hasAttribute('data-gmre')) { $('#dlg .df [data-gmre]')?.remove(); return geoPunchDlg(); }
+const plEl = $('#fdPlace'); if (plEl) { const pv = plEl.value.trim(); if (pv.length < 3) { toast('Type the place where you are now', true); plEl.focus(); return; } S._gmPlace = pv; }
 S._gmPre = S._gmG; S._gmPass = true; closeDlg(); try { await stationAction('punch'); } finally { S._gmPass = false; S._gmPre = null; } }); }
 const IS_TEST = () => location.pathname.startsWith('/test');
 { const me = MGROUPS.find(g => g[0] === 'Me'); if (me && !me[1].includes('games')) { const i = me[1].indexOf('board'); me[1].splice(i >= 0 ? i + 1 : me[1].length, 0, 'games'); } }
@@ -5594,6 +5595,7 @@ if (ds > todayStr()) return { k: 'f', t: '—', c: 'mut' };
 return { k: 'a', t: ds === todayStr() ? 'Not checked in' : 'Absent', c: 'red' };
 }
 const geoFld = g => { if (!g || !g.lat || !(g.field || (g.dist > 300))) return ''; const km = g.dist >= 1000 ? (g.dist / 1000).toFixed(1) + ' km' : Math.round(g.dist) + ' m';
+if (g.place) return `<a class="geot" data-gd="1" href="https://www.google.com/maps?q=${g.lat},${g.lng}" target="_blank" rel="noopener" title="Open in Google Maps">📍 ${esc(g.place)} <span class="muted">· ${km} away</span></a>`;
 return `<a class="geot" data-gl="${g.lat},${g.lng}" data-gk="${km} away" href="https://www.google.com/maps?q=${g.lat},${g.lng}" target="_blank" rel="noopener" title="Open in Google Maps">📍 ${km} away</a>`; };
 const regFilt = e => (!S.regDeptF || (e.dept || 'Other') === S.regDeptF) && (!S.regLocF || (e.office || '') === S.regLocF);
 const regFiltBar = () => { const act = S.emps.filter(e => e.active), dp = [...new Set(act.map(e => e.dept || 'Other'))].sort(), lc = [...new Set(act.map(e => e.office).filter(Boolean))].sort();
@@ -5766,7 +5768,8 @@ setInterval(() => { if (S.me && !document.hidden && ['tasks', 'team', 'register'
 sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && lch) { try { sb.removeChannel(lch); } catch { } lch = null; } });
 }
 document.addEventListener('click', async e => { const b = e.target.closest('#fdGo'); if (!b) return; const p = ($('#fdPurp')?.value || '').trim();
-if (p.length < 3) { toast('Write where you are going', true); $('#fdPurp')?.focus(); return; }
+if (p.length < 3) { toast('Write the purpose', true); $('#fdPurp')?.focus(); return; }
+if (($('#fdPlace')?.value || '').trim().length < 3) { toast('Type the place where you are now', true); $('#fdPlace')?.focus(); return; }
 b.disabled = true; try { const gg = S._gmG || {}; await rpc('go_field', { p_purpose: p, p_lat: gg.lat ?? null, p_lng: gg.lng ?? null, p_acc: gg.acc ?? null }); S.fieldToday = { purpose: p }; const gm = document.createElement('button'); gm.setAttribute('data-gmgo', ''); gm.hidden = true; $('#dlg .df').append(gm); gm.click(); }
 catch (er) { b.disabled = false; toast(errMsg(er), true); } });
 { const _rdd = regDayData; regDayData = async function (ds) { const rows = await _rdd(ds); try { const fd = await q(sb.from('field_days').select('employee_id,purpose,lat,lng,created_at').eq('day', ds)); const M = new Map((fd || []).map(x => [x.employee_id, x])); rows.forEach(r => { const x = M.get(r.e.id); if (x) { r.place = '🚗 Field: ' + x.purpose + ' · from ' + hm(x.created_at) + (r.place ? ' · ' + r.place : ''); r.fdLoc = x.lat ? `https://www.google.com/maps?q=${x.lat},${x.lng}` : ''; } }); } catch { } return rows; }; }
