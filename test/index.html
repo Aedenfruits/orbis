@@ -717,8 +717,7 @@ return renderFatal(new Error('Your login is not linked to an employee. Ask HR.')
 await INTRO;
 if (S.me.must_change_pw) await forcePw();
 const today = loadToday().catch(() => { });
-if (!S.splashed) { S.splashed = true; const dd = new Date().toDateString(); let seenToday = false; try { seenToday = localStorage.getItem('orbis.splashDay') === dd + '|' + S.me?.id; localStorage.setItem('orbis.splashDay', dd + '|' + S.me?.id); } catch { }
-if (!seenToday) { await Promise.race([today, new Promise(r => setTimeout(r, 1200))]); await splash(); } }
+if (!S.splashed) { S.splashed = true; await Promise.race([today, new Promise(r => setTimeout(r, 1200))]); await splash(); }
 await Promise.race([today, new Promise(r => setTimeout(r, 1500))]);
 route(); flushQueue(); autoBackup(); startReminders(); refreshBadges();
 }
