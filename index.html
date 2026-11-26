@@ -558,7 +558,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .rbk.over{display:inline-block;padding:3px 10px;border-radius:99px;background:#ffe4ea;color:#c8103e;font-weight:700}
 #nfpops{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 14px);z-index:2147482000;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 24px))}.nfpop{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:13px 14px;border-radius:18px;border:1px solid rgba(224,22,100,.25);background:#fff;color:#1d1b2e;font:inherit;box-shadow:0 14px 40px rgba(29,43,83,.25);cursor:pointer;animation:nfpIn .35s cubic-bezier(.2,.9,.3,1.2)}.nfpop.out{opacity:0;transform:translateY(-10px);transition:.3s}.nfpi{font-size:22px;line-height:1.1}.nfpt{flex:1;min-width:0}.nfpt b{display:block;font-size:14.5px}.nfpt small{display:block;color:#6b7280;font-size:12.5px;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.nfpx{color:#9ca3af;font-size:13px;padding:2px 4px}@keyframes nfpIn{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}@media(max-width:640px){#nfpops{left:12px;right:12px;width:auto}}
 .tkrd{font-weight:600}.tkrd.ok{color:#15803d}.tkrd.no{color:#c2410c}
-.geot{display:block;font-size:11.5px;color:#2563eb;text-decoration:none;white-space:nowrap;margin-top:2px}.geot:hover{text-decoration:underline}
+.geot{display:block;font-size:11.5px;color:#2563eb;text-decoration:none;margin-top:2px;max-width:220px;line-height:1.3}.geot:hover{text-decoration:underline}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -5594,7 +5594,7 @@ if (ds > todayStr()) return { k: 'f', t: '—', c: 'mut' };
 return { k: 'a', t: ds === todayStr() ? 'Not checked in' : 'Absent', c: 'red' };
 }
 const geoFld = g => { if (!g || !g.lat || !(g.field || (g.dist > 300))) return ''; const km = g.dist >= 1000 ? (g.dist / 1000).toFixed(1) + ' km' : Math.round(g.dist) + ' m';
-return `<a class="geot" href="https://www.google.com/maps?q=${g.lat},${g.lng}" target="_blank" rel="noopener" title="Open in Google Maps">📍 ${km} away</a>`; };
+return `<a class="geot" data-gl="${g.lat},${g.lng}" data-gk="${km} away" href="https://www.google.com/maps?q=${g.lat},${g.lng}" target="_blank" rel="noopener" title="Open in Google Maps">📍 ${km} away</a>`; };
 const regFilt = e => (!S.regDeptF || (e.dept || 'Other') === S.regDeptF) && (!S.regLocF || (e.office || '') === S.regLocF);
 const regFiltBar = () => { const act = S.emps.filter(e => e.active), dp = [...new Set(act.map(e => e.dept || 'Other'))].sort(), lc = [...new Set(act.map(e => e.office).filter(Boolean))].sort();
 return `<div class="regflt"><label><span>Department</span><select id="regDeptF"><option value="">All departments</option>${dp.map(d => `<option ${S.regDeptF === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label><label><span>Location</span><select id="regLocF"><option value="">All locations</option>${lc.map(d => `<option ${S.regLocF === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>${S.regDeptF || S.regLocF ? '<button class="btn sm" id="regFClr">✕ Clear</button>' : ''}</div>`; };
@@ -5630,7 +5630,7 @@ ${regFiltBar()}<div class="rdbox">${boxes.map(([k, t, n, c]) => `<button class="
 ${show.map(r => { const dh = r.e.dept !== lastDept ? `<tr class="rdd"><td colspan="7">${esc(r.e.dept || 'Other')}</td></tr>` : ''; lastDept = r.e.dept;
 return `${dh}<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.code)}${r.e.desig ? ' · ' + esc(r.e.desig) : ''}</div></div></div></td>
 <td>${(() => { const s = shiftOf(r.e, ds); return s ? `<b class="rsh">${esc(s.name)}</b><div class="small muted">${brT12(s.start)} – ${brT12(s.end)}${r.e.shift_locked ? ' · 🔒' : ''}</div>` : '—'; })()}</td>
-<td><span class="rst ${r.st.c}">${esc(r.st.t)}</span>${r.place ? `<div class="small muted">${esc(r.place)}</div>` : ''}${r.fdLoc ? `<a class="geot" href="${r.fdLoc}" target="_blank" rel="noopener">📍 Where they started</a>` : ''}</td>
+<td><span class="rst ${r.st.c}">${esc(r.st.t)}</span>${r.place ? `<div class="small muted">${esc(r.place)}</div>` : ''}${r.fdLoc ? `<a class="geot" data-gl="${r.fdLoc.split('q=')[1]}" data-gk="started here" href="${r.fdLoc}" target="_blank" rel="noopener">📍 Where they started</a>` : ''}</td>
 <td>${r.a?.in_at ? hm(r.a.in_at) + geoFld(r.a.in_geo) : '—'}</td><td>${r.a?.out_at ? hm(r.a.out_at) + geoFld(r.a.out_geo) : r.a?.in_at ? '<span class="small muted">working</span>' : '—'}</td>
 <td>${r.bm ? `<span class="rbk ${r.bm > brCfg().reduce((s, b) => s + b.min, 0) ? 'over' : ''}">${r.bm >= 60 ? `${Math.floor(r.bm / 60)}h ${r.bm % 60}m` : r.bm + ' min'}</span>` : '—'}</td><td>${r.a?.in_at ? hmz(r.wk) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Nobody in this list.</td></tr>'}
 </tbody></table></div><p class="small muted">Tap a box to filter. Orange = late (after shift start + grace). ${fmtD(ds)}.</p></div>`;
@@ -5770,4 +5770,14 @@ if (p.length < 3) { toast('Write where you are going', true); $('#fdPurp')?.focu
 b.disabled = true; try { const gg = S._gmG || {}; await rpc('go_field', { p_purpose: p, p_lat: gg.lat ?? null, p_lng: gg.lng ?? null, p_acc: gg.acc ?? null }); S.fieldToday = { purpose: p }; const gm = document.createElement('button'); gm.setAttribute('data-gmgo', ''); gm.hidden = true; $('#dlg .df').append(gm); gm.click(); }
 catch (er) { b.disabled = false; toast(errMsg(er), true); } });
 { const _rdd = regDayData; regDayData = async function (ds) { const rows = await _rdd(ds); try { const fd = await q(sb.from('field_days').select('employee_id,purpose,lat,lng,created_at').eq('day', ds)); const M = new Map((fd || []).map(x => [x.employee_id, x])); rows.forEach(r => { const x = M.get(r.e.id); if (x) { r.place = '🚗 Field: ' + x.purpose + ' · from ' + hm(x.created_at) + (r.place ? ' · ' + r.place : ''); r.fdLoc = x.lat ? `https://www.google.com/maps?q=${x.lat},${x.lng}` : ''; } }); } catch { } return rows; }; }
+{ const GN = lsGet('geoNames', {}); let busy = false;
+async function fillGeoNames() { if (busy) return; const els = [...document.querySelectorAll('a[data-gl]:not([data-gd])')]; if (!els.length) return; busy = true;
+try { for (const el of els) { const [la, lo] = el.dataset.gl.split(',').map(Number); if (!isFinite(la)) continue; const key = la.toFixed(3) + ',' + lo.toFixed(3);
+let nm = GN[key]; if (nm === undefined) { try { const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&lat=${la}&lon=${lo}&accept-language=en`, { headers: { Accept: 'application/json' } }); const j = await r.json(); const ad = j.address || {};
+nm = [ad.road || ad.neighbourhood || ad.suburb || ad.village, ad.suburb && ad.road ? ad.suburb : null, ad.city || ad.town || ad.county].filter(Boolean).filter((x, i, A) => A.indexOf(x) === i).slice(0, 3).join(', ') || (j.display_name || '').split(',').slice(0, 3).join(','); } catch { nm = ''; }
+GN[key] = nm; lsSet('geoNames', GN); await new Promise(z => setTimeout(z, 1100)); }
+el.dataset.gd = '1'; if (nm) el.innerHTML = `📍 ${esc(nm)} <span class="muted">· ${esc(el.dataset.gk || '')}</span>`; } }
+finally { busy = false; } if (document.querySelector('a[data-gl]:not([data-gd])')) setTimeout(fillGeoNames, 500); }
+const _rrG = render; render = async function () { const r = await _rrG.apply(this, arguments); setTimeout(fillGeoNames, 300); return r; };
+}
 </script></body></html>
