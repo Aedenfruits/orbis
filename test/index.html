@@ -536,7 +536,17 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .mdpad button.j{width:120px;background:#e0115f;font-size:20px}
 .mdpad button.on{filter:brightness(1.3);transform:scale(.95)}
 @media(hover:hover) and (pointer:fine){.mdpad{display:none}}
-#qcPill{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:99999;background:#1e2a5a;color:#fff;font:600 12.5px DM Sans,system-ui;padding:7px 14px;border-radius:99px;box-shadow:0 6px 18px rgba(0,0,0,.25);white-space:nowrap;pointer-events:none;animation:qcin .25s}@keyframes qcin{from{opacity:0;transform:translate(-50%,-6px)}}.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
+#qcPill{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);transform:translateX(-50%);z-index:99999;background:#1e2a5a;color:#fff;font:600 12.5px DM Sans,system-ui;padding:7px 14px;border-radius:99px;box-shadow:0 6px 18px rgba(0,0,0,.25);white-space:nowrap;pointer-events:none;animation:qcin .25s}@keyframes qcin{from{opacity:0;transform:translate(-50%,-6px)}}.regseg{margin-top:8px}
+.rdin{padding:7px 10px;border-radius:10px;border:1px solid #dfe3ee;font:inherit;background:#fff}
+.rdbox{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.rdb{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px 14px;border-radius:16px;border:2px solid transparent;background:#fff;box-shadow:0 2px 10px rgba(29,43,83,.06);cursor:pointer;font:inherit;text-align:left}
+.rdb b{font-size:24px;line-height:1.1}.rdb span{font-size:12.5px;color:#667}
+.rdb.grn b{color:#16a34a}.rdb.amb b{color:#d97706}.rdb.pur b{color:#7c3aed}.rdb.blu b{color:#2563eb}.rdb.red b{color:#e11d48}
+.rdb.on{border-color:#1e2a5a}
+.rdt td,.rdt th{white-space:nowrap}.rdt tr.rdd td{background:#f4f6fb;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#667}
+.rst{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12.5px;font-weight:700}
+.rst.grn{background:#e9f8ee;color:#15803d}.rst.amb{background:#fff4e0;color:#b45309}.rst.pur{background:#f1ebff;color:#6d28d9}.rst.blu{background:#e8f0ff;color:#1d4ed8}.rst.red{background:#fdecf1;color:#be123c}.rst.mut{background:#eef0f5;color:#667}
+.rdnav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.rdnav .rdin{width:150px}.testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
 @media (min-width:900px){body .authbox.splash.wl{width:min(1320px,94vw);column-gap:clamp(56px,7vw,120px)}
@@ -5512,4 +5522,95 @@ VIEWS.welcome = async () => { setTimeout(openWelcome, 0); return '<div class="ce
 const me = MGROUPS.find(g => g[0] === 'Me'); if (me && !me[1].includes('welcome')) me[1].unshift('welcome');
 if (typeof ICP === 'object') ICP.welcome = '<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path class="a" d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>';
 document.addEventListener('click', e => { const l = e.target.closest('header .alg, .topbar .alg, .hdr .alg, .mtop .alg, #brandHome'); if (!l || document.body.classList.contains('auth')) return; e.preventDefault(); openWelcome(); }); }
+async function goLiveDay() { if (S.goLive) return S.goLive; try { const r = await q(sb.from('attendance').select('day').order('day', { ascending: true }).limit(1)); S.goLive = r?.[0]?.day || todayStr(); } catch { S.goLive = '2000-01-01'; } return S.goLive; }
+function attStatus(e, ds, a, lv, od) {
+if (e.no_punch) return { k: 'np', t: 'No punching', c: 'mut' };
+if (!a?.in_at && !lv && !od && S.goLive && ds < S.goLive) return { k: 'f', t: 'Before ORBIS', c: 'mut' };
+if (a?.in_at) { const late = hm(a.in_at) > lateLim(e, ds); return { k: late ? 'late' : 'p', t: late ? 'Late' : 'Present', c: late ? 'amb' : 'grn' }; }
+if (od) return { k: 'od', t: 'On duty', c: 'blu' };
+if (lv) return { k: 'lv', t: (lv.half ? 'Half day · ' : '') + ltName(lv.type), c: 'pur' };
+if (isWeekOff(ds, e)) return { k: 'wo', t: 'Week off', c: 'mut' };
+const h = holOn(ds, e.office); if (h) return { k: 'h', t: 'Holiday · ' + h.name, c: 'mut' };
+if (ds > todayStr()) return { k: 'f', t: '—', c: 'mut' };
+return { k: 'a', t: ds === todayStr() ? 'Not checked in' : 'Absent', c: 'red' };
+}
+async function regDayData(ds) {
+await goLiveDay();
+const [att, brk, lv, od] = await Promise.all([q(sb.from('attendance').select('*').eq('day', ds)), q(sb.from('breaks').select('*').eq('day', ds)),
+q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', ds).gte('to_date', ds)), q(sb.from('punch_fixes').select('*').eq('kind', 'od').eq('status', 'approved').eq('day', ds))]);
+const rows = S.emps.filter(e => e.active).map(e => {
+const a = att.find(x => x.employee_id === e.id), l = lv.find(x => x.employee_id === e.id), o = od.find(x => x.employee_id === e.id);
+const bm = brk.filter(x => x.employee_id === e.id).reduce((s, x) => s + Math.max(0, Math.round(((x.end_at ? new Date(x.end_at) : (ds === todayStr() ? new Date() : new Date(x.start_at))) - new Date(x.start_at)) / 60000)), 0);
+const end = a?.out_at ? new Date(a.out_at) : (a?.in_at && ds === todayStr() ? new Date() : null);
+const wk = a?.in_at && end ? Math.max(0, Math.round((end - new Date(a.in_at)) / 60000) - bm) : 0;
+return { e, a, st: attStatus(e, ds, a, l, o), bm, wk, place: o?.place || '' };
+}).sort((x, y) => (x.e.dept || '').localeCompare(y.e.dept || '') || x.e.name.localeCompare(y.e.name));
+return rows;
+}
+const hmz = m => m ? hmm(m) : '—';
+{ const _reg = VIEWS.register;
+VIEWS.register = async () => {
+const mode = S.regMode || 'month', seg = `<div class="seg regseg"><button class="${mode !== 'day' ? 'on' : ''}" data-regmode="month">📅 Month</button><button class="${mode === 'day' ? 'on' : ''}" data-regmode="day">📍 Day</button></div>`;
+if (mode !== 'day') { const h = await _reg(); return h.replace('<h2>Attendance register</h2></div>', '<h2>Attendance register</h2>' + seg + '</div>'); }
+const ds = S.regDay || todayStr(), rows = await regDayData(ds); S.regDayRows = { ds, rows };
+const cnt = k => rows.filter(r => r.st.k === k).length, f = S.regDayF || 'all';
+const boxes = [['all', 'All staff', rows.length, ''], ['in', 'Present', cnt('p') + cnt('late'), 'grn'], ['late', 'Late', cnt('late'), 'amb'], ['lv', 'On leave', cnt('lv'), 'pur'], ['od', 'On duty', cnt('od'), 'blu'], ['a', ds === todayStr() ? 'Not in' : 'Absent', cnt('a'), 'red'], ['out', 'Not checked out', rows.filter(r => r.a?.in_at && !r.a.out_at).length, 'amb']];
+const show = rows.filter(r => f === 'all' || (f === 'in' ? ['p', 'late'].includes(r.st.k) : f === 'out' ? (r.a?.in_at && !r.a.out_at) : r.st.k === f));
+let lastDept = null;
+return `<div class="stack"><div class="row"><div><span class="eyebrow">HR</span><h2>Attendance register</h2>${seg}</div>
+<div class="rdnav"><button class="btn sm" data-rd="-1">‹</button><input type="date" id="regDayIn" value="${ds}" max="${todayStr()}" class="rdin"><button class="btn sm" data-rd="1" ${ds >= todayStr() ? 'disabled' : ''}>›</button>${ds !== todayStr() ? '<button class="btn sm" data-rd="0">Today</button>' : ''}<button class="btn sm pri" id="regDayX">⬇ Excel</button></div></div>
+<div class="rdbox">${boxes.map(([k, t, n, c]) => `<button class="rdb ${c} ${f === k ? 'on' : ''}" data-rdf="${k}"><b>${n}</b><span>${t}</span></button>`).join('')}</div>
+<div class="card flush scroll"><table class="rdt"><thead><tr><th>Employee</th><th>Status</th><th>In</th><th>Out</th><th>Break</th><th>Worked</th></tr></thead><tbody>
+${show.map(r => { const dh = r.e.dept !== lastDept ? `<tr class="rdd"><td colspan="6">${esc(r.e.dept || 'Other')}</td></tr>` : ''; lastDept = r.e.dept;
+return `${dh}<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.code)}${r.e.desig ? ' · ' + esc(r.e.desig) : ''}</div></div></div></td>
+<td><span class="rst ${r.st.c}">${esc(r.st.t)}</span>${r.place ? `<div class="small muted">${esc(r.place)}</div>` : ''}</td>
+<td>${r.a?.in_at ? hm(r.a.in_at) : '—'}</td><td>${r.a?.out_at ? hm(r.a.out_at) : r.a?.in_at ? '<span class="small muted">working</span>' : '—'}</td>
+<td>${r.bm ? r.bm + ' min' : '—'}</td><td>${r.a?.in_at ? hmz(r.wk) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="6" class="muted">Nobody in this list.</td></tr>'}
+</tbody></table></div><p class="small muted">Tap a box to filter. Orange = late (after shift start + grace). ${fmtD(ds)}.</p></div>`;
+};
+document.addEventListener('click', async e => {
+const m = e.target.closest('[data-regmode]'); if (m) { S.regMode = m.dataset.regmode; return render(); }
+const d = e.target.closest('[data-rd]'); if (d) { const v = +d.dataset.rd; S.regDay = v === 0 ? todayStr() : addDays(S.regDay || todayStr(), v); if (S.regDay > todayStr()) S.regDay = todayStr(); return render(); }
+const fl = e.target.closest('[data-rdf]'); if (fl) { S.regDayF = fl.dataset.rdf; return render(); }
+if (e.target.closest('#regDayX')) { const { ds, rows } = S.regDayRows || {}; if (!rows) return; const X = await loadXLSX();
+const aoa = [[`ORBIS attendance — ${fmtD(ds)}`], [], ['Code', 'Name', 'Department', 'Designation', 'Status', 'In', 'Out', 'Break (min)', 'Worked', 'On duty place'],
+...rows.map(r => [r.e.code, r.e.name, r.e.dept || '', r.e.desig || '', r.st.t, r.a?.in_at ? hm(r.a.in_at) : '', r.a?.out_at ? hm(r.a.out_at) : '', r.bm || '', r.a?.in_at ? hmz(r.wk) : '', r.place])];
+const wb = X.utils.book_new(), ws = X.utils.aoa_to_sheet(aoa); ws['!cols'] = [8, 26, 14, 18, 18, 7, 7, 10, 10, 20].map(w => ({ wch: w })); X.utils.book_append_sheet(wb, ws, 'Day ' + ds); X.writeFile(wb, `ORBIS-attendance-${ds}.xlsx`); }
+});
+document.addEventListener('change', e => { if (e.target.id === 'regDayIn' && e.target.value) { S.regDay = e.target.value > todayStr() ? todayStr() : e.target.value; render(); } });
+}
+async function regMonthSheets(X, wb, ym) {
+await goLiveDay();
+const [y, mo] = ym.split('-').map(Number), last = new Date(y, mo, 0).getDate(), a0 = ym + '-01', a1 = `${ym}-${pad(last)}`;
+const [att, brk, lv, od] = await Promise.all([fetchAllRange('attendance', a0, a1), fetchAllRange('breaks', a0, a1),
+q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', a1).gte('to_date', a0)), q(sb.from('punch_fixes').select('*').eq('kind', 'od').eq('status', 'approved').gte('day', a0).lte('day', a1))]);
+const emps = S.emps.filter(e => e.active || att.some(a => a.employee_id === e.id));
+const code = { p: 'P', late: 'P*', od: 'OD', lv: 'L', wo: 'WO', h: 'H', a: 'A', f: '', np: '·' };
+const grid = [[`Attendance register — ${new Date(y, mo - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}`], ['P present · P* late · L leave · OD on duty · A absent · H holiday · WO week off · · no punching'], [],
+['Code', 'Name', 'Department', ...[...Array(last)].map((_, i) => i + 1), 'Present', 'Late', 'Leave', 'On duty', 'Absent']];
+const times = [['Code', 'Name', 'Department', 'Date', 'Status', 'In', 'Out', 'Break (min)', 'Worked (min)']];
+for (const e of emps) { const row = [e.code, e.name, e.dept || '']; let P = 0, Lt = 0, L = 0, O = 0, A = 0;
+for (let d = 1; d <= last; d++) { const ds = `${ym}-${pad(d)}`, a = att.find(x => x.employee_id === e.id && x.day === ds), l = lv.find(x => x.employee_id === e.id && x.from_date <= ds && x.to_date >= ds), o = od.find(x => x.employee_id === e.id && x.day === ds);
+const st = attStatus(e, ds, a, l, o); row.push(code[st.k] ?? ''); if (st.k === 'p' || st.k === 'late') P++; if (st.k === 'late') Lt++; if (st.k === 'lv') L++; if (st.k === 'od') O++; if (st.k === 'a') A++;
+if (a?.in_at || st.k === 'lv' || st.k === 'od' || st.k === 'a') { const bm = brk.filter(x => x.employee_id === e.id && x.day === ds && x.end_at).reduce((s, x) => s + Math.round((new Date(x.end_at) - new Date(x.start_at)) / 60000), 0);
+const wk = a?.in_at && a.out_at ? Math.max(0, Math.round((new Date(a.out_at) - new Date(a.in_at)) / 60000) - bm) : '';
+times.push([e.code, e.name, e.dept || '', ds, st.t, a?.in_at ? hm(a.in_at) : '', a?.out_at ? hm(a.out_at) : '', bm || '', wk]); } }
+grid.push([...row, P, Lt, L, O, A]); }
+const ws = X.utils.aoa_to_sheet(grid); ws['!cols'] = [{ wch: 8 }, { wch: 24 }, { wch: 13 }, ...[...Array(last)].map(() => ({ wch: 4 })), ...[1, 2, 3, 4, 5].map(() => ({ wch: 8 }))];
+X.utils.book_append_sheet(wb, ws, ('Register ' + ym).slice(0, 31));
+const wt = X.utils.aoa_to_sheet(times); wt['!cols'] = [8, 24, 13, 11, 18, 7, 7, 10, 11].map(w => ({ wch: w })); X.utils.book_append_sheet(wb, wt, ('Daily times ' + ym).slice(0, 31));
+}
+async function fetchAllRange(t, a0, a1) { const out = []; for (let f = 0; ; f += 1000) { const r = await q(sb.from(t).select('*').gte('day', a0).lte('day', a1).range(f, f + 999)); out.push(...r); if (r.length < 1000) break; } return out; }
+{ const _mb = makeBackup;
+makeBackup = async function (silent) {
+const X = await loadXLSX(), _bn = X.utils.book_new, _wf = X.utils.writeFile || X.writeFile; let wbRef = null;
+X.utils.book_new = (...a) => (wbRef = _bn.apply(X.utils, a));
+const _write = X.writeFile; X.writeFile = async (wb, name, ...rest) => { X.writeFile = _write; X.utils.book_new = _bn;
+try { const now = todayStr().slice(0, 7), [y, m] = now.split('-').map(Number), prev = `${m === 1 ? y - 1 : y}-${pad(m === 1 ? 12 : m - 1)}`;
+const sheets = wb.SheetNames.slice(); await regMonthSheets(X, wb, now); await regMonthSheets(X, wb, prev);
+const added = wb.SheetNames.filter(s => !sheets.includes(s)); wb.SheetNames = [...added, ...sheets]; } catch (er) { console.warn('register sheets', er); }
+return _write.call(X, wb, name, ...rest); };
+try { return await _mb.apply(this, arguments); } finally { X.writeFile = _write; X.utils.book_new = _bn; }
+};
+}
 </script></body></html>
