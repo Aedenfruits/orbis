@@ -1,4 +1,4 @@
-const C = 'orbis-v79'; let pending = false;
+const C = 'orbis-v80'; let pending = false;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-s-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { let had = false; for (const k of await caches.keys()) if (k !== C) { had = true; await caches.delete(k); } await self.clients.claim();
   /* an older version was running: reload open windows once so they show the newest ORBIS */
