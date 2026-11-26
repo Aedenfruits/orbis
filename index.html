@@ -5736,4 +5736,23 @@ document.addEventListener('click', async e => { const b = e.target.closest('[dat
 try { const at = await rpc('task_mark_read', { p_id: b.dataset.tkread }); [S.tasks, S.planTasks].forEach(L => (L || []).forEach(x => { if (x.id === b.dataset.tkread) x.seen_at = at || new Date().toISOString(); })); toast('👁 Marked as read'); render(); }
 catch (er) { b.disabled = false; toast(errMsg(er), true); } });
 }
+{ const LIVE_T = ['tasks', 'task_comments', 'leave_requests', 'announcements', 'announcement_reads', 'work_plans', 'plan_reviews', 'extra_breaks', 'employees', 'wishes', 'appraisals', 'tickets', 'ticket_msgs', 'polls', 'poll_votes', 'advances', 'holidays', 'app_settings', 'punch_fixes', 'attendance', 'breaks'];
+let lch = null, tmr = 0, pend = false, hidden = false;
+const busy = () => !!document.querySelector('dialog[open]') || !!document.activeElement?.matches?.('input,textarea,select,[contenteditable]') || S.busy || S.brPick;
+async function liveRender() { if (!S.me || document.hidden) { pend = true; return; } if (busy()) { pend = true; return; }
+pend = false; try { QC.lastWrite = Date.now(); } catch { }
+try { if (typeof refreshBadges === 'function') refreshBadges(); } catch { }
+if (['games'].includes(S.view)) return; const y = scrollY; try { await render(); scrollTo(0, y); } catch { } }
+const kick = p => { const t = p?.table; if (t === 'employees' || t === 'app_settings' || t === 'holidays') { S.coreStale = true; }
+clearTimeout(tmr); tmr = setTimeout(async () => { if (S.coreStale && !busy()) { S.coreStale = false; try { QC.lastWrite = Date.now(); await loadCore(); } catch { } } liveRender(); }, 1200); };
+const liveRt = () => { if (lch || !S.me || !S.session || !sb.channel) return;
+try { let c = sb.channel('orbis-all-' + S.me.id); LIVE_T.forEach(t => { c = c.on('postgres_changes', { event: '*', schema: 'public', table: t }, kick); });
+lch = c.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') { try { sb.removeChannel(lch); } catch { } lch = null; setTimeout(liveRt, 10000); } }); } catch { lch = null; } };
+const _rrL = render; render = async function () { const r = await _rrL.apply(this, arguments); liveRt(); return r; };
+document.addEventListener('focusout', () => setTimeout(() => { if (pend) liveRender(); }, 400));
+document.addEventListener('close', () => setTimeout(() => { if (pend) liveRender(); }, 400), true);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && pend) liveRender(); });
+setInterval(() => { if (!lch && S.me && !document.hidden) liveRender(); }, 60000);
+sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && lch) { try { sb.removeChannel(lch); } catch { } lch = null; } });
+}
 </script></body></html>
