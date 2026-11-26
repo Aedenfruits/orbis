@@ -2544,6 +2544,7 @@ if (S.kLeft <= 0) { clearInterval(S.kIdleI); toast('Signed out for the next pers
 ['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => { if (KMODE()) S.kLeft = 60; }, true));
 const _signOut0 = signOut; signOut = async function () { clearInterval(S.kIdleI); closeDlg(); document.body.classList.remove('kmode'); S.hrLogin = false; return _signOut0(); };
 maybeKioskLogout = function () { if (KMODE()) { S.kLeft = Math.min(S.kLeft || 60, 8); } };
+maybeKioskLogout = function () { }; kioskIdle = function () { clearInterval(S.kIdleI); const el = $('#kIdle'); if (el) el.textContent = ''; };
 document.addEventListener('change', async e => { const s = e.target.closest('[data-devown]'); if (!s) return;
 try { await q(sb.from('devices').update({ owner: s.value || null }).eq('id', s.dataset.devown)); toast(s.value ? `🔒 Only ${empById(s.value)?.name} can punch on this computer` : 'Anyone can punch on this computer'); } catch (er) { toast(errMsg(er), true); } });
 function pwaOn(on) {
