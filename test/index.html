@@ -4179,6 +4179,7 @@ ${a?.offline ? '<div class="pboff">⏳ includes a punch saved offline</div>' : '
 </div>
 ${mob ? '' : `<div class="devline">${PH ? `<span class="chip good">📱 Phone · check in & out here · office location is checked</span>` : devLine}</div>`}
 ${state === 'out' && !PH && (ob || S.brPick) ? breakPanel(ob, cfg) : ''}
+${state === 'out' && PH && ob ? breakPanel(ob, cfg).replace(/<button class="btn pri wide" id="bEnd">[^<]*<\/button>/, '<div class="small center" style="margin-top:8px;opacity:.8">⏱ Live on your phone · end the break on the office computer when you are back</div>') : ''}
 </div>`;
 };
 { const _tk = startTicker; startTicker = function () { _tk(); clearInterval(S.pbT); S.pbT = setInterval(() => {
