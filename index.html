@@ -1717,6 +1717,9 @@ dlg('Change my password', `<label>New password<input id="c_p1" type="password" a
 $('#c_save').onclick = async () => { const p1 = $('#c_p1').value, bad = pwRules(p1, $('#c_p2').value); if (bad) return toast(bad, true); try { await setMyPw(p1); closeDlg(); toast('✓ Password changed'); } catch (er) { toast(errMsg(er), true); } };
 }
 const PHOTO_BUCKET = 'orbis-photos';
+let _errN = 0; function logErr(place, er) { try { if (!S.me || _errN++ > 25) return; const m = String(er?.message || er || '').slice(0, 400) + (er?.name ? ' [' + er.name + ']' : '');
+sb.from('client_errors').insert({ place: String(place).slice(0, 60), msg: m, ua: navigator.userAgent.slice(0, 250) }).then(() => { }, () => { }); } catch { } }
+addEventListener('error', ev => logErr('js', ev.error || ev.message)); addEventListener('unhandledrejection', ev => logErr('promise', ev.reason));
 S.photoUrl = {};
 async function photoUrl(e) {
 if (!e || !e.photo_at) return null; const k = e.id + '@' + e.photo_at; if (S.photoUrl[k]) return S.photoUrl[k];
@@ -1749,18 +1752,19 @@ ${u ? '<button class="btn" type="button" id="phDel">Remove photo</button>' : ''}
 $('#dlg').addEventListener('close', stopCam, { once: true });
 S.crop = null; const show = async blob => { S.crop = null; $('#cropBar')?.remove(); S.photoNew = blob; $('#phBox').innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="">`; $('#phSave').disabled = false; };
 const pick = async f => { if (!f) return; stopCam(); $('#phSnap').hidden = true;
-try { startCrop(await blobImg(f)); $('#phSave').disabled = false; } catch { toast('Could not read that photo. Take a screenshot of it and choose the screenshot.', true); } };
+let img; try { img = await blobImg(f); } catch (er) { logErr('photo-read ' + (f.type || '?') + ' ' + Math.round((f.size || 0) / 1024) + 'KB', er); return toast('This photo type can\'t be opened (often HEIC from the camera). Take a selfie instead, or take a screenshot of the photo and choose the screenshot.', true); }
+try { startCrop(img); $('#phSave').disabled = false; } catch (er) { logErr('photo-crop', er); try { show(await cropToJpeg(img)); } catch (er2) { logErr('photo-crop2', er2); toast('Could not prepare that photo. Please try a different photo.', true); } } };
 const open = sel => { let i = document.getElementById('phIn'); if (i) i.remove(); i = document.createElement('input'); i.type = 'file'; i.id = 'phIn'; i.accept = 'image/*'; if (sel) i.setAttribute('capture', 'user');
-i.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; document.body.appendChild(i); i.addEventListener('change', () => pick(i.files && i.files[0])); i.click(); };
+i.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; ($('#dlg') || document.body).appendChild(i); i.addEventListener('change', () => pick(i.files && i.files[0])); i.click(); };
 $('#phPick').onclick = () => open(false); if ($('#phSelfie')) $('#phSelfie').onclick = () => open(true);
 if ($('#phCam')) $('#phCam').onclick = async () => { try { camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 960, facingMode: 'user' } });
 $('#phBox').innerHTML = '<video id="phVid" autoplay playsinline muted></video>'; $('#phVid').srcObject = camStream; $('#phSnap').hidden = false; }
-catch { toast('Camera not available. Use "Choose a photo" instead.', true); } };
+catch (er) { logErr('photo-cam', er); toast('Camera not available. Use "Choose a photo" instead.', true); } };
 $('#phSnap').onclick = async () => { const v = $('#phVid'); if (!v) return; const b = await cropToJpeg(v); stopCam(); $('#phSnap').hidden = true; show(b); };
-$('#phSave').onclick = async () => { if (S.crop) { try { S.photoNew = await cropOut(); } catch { return toast('Could not crop that photo', true); } } if (!S.photoNew) return; const b = $('#phSave'); b.disabled = true; b.textContent = 'Saving…';
+$('#phSave').onclick = async () => { if (S.crop) { try { S.photoNew = await cropOut(); } catch (er) { logErr('photo-cropout', er); try { S.photoNew = await cropToJpeg(S.crop.img); } catch { return toast('Could not crop that photo', true); } } } if (!S.photoNew) return; const b = $('#phSave'); b.disabled = true; b.textContent = 'Saving…';
 try { const { error } = await sb.storage.from(PHOTO_BUCKET).upload(e.id + '.jpg', S.photoNew, { upsert: true, contentType: 'image/jpeg' }); if (error) throw error;
 await rpc('set_photo', { p_emp: e.id, p_clear: false }); e.photo_at = new Date().toISOString(); closeDlg(); toast('✓ Photo saved'); render(); }
-catch (er) { b.disabled = false; b.textContent = 'Save photo'; toast(errMsg(er), true); } };
+catch (er) { logErr('photo-save ' + Math.round((S.photoNew?.size || 0) / 1024) + 'KB', er); b.disabled = false; b.textContent = 'Save photo'; toast(errMsg(er), true); } };
 if ($('#phDel')) $('#phDel').onclick = async () => { try { await sb.storage.from(PHOTO_BUCKET).remove([e.id + '.jpg']); await rpc('set_photo', { p_emp: e.id, p_clear: true }); e.photo_at = null; closeDlg(); toast('Photo removed'); render(); } catch (er) { toast(errMsg(er), true); } };
 }
 document.addEventListener('click', ev => { const b = ev.target.closest('[data-photo]'); if (b) photoDlg(b.dataset.photo); });
