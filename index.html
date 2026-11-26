@@ -556,6 +556,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 #updbar{z-index:2147483000!important;pointer-events:auto!important}
 .rsh{font-size:13.5px;white-space:nowrap}
 .rbk.over{display:inline-block;padding:3px 10px;border-radius:99px;background:#ffe4ea;color:#c8103e;font-weight:700}
+#nfpops{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 14px);z-index:2147482000;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 24px))}.nfpop{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:13px 14px;border-radius:18px;border:1px solid rgba(224,22,100,.25);background:#fff;color:#1d1b2e;font:inherit;box-shadow:0 14px 40px rgba(29,43,83,.25);cursor:pointer;animation:nfpIn .35s cubic-bezier(.2,.9,.3,1.2)}.nfpop.out{opacity:0;transform:translateY(-10px);transition:.3s}.nfpi{font-size:22px;line-height:1.1}.nfpt{flex:1;min-width:0}.nfpt b{display:block;font-size:14.5px}.nfpt small{display:block;color:#6b7280;font-size:12.5px;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.nfpx{color:#9ca3af;font-size:13px;padding:2px 4px}@keyframes nfpIn{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}@media(max-width:640px){#nfpops{left:12px;right:12px;width:auto}}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -5682,5 +5683,21 @@ dlg('Lock your shift?', `<p>You chose <b>${esc(z?.name || k)}</b> (${z ? `${t12(
 const y = e.target.closest('#shYes'); if (y) { y.disabled = true; const k = S.shPick || S.me.shift || 'gen';
 rpc('choose_my_shift', { p_shift: k }).then(() => { S.me.shift = k === 'gen' ? null : k; S.me.shift_locked = true; S.me.shift_locked_at = new Date().toISOString(); const e2 = empById(S.me.id); if (e2) Object.assign(e2, { shift: S.me.shift, shift_locked: true });
 closeDlg(); toast('🔒 Shift locked'); render(); }).catch(er => { y.disabled = false; toast(errMsg(er), true); }); } });
+}
+{ const popIco = n => { const t = String(n.tag || ''); return /^wpo/.test(t) ? '⏰' : /^(tk|tdn)/.test(t) ? '✅' : /^tcm|^tkm/.test(t) ? '💬' : /^ann/.test(t) ? '📢' : /^prv/.test(t) ? '⭐' : /^(cel|wsh)/.test(t) ? '🎉' : /^appr|^lv/.test(t) ? '📝' : /^pay|^add/.test(t) ? '💰' : /^(in|out|r820|r1800|brk)/.test(t) ? '⏰' : '🔔'; };
+function popShow(n) { let box = $('#nfpops'); if (!box) { box = document.createElement('div'); box.id = 'nfpops'; document.body.append(box); }
+const el = document.createElement('button'); el.type = 'button'; el.className = 'nfpop';
+el.innerHTML = `<span class="nfpi">${popIco(n)}</span><span class="nfpt"><b>${esc(String(n.title).replace(/[\p{Extended_Pictographic}\uFE0F]/gu, '').trim())}</b>${n.body ? `<small>${esc(n.body)}</small>` : ''}</span><span class="nfpx" aria-label="Close">✕</span>`;
+const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 300); };
+el.onclick = ev => { if (ev.target.closest('.nfpx')) return close(); close(); try { sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', n.id).then(() => { }); } catch { }
+const u = String(n.url || ''), hs = u.includes('#') ? u.slice(u.indexOf('#') + 1) : ''; if (hs) location.hash = hs; };
+box.prepend(el); while (box.children.length > 3) box.lastChild.remove(); setTimeout(close, 9000);
+try { navigator.vibrate?.([80, 40, 80]); } catch { } }
+let pch = null; const popRt = () => { if (pch || !S.me || !S.session || !sb.channel) return;
+try { pch = sb.channel('orbis-pop-' + S.me.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `employee_id=eq.${S.me.id}` }, p => { if (p.new && document.visibilityState === 'visible') popShow(p.new); })
+.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(pch); } catch { } pch = null; setTimeout(popRt, 15000); } }); } catch { pch = null; } };
+const _rrPop = render; render = async function () { const r = await _rrPop.apply(this, arguments); popRt(); return r; };
+sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && pch) { try { sb.removeChannel(pch); } catch { } pch = null; } });
+window.__popShow = popShow;
 }
 </script></body></html>
