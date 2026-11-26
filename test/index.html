@@ -5577,7 +5577,7 @@ async function goLiveDay() { if (S.goLive) return S.goLive; try { const r = awai
 function attStatus(e, ds, a, lv, od) {
 if (e.no_punch) return { k: 'np', t: 'No punching', c: 'mut' };
 if (!a?.in_at && !lv && !od && S.goLive && ds < S.goLive) return { k: 'f', t: 'Before ORBIS', c: 'mut' };
-if (a?.in_at) { const late = hm(a.in_at) > lateLim(e, ds); return { k: late ? 'late' : 'p', t: late ? 'Late' : 'Present', c: late ? 'amb' : 'grn' }; }
+if (a?.in_at) { const late = hm(a.in_at) > lateLim(e, ds) && !(lv?.half === 'am'); const hl = lv?.half ? ` · ½ day ${ltName(lv.type)} (${lv.half === 'am' ? 'morning' : 'afternoon'})` : ''; return { k: late ? 'late' : 'p', t: (late ? 'Late' : 'Present') + hl, c: late ? 'amb' : 'grn' }; }
 if (od) return { k: 'od', t: 'On duty', c: 'blu' };
 if (lv) return { k: 'lv', t: (lv.half ? 'Half day · ' : '') + ltName(lv.type), c: 'pur' };
 if (isWeekOff(ds, e)) return { k: 'wo', t: 'Week off', c: 'mut' };
