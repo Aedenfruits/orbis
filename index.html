@@ -5670,6 +5670,28 @@ return _write.call(X, wb, name, ...rest); };
 try { return await _mb.apply(this, arguments); } finally { X.writeFile = _write; X.utils.book_new = _bn; }
 };
 }
+{ const nfAgo = iso => { const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : fmtD(ymd(iso)); };
+const nfIco = n => { const t = String(n.tag || ''), u = String(n.url || '');
+return /^(in|out|r820|r1800|brk)/.test(t) ? '⏰' : /^(appr|lv)/.test(t) || u.includes('leave') ? '🏖️' : /^ann/.test(t) ? '📢' : /^(tk)/.test(t) || u.includes('tasks') ? '✅' : /^(cel)/.test(t) ? '🎉' : /^pay|add/.test(t) ? '💰' : /^(fx|xb)/.test(t) ? '🕘' : /^(tkn|tkm)/.test(t) ? '💬' : /^pol/.test(t) ? '📊' : '🔔'; };
+async function nfLoad() { try { S.nf = await q(sb.from('notifications').select('*').eq('employee_id', S.me.id).order('created_at', { ascending: false }).limit(60)); } catch { S.nf = []; } return S.nf; }
+function nfCard() { const L = S.nf || [], un = L.filter(n => !n.read_at).length, show = S.nfAll ? L : L.slice(0, 6);
+return `<div class="card nfc"><div class="row"><h3>🔔 Notifications ${un ? `<span class="chip crit">${un} new</span>` : ''}</h3>${un ? '<button class="btn sm" data-nfall>✓ Mark all read</button>' : ''}</div>
+${L.length ? `<div class="nfl">${show.map(n => `<a class="nfi ${n.read_at ? '' : 'un'}" href="#" data-nf="${n.id}" data-u="${esc(n.url || '')}"><span class="nfx">${nfIco(n)}</span><span class="grow"><b>${esc(n.title)}</b>${n.body ? `<small>${esc(n.body)}</small>` : ''}</span><span class="nft">${nfAgo(n.created_at)}</span></a>`).join('')}</div>
+${L.length > 6 ? `<div class="center"><button class="btn sm" data-nfmore>${S.nfAll ? 'Show less' : `Show all (${L.length})`}</button></div>` : ''}`
+: '<p class="small muted">No notifications yet. Reminders, approvals, tasks and news will appear here.</p>'}</div>`; }
+const _nwNf = VIEWS.news;
+VIEWS.news = async () => { const [h] = await Promise.all([_nwNf(), nfLoad()]); return h.replace(/(<h2>[^<]*News<\/h2><\/div>)/, '$1' + nfCard()); };
+document.addEventListener('click', async e => {
+const a = e.target.closest('[data-nf]'); if (a) { e.preventDefault(); const n = (S.nf || []).find(x => String(x.id) === a.dataset.nf);
+if (n && !n.read_at) { n.read_at = new Date().toISOString(); sb.from('notifications').update({ read_at: n.read_at }).eq('id', n.id).then(() => { }); }
+const u = a.dataset.u, hs = u.includes('#') ? u.slice(u.indexOf('#') + 1) : ''; if (hs && hs !== 'news') location.hash = hs; else render(); return; }
+if (e.target.closest('[data-nfall]')) { const t = new Date().toISOString(); (S.nf || []).forEach(n => { if (!n.read_at) n.read_at = t; }); try { await q(sb.from('notifications').update({ read_at: t }).eq('employee_id', S.me.id).is('read_at', null)); } catch { } render(); return; }
+if (e.target.closest('[data-nfmore]')) { S.nfAll = !S.nfAll; render(); } });
+let nch = null; const nfRt = () => { if (nch || !S.me || !S.session || !sb.channel) return;
+try { nch = sb.channel('orbis-nf-' + S.me.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `employee_id=eq.${S.me.id}` }, async () => { try { QC.lastWrite = Date.now(); } catch { } await nfLoad(); if (S.view === 'news' && !document.querySelector('dialog[open]')) { const y = scrollY; await render(); scrollTo(0, y); } }).subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(nch); } catch { } nch = null; setTimeout(nfRt, 15000); } }); } catch { nch = null; } };
+const _rrNf = render; render = async function () { const r = await _rrNf.apply(this, arguments); nfRt(); return r; };
+sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && nch) { try { sb.removeChannel(nch); } catch { } nch = null; } });
+}
 { const shCard = () => { const me = S.me; if (!me || me.no_punch || me.shift_locked || KMODE?.()) return '';
 const L = shiftsCfg(); if (L.length < 2) return ''; const cur = me.shift || 'gen', pick = S.shPick || cur;
 return `<div class="card shpick"><div class="row" style="justify-content:flex-start;gap:12px"><span class="shic">⏰</span><div><h3 style="margin:0">Choose your shift</h3><p class="small muted" style="margin:2px 0 0">You can choose <b>only once</b>. After you lock it, only HR can change it.</p></div></div>
