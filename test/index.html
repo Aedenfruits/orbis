@@ -850,7 +850,10 @@ m.innerHTML = `<div class="card" style="text-align:center"><h3>${net ? 'Slow or 
 }
 let afterFns = [];
 function after() { const f = afterFns; afterFns = []; f.forEach(x => { try { x(); } catch (e) { console.error(e); } }); }
-function brCfg() { return C().breaks || [{ k: 'lunch', name: 'Lunch', min: 30 }, { k: 'tea', name: 'Tea', min: 15 }]; }
+function brCfg() { return C().breaks || [{ k: 'lunch', name: 'Lunch', min: 45, from: '13:00', to: '14:00' }, { k: 'tea', name: 'Tea', min: 15, from: '16:00' }]; }
+const brT12 = v => { let [H, M] = String(v).split(':').map(Number); return `${H % 12 || 12}${M ? ':' + String(M).padStart(2, '0') : ''} ${H < 12 ? 'AM' : 'PM'}`; };
+const brWinTxt = b => b.from && b.to ? `${brT12(b.from)}–${brT12(b.to)}` : b.from ? `after ${brT12(b.from)}` : b.to ? `before ${brT12(b.to)}` : '';
+const brOpen = b => { const n = hm(new Date()); return (!b.from || n >= b.from) && (!b.to || n < b.to); };
 function openBreak() { return S.breaks.find(b => !b.end_at); }
 function breakUsedMin() { return S.breaks.reduce((s, b) => s + mins(b.start_at, b.end_at), 0); }
 VIEWS.punch = async () => {
@@ -894,13 +897,13 @@ return `<div class="card brk on"><div class="row"><div><b>☕ On ${esc(t.name.to
 }
 const taken = S.breaks.map(b => b.kind);
 const left = cfg.filter(b => !taken.includes(b.k));
-if (!S.brPick) return `<div class="card brk">${left.length ? `<button class="btn wide brtake" id="bOpen">☕ Take a break <small>${left.map(b => `${esc(b.name)} ${b.min}m`).join(' · ')} left today</small></button>` : '<p class="small muted center">All breaks used for today.</p>'}
+if (!S.brPick) return `<div class="card brk">${left.length ? `<button class="btn wide brtake" id="bOpen">☕ Take a break <small>${left.map(b => `${esc(b.name)} ${b.min}m${brWinTxt(b) ? ' (' + brWinTxt(b) + ')' : ''}`).join(' · ')} left today</small></button>` : '<p class="small muted center">All breaks used for today.</p>'}
 ${S.breaks.length ? `<div class="small muted" style="margin-top:8px">${S.breaks.map(b => `${esc((cfg.find(x => x.k === b.kind) || {}).name || b.kind)} ${hm(b.start_at)}–${hm(b.end_at)} (${mins(b.start_at, b.end_at)} min)`).join(' · ')}</div>` : ''}
 <button class="btn sm" id="xOpen" style="margin-top:10px">⏱ Request extra break</button></div>`;
-const sel = S.brSel || left[0]?.k;
+const sel = S.brSel || left.find(brOpen)?.k || '';
 return `<div class="card brk"><div class="row"><b>Which break?</b><button class="btn sm" id="bCancel">✕</button></div>
-<div class="brlist">${cfg.map(b => `<button class="btn brbtn ${sel === b.k ? 'sel' : ''}" data-k="${b.k}" ${taken.includes(b.k) ? 'disabled' : ''}><b>${esc(b.name)}</b><small>${taken.includes(b.k) ? 'taken' : b.min + ' min'}</small></button>`).join('')}</div>
-<button class="btn pri wide" id="bStart" data-k="${sel}">▶ Start break</button></div>`;
+<div class="brlist">${cfg.map(b => `<button class="btn brbtn ${sel === b.k ? 'sel' : ''}" data-k="${b.k}" ${taken.includes(b.k) || !brOpen(b) ? 'disabled' : ''}><b>${esc(b.name)}</b><small>${taken.includes(b.k) ? 'taken' : b.min + ' min'}${brWinTxt(b) ? ' · ' + brWinTxt(b) : ''}</small></button>`).join('')}</div>
+${sel ? `<button class="btn pri wide" id="bStart" data-k="${sel}">▶ Start break</button>` : `<p class="small muted center">No break is open right now. ${left.map(b => `${esc(b.name)}: ${brWinTxt(b)}`).join(' · ')}</p>`}</div>`;
 }
 function startTicker() {
 clearInterval(S.tick);
