@@ -5506,4 +5506,10 @@ return `<div class="stack"><div class="pgh"><div><button class="btn sm" data-gam
 <div class="card pbcard" id="mdCard"><div class="pbwrap" id="mdWrap"><canvas id="mdC"></canvas>
 <div class="pbov" id="mdOv"><div class="pbt">🥭 Mango Dash</div><p>Run and jump through the crate world!<br>Collect fruit 🍎 and stars ⭐, <b>jump on bugs</b> 🪲 to stomp them, reach the <b>Aeden flag</b>.</p><p class="small">Phone: ◀ ▶ to run, ⤒ to jump · Computer: arrow keys + space</p><button class="btn pri big" data-gstart="mango">▶ Play</button><div class="small" style="margin-top:10px;opacity:.8">Your best: <b>${gBest('mario')}</b></div></div></div><div class="mdpad"><div><button data-mdk="L">◀</button><button data-mdk="R">▶</button></div><button data-mdk="J" class="j">⤒ Jump</button></div></div>${gLbCard('Mango Dash heroes')}</div>`; };
 }
+async function openWelcome() { if (S.inWelcome) return; S.inWelcome = true; try { await splash(); } finally { S.inWelcome = false; } if (location.hash === '#welcome') location.hash = '#punch'; else route(); }
+VIEWS.welcome = async () => { setTimeout(openWelcome, 0); return '<div class="center muted" style="padding:40px">Opening…</div>'; };
+{ const _nw = navList; navList = function () { const n = _nw(); if (!n.some(x => x[0] === 'welcome')) n.push(['welcome', 'Welcome screen', '✨']); return n; };
+const me = MGROUPS.find(g => g[0] === 'Me'); if (me && !me[1].includes('welcome')) me[1].unshift('welcome');
+if (typeof ICP === 'object') ICP.welcome = '<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path class="a" d="M18 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>';
+document.addEventListener('click', e => { const l = e.target.closest('header .alg, .topbar .alg, .hdr .alg, .mtop .alg, #brandHome'); if (!l || document.body.classList.contains('auth')) return; e.preventDefault(); openWelcome(); }); }
 </script></body></html>
