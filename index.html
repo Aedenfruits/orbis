@@ -597,6 +597,7 @@ function tFetch(u, o = {}) { const url = String(u?.url || u), ms = /\/storage\/v
 { const m = String(o.method || 'GET').toUpperCase(), rd = url.match(/\/rpc\/([a-z_]+)/); if (m !== 'GET' && m !== 'HEAD' && /\/rest\/v1\//.test(url) && !(rd && typeof RPC_READ !== 'undefined' && RPC_READ.has(rd[1]))) QC.lastWrite = Date.now(); }
 if (o.signal || /\/auth\/v1\//.test(url)) return fetch(u, o); const ac = new AbortController(), t = setTimeout(() => ac.abort(), ms);
 return fetch(u, { ...o, signal: ac.signal }).finally(() => clearTimeout(t)); }
+const authFresh = (() => { let p = null, last = 0; return () => { if (p) return p; if (Date.now() - last < 20000) return Promise.resolve(); p = sb.auth.getSession().catch(() => { }).finally(() => { last = Date.now(); p = null; }); return p; }; })();
 const sbLock = (() => { const q = {}; return async (name, _t, fn) => { const prev = q[name] || Promise.resolve(); let rel; const cur = new Promise(r => rel = r); q[name] = prev.then(() => cur);
 await Promise.race([prev, new Promise(r => setTimeout(r, 8000))]); try { return await fn(); } finally { rel(); } }; })();
 const sb = supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, storageKey: 'orbis.auth' }, global: { fetch: tFetch } });
@@ -2031,7 +2032,7 @@ try {
 if (b.id === 'notifOn') { await pushTurnOn(b); render(); }
 if (b.id === 'an_post') { const title = $('#an_t').value.trim(); if (!title) return toast('Write a title', true);
 const team = !!b.dataset.team; await q(sb.from('announcements').insert({ title, body: $('#an_b').value.trim(), office: team ? '' : $('#an_o').value, pinned: $('#an_p').checked, created_by: S.me.id, ...(team ? { team_of: S.me.id } : {}) })); toast(team ? '📢 Posted to your team' : '📢 Posted'); render(); }
-if (b.dataset.anseen) { await q(sb.from('announcement_reads').insert({ ann_id: b.dataset.anseen, employee_id: S.me.id })); await refreshBadges(); render(); }
+if (b.dataset.anseen) { await q(sb.from('announcement_reads').upsert({ ann_id: b.dataset.anseen, employee_id: S.me.id }, { onConflict: 'ann_id,employee_id', ignoreDuplicates: true })); await refreshBadges(); render(); }
 if (b.dataset.anpin) { await q(sb.from('announcements').update({ pinned: b.dataset.v === '1' }).eq('id', b.dataset.anpin)); render(); }
 if (b.dataset.andel) { if (!confirm('Delete this announcement?')) return; await q(sb.from('announcements').delete().eq('id', b.dataset.andel)); render(); }
 if (b.dataset.anwho) { const a = S.ann.find(x => x.id === b.dataset.anwho); const aud = annAudience(a);
@@ -4087,6 +4088,7 @@ try { await q(sb.from('active_sessions').upsert({ employee_id: S.me.id, kind: se
 }
 let sessBusy = false;
 async function sessCheck() {
+try { await authFresh(); } catch { }
 if (sessOff() || sessBusy || !navigator.onLine) return; sessBusy = true;
 try { const mine = lsGet(sessKey(), ''); const { data: r, error: re } = await sb.from('active_sessions').select('sid,device').eq('employee_id', S.me.id).eq('kind', sessKind()).maybeSingle(); if (re) return;
 if (!r || !mine) { S.freshLogin = true; await sessClaim(); return; }
@@ -5330,6 +5332,7 @@ return _gv(); };
 }
 { let lastT = Date.now(), busyT = false;
 const freshen = async force => {
+try { await authFresh(); } catch { }
 if (busyT || !S.me || !S.session || document.hidden) return; if (!force && Date.now() - lastT < 20000) return;
 busyT = true; try { const before = JSON.stringify([S.today, S.breaks]); await loadToday(); lastT = Date.now(); if (JSON.stringify([S.today, S.breaks]) !== before && S.view === 'punch' && !document.querySelector('dialog[open]')) { const y = scrollY; await render(); scrollTo(0, y); } } catch { } finally { busyT = false; } };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) freshen(); });
@@ -5740,7 +5743,7 @@ catch (er) { b.disabled = false; toast(errMsg(er), true); } });
 { const LIVE_T = ['tasks', 'task_comments', 'leave_requests', 'announcements', 'announcement_reads', 'work_plans', 'plan_reviews', 'extra_breaks', 'employees', 'wishes', 'appraisals', 'tickets', 'ticket_msgs', 'polls', 'poll_votes', 'advances', 'holidays', 'app_settings', 'punch_fixes', 'attendance', 'breaks'];
 let lch = null, tmr = 0, pend = false, hidden = false;
 const busy = () => !!document.querySelector('dialog[open]') || !!document.activeElement?.matches?.('input,textarea,select,[contenteditable]') || S.busy || S.brPick;
-async function liveRender() { if (!S.me || document.hidden) { pend = true; return; } if (busy()) { pend = true; return; }
+async function liveRender() { if (!S.me || document.hidden) { pend = true; return; } if (busy()) { pend = true; return; } try { await authFresh(); } catch { }
 pend = false; try { QC.lastWrite = Date.now(); } catch { }
 try { if (typeof refreshBadges === 'function') refreshBadges(); } catch { }
 if (['games'].includes(S.view)) return; const y = scrollY; try { await render(); scrollTo(0, y); } catch { } }
