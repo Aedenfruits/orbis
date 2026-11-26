@@ -557,6 +557,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .rsh{font-size:13.5px;white-space:nowrap}
 .rbk.over{display:inline-block;padding:3px 10px;border-radius:99px;background:#ffe4ea;color:#c8103e;font-weight:700}
 #nfpops{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 14px);z-index:2147482000;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 24px))}.nfpop{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:13px 14px;border-radius:18px;border:1px solid rgba(224,22,100,.25);background:#fff;color:#1d1b2e;font:inherit;box-shadow:0 14px 40px rgba(29,43,83,.25);cursor:pointer;animation:nfpIn .35s cubic-bezier(.2,.9,.3,1.2)}.nfpop.out{opacity:0;transform:translateY(-10px);transition:.3s}.nfpi{font-size:22px;line-height:1.1}.nfpt{flex:1;min-width:0}.nfpt b{display:block;font-size:14.5px}.nfpt small{display:block;color:#6b7280;font-size:12.5px;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.nfpx{color:#9ca3af;font-size:13px;padding:2px 4px}@keyframes nfpIn{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}@media(max-width:640px){#nfpops{left:12px;right:12px;width:auto}}
+.tkrd{font-weight:600}.tkrd.ok{color:#15803d}.tkrd.no{color:#c2410c}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -5725,4 +5726,14 @@ window.__popShow = popShow;
 { const _pvX = VIEWS.punch; VIEWS.punch = async () => { const h = await _pvX();
 if (!S.me?.no_punch && S.today?.in_at && !S.today?.out_at) afterFns.push(() => { const pb = document.querySelector('.punch .pbb'); if (pb && !document.getElementById('xOpen')) pb.insertAdjacentHTML('afterend', '<button class="pbod" id="xOpen">⏱ Need more break time? Request extra break</button>'); });
 return h; }; }
+{ const tRead = iso => { const d = new Date(iso); return ymd(iso) === todayStr() ? brT12(hm(d)) : fmtD(ymd(iso)) + ', ' + brT12(hm(d)); };
+const _tcR = taskCard; taskCard = function (t) { let h = _tcR(t); const mine = t.assigned_to === S.me.id, gave = t.assigned_by === S.me.id;
+if (t.assigned_to === t.assigned_by) return h;
+if (mine && !t.seen_at && t.status !== 'done') h = h.replace('<div class="hstack">', `<div class="hstack"><button class="btn sm pri" data-tkread="${t.id}">👁 Mark as read</button>`);
+if (!mine && (gave || isAdmin())) h = h.replace('<small class="muted">', `<small class="muted">${t.seen_at ? `<span class="tkrd ok">👁 Read ${tRead(t.seen_at)}</span> · ` : '<span class="tkrd no">Not read yet</span> · '}`);
+return h; };
+document.addEventListener('click', async e => { const b = e.target.closest('[data-tkread]'); if (!b) return; b.disabled = true;
+try { const at = await rpc('task_mark_read', { p_id: b.dataset.tkread }); [S.tasks, S.planTasks].forEach(L => (L || []).forEach(x => { if (x.id === b.dataset.tkread) x.seen_at = at || new Date().toISOString(); })); toast('👁 Marked as read'); render(); }
+catch (er) { b.disabled = false; toast(errMsg(er), true); } });
+}
 </script></body></html>
