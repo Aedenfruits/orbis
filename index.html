@@ -5753,6 +5753,7 @@ document.addEventListener('focusout', () => setTimeout(() => { if (pend) liveRen
 document.addEventListener('close', () => setTimeout(() => { if (pend) liveRender(); }, 400), true);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && pend) liveRender(); });
 setInterval(() => { if (!lch && S.me && !document.hidden) liveRender(); }, 60000);
+setInterval(() => { if (S.me && !document.hidden && ['tasks', 'team', 'register', 'news', 'plan'].includes(S.view)) liveRender(); }, 15000);
 sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && lch) { try { sb.removeChannel(lch); } catch { } lch = null; } });
 }
 </script></body></html>
