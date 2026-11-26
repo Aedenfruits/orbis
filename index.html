@@ -1993,9 +1993,10 @@ S.ann = ann.filter(a => !a.office || a.office === S.me.office || isAdmin()); S.a
 catch { S.ann = []; S.annReads = []; }
 return S.ann;
 }
-const annSeen = (a, id = S.me.id) => (S.annReads || []).some(r => r.ann_id === a.id && r.employee_id === id);
+const annSeen = (a, id = S.me.id) => a.created_by === id || (S.annReads || []).some(r => r.ann_id === a.id && r.employee_id === id);
 function teamOfMgr(mid) { const out = new Set(), q2 = [mid]; while (q2.length) { const m = q2.shift(); S.emps.forEach(e => { if (e.reports_to === m && !out.has(e.id) && e.id !== mid) { out.add(e.id); q2.push(e.id); } }); } return out; }
-const annAudience = a => a.team_of ? S.emps.filter(e => e.active && e.auth_uid && (a.team_of === S.me.id && (S.team || []).length ? S.team.includes(e.id) : teamOfMgr(a.team_of).has(e.id))) : S.emps.filter(e => e.active && e.auth_uid && (!a.office || e.office === a.office));
+const annAudience = a => annAudience0(a).filter(e => e.id !== a.created_by);
+const annAudience0 = a => a.team_of ? S.emps.filter(e => e.active && e.auth_uid && (a.team_of === S.me.id && (S.team || []).length ? S.team.includes(e.id) : teamOfMgr(a.team_of).has(e.id))) : S.emps.filter(e => e.active && e.auth_uid && (!a.office || e.office === a.office));
 const annCanManage = a => isAdmin() || (a.team_of && a.team_of === S.me.id && a.created_by === S.me.id);
 const isMgr = () => !isAdmin() && (S.team || []).length > 0;
 VIEWS.news = async () => {
@@ -2011,7 +2012,7 @@ ${isAdmin() ? `<div class="card"><h3>Post an announcement</h3><label>Title<input
 ${isMgr() ? `<div class="card"><h3>Post to my team</h3><p class="small muted">Only your team (${(S.team || []).length} people) will see this.</p><label>Title<input id="an_t" placeholder="e.g. Month-end closing on Saturday"></label><label>Message<textarea id="an_b" rows="3"></textarea></label>
 <label class="chk"><input type="checkbox" id="an_p"> Pin to top</label><button class="btn pri" id="an_post" data-team="1">📢 Post to my team</button></div>` : ''}
 ${list.length ? list.map(a => { const seen = annSeen(a), aud = audience(a), sc = aud.filter(e => annSeen(a, e.id)).length;
-return `<div class="card ann ${a.pinned ? 'pin' : ''} ${seen ? '' : 'unread'}"><div class="row"><div class="anh">${a.author_label ? `<span class="av anav">${esc(initials(a.author_label))}</span>` : empById(a.created_by) ? avatarHTML(empById(a.created_by)) : '<span class="av anav">HR</span>'}<div><b class="at">${a.pinned ? '📌 ' : ''}${esc(a.title)}</b><div class="small muted">${esc(a.author_label || empById(a.created_by)?.name || 'HR')} · ${fmtD(ymd(a.created_at))}${a.office ? ' · ' + esc(a.office) + ' only' : ''}${a.team_of ? ` · <span class="chip">👥 ${a.team_of === S.me.id ? 'My team' : esc((empById(a.team_of)?.name || '').split(' ')[0]) + "'s team"}</span>` : ''}</div></div></div>${seen ? '<span class="chip good">✓ Seen</span>' : `<button class="btn sm pri" data-anseen="${a.id}">Mark as seen</button>`}</div>
+return `<div class="card ann ${a.pinned ? 'pin' : ''} ${seen ? '' : 'unread'}"><div class="row"><div class="anh">${a.author_label ? `<span class="av anav">${esc(initials(a.author_label))}</span>` : empById(a.created_by) ? avatarHTML(empById(a.created_by)) : '<span class="av anav">HR</span>'}<div><b class="at">${a.pinned ? '📌 ' : ''}${esc(a.title)}</b><div class="small muted">${esc(a.author_label || empById(a.created_by)?.name || 'HR')} · ${fmtD(ymd(a.created_at))}${a.office ? ' · ' + esc(a.office) + ' only' : ''}${a.team_of ? ` · <span class="chip">👥 ${a.team_of === S.me.id ? 'My team' : esc((empById(a.team_of)?.name || '').split(' ')[0]) + "'s team"}</span>` : ''}</div></div></div>${a.created_by === S.me.id ? '<span class="chip">📢 Posted by you</span>' : seen ? '<span class="chip good">✓ Seen</span>' : `<button class="btn sm pri" data-anseen="${a.id}">Mark as seen</button>`}</div>
 ${a.body ? `<p style="white-space:pre-wrap;margin:8px 0 0">${esc(a.body)}</p>` : ''}
 ${annCanManage(a) ? `<div class="row small" style="margin-top:8px"><a href="#" data-anwho="${a.id}">Seen by ${sc} of ${aud.length}</a><span class="hstack"><button class="btn sm" data-anpin="${a.id}" data-v="${a.pinned ? 0 : 1}">${a.pinned ? 'Unpin' : 'Pin'}</button><button class="btn sm" data-andel="${a.id}">Delete</button></span></div>` : ''}</div>`; }).join('')
 : '<div class="card muted center">No announcements yet.</div>'}
