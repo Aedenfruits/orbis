@@ -663,7 +663,7 @@ const LOGO = '<svg viewBox="-4 -4 724 216" aria-label="aeden" role="img"><path c
 const S = { session: null, me: null, emps: [], settings: {}, team: [], view: 'punch', device: null, today: null, breaks: [], busy: false };
 const isAdmin = () => ['hr', 'md', 'dev'].includes(S.me?.access);
 const isDev = () => S.me?.access === 'dev';
-const empById = id => S.emps.find(e => e.id === id);
+const empById = id => (S.empsAll || S.emps).find(e => e.id === id);
 const C = () => S.settings || {};
 const queueAll = () => lsGet('queue', []);
 const queue = () => queueAll().filter(it => !S.me || !it.emp || it.emp === S.me.id);
@@ -689,8 +689,8 @@ const [emps, set] = await Promise.all([
 q(sb.from('employees').select('*').order('name')),
 q(sb.from('app_settings').select('data').eq('id', 1).maybeSingle())
 ]);
-S.emps = emps || []; S.settings = set?.data || {};
-S.me = S.emps.find(e => e.auth_uid === uid) || null;
+S.empsAll = emps || []; S.emps = S.empsAll.filter(e => e.access !== 'dev'); S.settings = set?.data || {};
+S.me = S.empsAll.find(e => e.auth_uid === uid) || null;
 const tok = lsGet('device', null); S.device = null;
 await Promise.all([
 S.me ? rpc('my_team').then(r => r || [], () => []).then(r => { S.team = r.filter(id => id && id !== S.me.id); }) : Promise.resolve(),
