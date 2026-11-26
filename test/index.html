@@ -1018,6 +1018,11 @@ if (S.cert && isSick(typ)) { row.cert_path = await certUpload(id); row.cert_chec
 await q(sb.from('leave_requests').insert(row)); S.cert = null; toast('Leave request sent'); render(); } catch (e) { btn.disabled = false; toast(errMsg(e), true); } };
 }
 document.addEventListener('click', async e => { const b = e.target.closest('[data-lcancel]'); if (!b) return; try { await rpc('cancel_leave', { p_id: b.dataset.lcancel }); toast('Request cancelled'); render(); } catch (er) { toast(errMsg(er), true); } });
+function nextEmpCode() { const E = (S.emps || []).filter(e => e.code); if (!E.length) return { next: '', last: null };
+const last = E.slice().sort((p, q) => String(q.created_at || '').localeCompare(String(p.created_at || '')) || String(q.code).localeCompare(String(p.code), undefined, { numeric: true }))[0];
+const m = String(last.code).match(/^(.*?)(\d+)$/); if (!m) return { next: '', last };
+const pre = m[1], w = m[2].length, mx = Math.max(...E.map(e => String(e.code).match(/^(.*?)(\d+)$/)).filter(z => z && z[1].toUpperCase() === pre.toUpperCase()).map(z => Number(z[2])));
+return { next: pre + String(mx + 1).padStart(w, '0'), last }; }
 const t12 = v => { if (!v || !/^\d{1,2}:\d{2}/.test(v)) return esc(v || ''); let [H, M] = v.split(':').map(Number); H = H % 24; return `${H % 12 || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`; };
 function tp12(id, v) { let [H, M] = (v || '09:00').split(':').map(Number); H = (H || 0) % 24; M = M || 0; const h = H % 12 || 12, ap = H < 12 ? 'AM' : 'PM';
 const ms = [...new Set([...Array(12).keys()].map(i => i * 5).concat(M))].sort((x, y) => x - y);
@@ -1188,7 +1193,7 @@ document.addEventListener('click', async e => {
 const b = e.target.closest('[data-emp]'); if (!b) return; const a = b.dataset.emp, id = b.dataset.id;
 if (a === 'new' || a === 'edit') {
 const x = id ? empById(id) : { active: true, access: '' }; const opt = (arr, v) => arr.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('');
-dlg(id ? 'Edit employee' : 'Add employee', `<div class="grid2"><label>Employee code<input id="e_code" value="${esc(x.code || '')}" ${id ? 'disabled' : ''} placeholder="ADN0072"></label><label>Full name<input id="e_name" value="${esc(x.name || '')}"></label>
+dlg(id ? 'Edit employee' : 'Add employee', `<div class="grid2"><label>Employee code<input id="e_code" value="${esc(x.code || (id ? '' : nextEmpCode().next))}" ${id ? 'disabled' : ''} placeholder="${esc(nextEmpCode().next || 'AFI001')}">${!id && nextEmpCode().last ? `<small class="muted">Last added: ${esc(nextEmpCode().last.code)} · ${esc(nextEmpCode().last.name)}</small>` : ''}</label><label>Full name<input id="e_name" value="${esc(x.name || '')}"></label>
 <label>Designation<input id="e_desig" value="${esc(x.desig || '')}"></label><label>Department<select id="e_dept"><option></option>${opt(C().depts || [], x.dept)}</select></label>
 <label>Office<select id="e_office"><option></option>${opt(C().offices || [], x.office)}</select></label><label>Joining date<input type="date" id="e_join" value="${x.join_date || ''}"></label><label>Biometric machine ID <span class="small muted">(only if different from code)</span><input id="e_bio" value="${esc(x.bio_id || '')}" placeholder="e.g. 71"></label><label>Shift<select id="e_shift">${shiftsCfg().map(z => `<option value="${z.k}" ${(x.shift || 'gen') === z.k ? 'selected' : ''}>${esc(z.name)} · ${z.start}–${z.end}</option>`).join('')}</select></label><label>Weekly off${woBoxes('e_wo', weekOffs(x))}</label>
 <label>Reports to<select id="e_mgr"><option value="">— nobody —</option>${S.emps.filter(o => o.id !== id && o.active).map(o => `<option value="${o.id}" ${x.reports_to === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
