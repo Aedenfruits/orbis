@@ -718,7 +718,7 @@ await INTRO;
 if (S.me.must_change_pw) await forcePw();
 const today = loadToday().catch(() => { });
 if (!S.splashed) { S.splashed = true; const dd = new Date().toDateString(); let seenToday = false; try { seenToday = localStorage.getItem('orbis.splashDay') === dd + '|' + S.me?.id; localStorage.setItem('orbis.splashDay', dd + '|' + S.me?.id); } catch { }
-if (!seenToday) { await Promise.race([today, new Promise(r => setTimeout(r, 1200))]); await splash(); } }
+void seenToday; /* welcome screen removed — open straight to home */ }
 await Promise.race([today, new Promise(r => setTimeout(r, 1500))]);
 route(); flushQueue(); autoBackup(); startReminders(); refreshBadges();
 }
