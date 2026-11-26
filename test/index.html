@@ -559,6 +559,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 #nfpops{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 14px);z-index:2147482000;display:flex;flex-direction:column;gap:10px;width:min(380px,calc(100vw - 24px))}.nfpop{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:13px 14px;border-radius:18px;border:1px solid rgba(224,22,100,.25);background:#fff;color:#1d1b2e;font:inherit;box-shadow:0 14px 40px rgba(29,43,83,.25);cursor:pointer;animation:nfpIn .35s cubic-bezier(.2,.9,.3,1.2)}.nfpop.out{opacity:0;transform:translateY(-10px);transition:.3s}.nfpi{font-size:22px;line-height:1.1}.nfpt{flex:1;min-width:0}.nfpt b{display:block;font-size:14.5px}.nfpt small{display:block;color:#6b7280;font-size:12.5px;margin-top:2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.nfpx{color:#9ca3af;font-size:13px;padding:2px 4px}@keyframes nfpIn{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}@media(max-width:640px){#nfpops{left:12px;right:12px;width:auto}}
 .tkrd{font-weight:600}.tkrd.ok{color:#15803d}.tkrd.no{color:#c2410c}
 .geot{display:block;font-size:11.5px;color:#2563eb;text-decoration:none;margin-top:2px;max-width:220px;line-height:1.3}.geot:hover{text-decoration:underline}
+.phlab{position:relative;overflow:hidden;cursor:pointer;justify-content:center}.phlab input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1746,8 +1747,8 @@ const e = empById(id); if (!e) return; const self = id === S.me.id; if (!self &&
 const u = await photoUrl(e).catch(() => null); S.photoNew = null;
 dlg(self ? '📷 My photo' : `📷 Photo — ${esc(e.name)}`, `<div class="phwrap"><div class="phbox" id="phBox">${u ? `<img src="${u}" alt="">` : `<span>${esc(initials(e.name))}</span>`}</div>
 <div class="stack" style="gap:8px"><p class="small muted">Used on the company ID card. A clear, front-facing photo with a plain background works best.</p>
-<button class="btn" type="button" id="phPick">🖼 ${onMobile() ? 'Choose from gallery' : 'Choose a photo'}</button>
-${onMobile() ? `<button class="btn" type="button" id="phSelfie">📸 Take a selfie</button>` : `<button class="btn" type="button" id="phCam">📸 Use this computer's camera</button>`}<button class="btn pri" type="button" id="phSnap" hidden>● Take photo</button>
+<label class="btn phlab" id="phPick">🖼 ${onMobile() ? 'Choose from gallery' : 'Choose a photo'}<input type="file" accept="image/*" id="phInG"></label>
+${onMobile() ? `<label class="btn phlab" id="phSelfie">📸 Take a selfie<input type="file" accept="image/*" capture="user" id="phInS"></label>` : `<button class="btn" type="button" id="phCam">📸 Use this computer's camera</button>`}<button class="btn pri" type="button" id="phSnap" hidden>● Take photo</button>
 ${u ? '<button class="btn" type="button" id="phDel">Remove photo</button>' : ''}</div></div>`, `<button class="btn pri" id="phSave" disabled>Save photo</button>`);
 $('#dlg').addEventListener('close', stopCam, { once: true });
 S.crop = null; const show = async blob => { S.crop = null; $('#cropBar')?.remove(); S.photoNew = blob; $('#phBox').innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="">`; $('#phSave').disabled = false; };
@@ -1756,7 +1757,7 @@ let img; try { img = await blobImg(f); } catch (er) { logErr('photo-read ' + (f.
 try { startCrop(img); $('#phSave').disabled = false; } catch (er) { logErr('photo-crop', er); try { show(await cropToJpeg(img)); } catch (er2) { logErr('photo-crop2', er2); toast('Could not prepare that photo. Please try a different photo.', true); } } };
 const open = sel => { let i = document.getElementById('phIn'); if (i) i.remove(); i = document.createElement('input'); i.type = 'file'; i.id = 'phIn'; i.accept = 'image/*'; if (sel) i.setAttribute('capture', 'user');
 i.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0'; ($('#dlg') || document.body).appendChild(i); i.addEventListener('change', () => pick(i.files && i.files[0])); i.click(); };
-$('#phPick').onclick = () => open(false); if ($('#phSelfie')) $('#phSelfie').onclick = () => open(true);
+['#phInG', '#phInS'].forEach(sel => { const inp = $(sel); if (!inp) return; let done = 0; const go = () => { const f = inp.files && inp.files[0]; if (!f || done === f.lastModified + f.size) return; done = f.lastModified + f.size; pick(f); }; inp.addEventListener('change', go); inp.addEventListener('input', go); inp.addEventListener('click', () => { done = 0; inp.value = ''; }); });
 if ($('#phCam')) $('#phCam').onclick = async () => { try { camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 960, facingMode: 'user' } });
 $('#phBox').innerHTML = '<video id="phVid" autoplay playsinline muted></video>'; $('#phVid').srcObject = camStream; $('#phSnap').hidden = false; }
 catch (er) { logErr('photo-cam', er); toast('Camera not available. Use "Choose a photo" instead.', true); } };
@@ -5763,7 +5764,7 @@ const kick = p => { const t = p?.table; if (t === 'employees' || t === 'app_sett
 clearTimeout(tmr); tmr = setTimeout(async () => { if (S.coreStale && !busy()) { S.coreStale = false; try { QC.lastWrite = Date.now(); await loadCore(); } catch { } } liveRender(); }, 1200); };
 const liveRt = () => { if (lch || !S.me || !S.session || !sb.channel) return;
 try { let c = sb.channel('orbis-all-' + S.me.id); LIVE_T.forEach(t => { c = c.on('postgres_changes', { event: '*', schema: 'public', table: t }, kick); });
-lch = c.subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') { try { sb.removeChannel(lch); } catch { } lch = null; setTimeout(liveRt, 10000); } }); } catch { lch = null; } };
+const me = c; lch = c; c.subscribe(st => { if ((st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') && lch === me) { lch = null; setTimeout(() => { try { sb.removeChannel(me); } catch { } }, 0); setTimeout(liveRt, 10000); } }); } catch { lch = null; } };
 const _rrL = render; render = async function () { const r = await _rrL.apply(this, arguments); liveRt(); return r; };
 document.addEventListener('focusout', () => setTimeout(() => { if (pend) liveRender(); }, 400));
 document.addEventListener('close', () => setTimeout(() => { if (pend) liveRender(); }, 400), true);
