@@ -554,6 +554,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .nfl{display:flex;flex-direction:column;gap:6px;margin-top:6px}.nfi{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:14px;text-decoration:none;color:inherit;border:1px solid var(--line,#eee)}.nfi:hover{background:rgba(29,43,83,.04)}.nfi.un{background:#fff3f7;border-color:#f8c6d8}.nfi b{display:block;font-size:14px}.nfi small{display:block;color:var(--muted,#6b7280);font-size:12.5px;margin-top:2px}.nfx{font-size:20px;line-height:1.2}.nft{font-size:11.5px;color:var(--muted,#6b7280);white-space:nowrap}.nfi.un .nft{color:#e01664;font-weight:700}
 .shpick{border:1.5px solid #f8c6d8;background:linear-gradient(180deg,#fff,#fff6f9)}.shic{font-size:26px}.shopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}.shopt{display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line,#e5e7eb);background:#fff;font:inherit;cursor:pointer;text-align:left}.shopt b{font-size:15px}.shopt span{font-size:13px;color:var(--muted,#6b7280)}.shopt.on{border-color:#e01664;background:#fff0f5;box-shadow:0 0 0 3px rgba(224,22,100,.12)}
 #updbar{z-index:2147483000!important;pointer-events:auto!important}
+.rsh{font-size:13.5px;white-space:nowrap}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1173,7 +1174,7 @@ const head = [...Array(last)].map((_, i) => `<th class="c ${dowOf(`${ym}-${pad(i
 const rows = emps.map(e => { let P = 0, L = 0, lt = 0; const cells = [...Array(last)].map((_, i) => { const ds = `${ym}-${pad(i + 1)}`; const a = att.find(x => x.employee_id === e.id && x.day === ds); const l = lv.find(x => x.employee_id === e.id && x.from_date <= ds && x.to_date >= ds);
 if (a?.in_at) { P++; const late = hm(a.in_at) > lateLim(e, a.day); if (late) lt++; return `<td class="c p ${late ? 'lt' : ''}" title="${hm(a.in_at)}–${hm(a.out_at)}">P</td>`; }
 if (l) { L++; return `<td class="c l" title="${esc(ltName(l.type))}">L</td>`; } if (isWeekOff(ds, e)) return '<td class="c wo">–</td>'; if (holOn(ds, e.office)) return `<td class="c h" title="${esc(holOn(ds, e.office).name)}">H</td>`; if (ds > todayStr()) return '<td class="c"></td>'; return '<td class="c a">A</td>'; }).join('');
-return `<tr><td class="nm"><b>${esc(e.name)}</b><small>${esc(e.code)}</small></td>${cells}<td class="c"><b>${P}</b></td><td class="c">${L}</td><td class="c">${lt}</td></tr>`; }).join('');
+return `<tr><td class="nm"><b>${esc(e.name)}</b><small>${esc(e.code)} · ${esc(shiftOf(e)?.name || 'General')} ${shiftOf(e) ? brT12(shiftOf(e).start) + '–' + brT12(shiftOf(e).end) : ''}</small></td>${cells}<td class="c"><b>${P}</b></td><td class="c">${L}</td><td class="c">${lt}</td></tr>`; }).join('');
 return `<div class="stack"><div class="row"><div><span class="eyebrow">HR</span><h2>Attendance register</h2></div><div class="hstack"><button class="btn sm" data-rm="-1">‹</button><b>${new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b><button class="btn sm" data-rm="1">›</button><button class="btn" id="regCsv">⬇ Daily times (CSV)</button><button class="btn sm pri" id="salXls">⬇ Salary summary (Excel)</button></div></div>
 <div class="card flush scroll"><table class="reg"><thead><tr><th>Employee</th>${head}<th class="c">P</th><th class="c">L</th><th class="c">Late</th></tr></thead><tbody>${rows || '<tr><td>No employees</td></tr>'}</tbody></table></div>
 <p class="small muted">P present · L leave · A absent · H holiday · – Sunday. Orange P = late. Hover a cell to see times.</p></div>`;
@@ -5608,12 +5609,13 @@ let lastDept = null;
 return `<div class="stack"><div class="row"><div><span class="eyebrow">HR</span><h2>Attendance register</h2>${seg}</div>
 <div class="rdnav"><button class="btn sm" data-rd="-1">‹</button><input type="date" id="regDayIn" value="${ds}" max="${todayStr()}" class="rdin"><button class="btn sm" data-rd="1" ${ds >= todayStr() ? 'disabled' : ''}>›</button>${ds !== todayStr() ? '<button class="btn sm" data-rd="0">Today</button>' : ''}<button class="btn sm pri" id="regDayX">⬇ Excel</button></div></div>
 ${regFiltBar()}<div class="rdbox">${boxes.map(([k, t, n, c]) => `<button class="rdb ${c} ${f === k ? 'on' : ''}" data-rdf="${k}"><b>${n}</b><span>${t}</span></button>`).join('')}</div>
-<div class="card flush scroll"><table class="rdt"><thead><tr><th>Employee</th><th>Status</th><th>In</th><th>Out</th><th>Break</th><th>Worked</th></tr></thead><tbody>
-${show.map(r => { const dh = r.e.dept !== lastDept ? `<tr class="rdd"><td colspan="6">${esc(r.e.dept || 'Other')}</td></tr>` : ''; lastDept = r.e.dept;
+<div class="card flush scroll"><table class="rdt"><thead><tr><th>Employee</th><th>Shift</th><th>Status</th><th>In</th><th>Out</th><th>Break</th><th>Worked</th></tr></thead><tbody>
+${show.map(r => { const dh = r.e.dept !== lastDept ? `<tr class="rdd"><td colspan="7">${esc(r.e.dept || 'Other')}</td></tr>` : ''; lastDept = r.e.dept;
 return `${dh}<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.code)}${r.e.desig ? ' · ' + esc(r.e.desig) : ''}</div></div></div></td>
+<td>${(() => { const s = shiftOf(r.e, ds); return s ? `<b class="rsh">${esc(s.name)}</b><div class="small muted">${brT12(s.start)} – ${brT12(s.end)}${r.e.shift_locked ? ' · 🔒' : ''}</div>` : '—'; })()}</td>
 <td><span class="rst ${r.st.c}">${esc(r.st.t)}</span>${r.place ? `<div class="small muted">${esc(r.place)}</div>` : ''}</td>
 <td>${r.a?.in_at ? hm(r.a.in_at) : '—'}</td><td>${r.a?.out_at ? hm(r.a.out_at) : r.a?.in_at ? '<span class="small muted">working</span>' : '—'}</td>
-<td>${r.bm ? r.bm + ' min' : '—'}</td><td>${r.a?.in_at ? hmz(r.wk) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="6" class="muted">Nobody in this list.</td></tr>'}
+<td>${r.bm ? r.bm + ' min' : '—'}</td><td>${r.a?.in_at ? hmz(r.wk) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Nobody in this list.</td></tr>'}
 </tbody></table></div><p class="small muted">Tap a box to filter. Orange = late (after shift start + grace). ${fmtD(ds)}.</p></div>`;
 };
 document.addEventListener('click', async e => {
@@ -5621,9 +5623,9 @@ const m = e.target.closest('[data-regmode]'); if (m) { S.regMode = m.dataset.reg
 const d = e.target.closest('[data-rd]'); if (d) { const v = +d.dataset.rd; S.regDay = v === 0 ? todayStr() : addDays(S.regDay || todayStr(), v); if (S.regDay > todayStr()) S.regDay = todayStr(); return render(); }
 const fl = e.target.closest('[data-rdf]'); if (fl) { S.regDayF = fl.dataset.rdf; return render(); }
 if (e.target.closest('#regDayX')) { const { ds, rows } = S.regDayRows || {}; if (!rows) return; const X = await loadXLSX();
-const aoa = [[`ORBIS attendance — ${fmtD(ds)}`], [], ['Code', 'Name', 'Department', 'Designation', 'Status', 'In', 'Out', 'Break (min)', 'Worked', 'On duty place'],
-...rows.map(r => [r.e.code, r.e.name, r.e.dept || '', r.e.desig || '', r.st.t, r.a?.in_at ? hm(r.a.in_at) : '', r.a?.out_at ? hm(r.a.out_at) : '', r.bm || '', r.a?.in_at ? hmz(r.wk) : '', r.place])];
-const wb = X.utils.book_new(), ws = X.utils.aoa_to_sheet(aoa); ws['!cols'] = [8, 26, 14, 18, 18, 7, 7, 10, 10, 20].map(w => ({ wch: w })); X.utils.book_append_sheet(wb, ws, 'Day ' + ds); X.writeFile(wb, `ORBIS-attendance-${ds}${S.regDeptF ? '-' + S.regDeptF : ''}${S.regLocF ? '-' + S.regLocF : ''}.xlsx`); }
+const aoa = [[`ORBIS attendance — ${fmtD(ds)}`], [], ['Code', 'Name', 'Department', 'Designation', 'Shift', 'Shift time', 'Status', 'In', 'Out', 'Break (min)', 'Worked', 'On duty place'],
+...rows.map(r => [r.e.code, r.e.name, r.e.dept || '', r.e.desig || '', shiftOf(r.e, ds)?.name || '', shiftOf(r.e, ds) ? `${brT12(shiftOf(r.e, ds).start)} – ${brT12(shiftOf(r.e, ds).end)}` : '', r.st.t, r.a?.in_at ? hm(r.a.in_at) : '', r.a?.out_at ? hm(r.a.out_at) : '', r.bm || '', r.a?.in_at ? hmz(r.wk) : '', r.place])];
+const wb = X.utils.book_new(), ws = X.utils.aoa_to_sheet(aoa); ws['!cols'] = [8, 26, 14, 18, 12, 18, 18, 7, 7, 10, 10, 20].map(w => ({ wch: w })); X.utils.book_append_sheet(wb, ws, 'Day ' + ds); X.writeFile(wb, `ORBIS-attendance-${ds}${S.regDeptF ? '-' + S.regDeptF : ''}${S.regLocF ? '-' + S.regLocF : ''}.xlsx`); }
 });
 document.addEventListener('change', e => { if (e.target.id === 'regDayIn' && e.target.value) { S.regDay = e.target.value > todayStr() ? todayStr() : e.target.value; render(); } });
 }
