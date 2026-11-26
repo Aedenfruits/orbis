@@ -597,7 +597,12 @@ const mmss = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); retu
 const hhmmss = ms => { ms = Math.max(0, ms); const s = Math.floor(ms / 1000); return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}`; };
 const PW = p => String(p ?? '');
 const codeToEmail = c => `${String(c).trim().toLowerCase().replace(/[^a-z0-9]/g, '')}@${EMAIL_DOMAIN}`;
-const errMsg = e => (e?.message || String(e || 'Something went wrong')).replace(/^.*?ERROR:\s*/, '');
+const errMsg = e => { const m = (e?.message || String(e || 'Something went wrong')).replace(/^.*?ERROR:\s*/, '');
+if (e?.name === 'AbortError' || /load failed|failed to fetch|networkerror|network request failed|fetch is aborted|the network connection was lost|timed? ?out|aborted/i.test(m)) return 'Slow or no internet — please check your connection and try again';
+if (/JWT|jwt expired|invalid.*token|not authorized|permission denied for|row-level security/i.test(m)) return 'Your sign-in has expired — please close ORBIS and open it again';
+if (/duplicate key|violates unique/i.test(m)) return 'This is already saved';
+if (/violates (foreign key|check) constraint|null value in column/i.test(m)) return 'Some details are missing or not valid — please check and try again';
+return m; };
 function toast(t, bad) { const el = $('#toast'); el.textContent = t; el.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toast.t); toast.t = setTimeout(() => el.className = '', 3800); }
 const lsGet = (k, d) => { try { const v = localStorage.getItem('orbis.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem('orbis.' + k, JSON.stringify(v)); } catch { } };
@@ -2735,12 +2740,13 @@ try { await save(sub); } catch { await sub.unsubscribe().catch(() => { }); sub =
 lsSet('pushOn', true); return 'granted';
 }
 async function pushTest() { const r = await fetch(PUSH_FN, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (S.session?.access_token || '') }, body: '{"test":true}' }); return r.ok ? (await r.json()).sent : 0; }
+const pushSubDone = () => { try { return lsGet('pushOn', false) === true; } catch { return false; } };
 async function pushTurnOn(b) {
 if (!pushOK()) return toast(isIOS() ? '📱 On iPhone: tap Share → Add to Home Screen, open ORBIS from the home screen, then turn on notifications.' : 'This browser can\'t show notifications. Use Chrome or Edge.', true);
 if (Notification.permission === 'denied') return toast('Notifications are blocked for aedenorbis.com. Allow them in your browser or phone settings, then try again.', true);
 if (b) b.disabled = true;
 try { const p = await pushSubscribe(true); if (p !== 'granted') return toast('Notifications stay off', true); let n = 0; try { n = await pushTest(); } catch { } toast(n ? '🔔 Notifications on — a test notification is on its way' : '🔔 Notifications on'); render?.(); }
-catch (er) { toast('Could not turn on notifications: ' + errMsg(er), true); } finally { if (b) b.disabled = false; }
+catch (er) { toast(pushSubDone() ? '🔔 Notifications on' : 'Notifications could not be turned on just now — please try again in a minute'); } finally { if (b) b.disabled = false; }
 }
 function pushCard() {
 if (KMODE() || (lsGet('pushOn', false) && pushOK() && Notification.permission === 'granted')) return '';
