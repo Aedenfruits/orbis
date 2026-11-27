@@ -1,4 +1,4 @@
-const C = 'orbis-v136'; let pending = false;
+const C = 'orbis-v137'; let pending = false;
 const bn = t => +(((t || '').match(/name="orbis-build" content="(\d+)"/) || [])[1]) || 0;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-s-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { let had = false; for (const k of await caches.keys()) if (k !== C) { had = true; await caches.delete(k); } await self.clients.claim();

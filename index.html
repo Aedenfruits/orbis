@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795766924"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795767335"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -576,6 +576,16 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .rx{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;position:relative;align-items:center}.rxc{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:2px 8px;font-size:13px;line-height:1.5;cursor:pointer;color:inherit}.rxc.me{background:#fde8ef;border-color:#f3a6c0;color:#b4123a;font-weight:700}.rxc.rxadd{opacity:.55;padding:2px 7px}.rxc.rxadd b{font-size:11px;margin-left:1px}.rx:hover .rxadd,.rxc.rxadd:focus{opacity:1}.rxpick{position:absolute;bottom:calc(100% + 4px);left:0;z-index:20;display:flex;gap:2px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:4px 6px;box-shadow:0 8px 24px rgba(29,43,83,.18)}.rxpick button{border:0;background:none;font-size:20px;padding:2px 4px;cursor:pointer;border-radius:8px;transition:transform .12s}.rxpick button:hover{transform:scale(1.25);background:#f4f6fb}.tcm .rx,.tkm .rx{margin-top:4px}
 .stamp .st-w{margin-top:12px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fde8ef,#eef2ff);color:#1D2B53;font-weight:700;font-size:15px;line-height:1.45}.wkconf{position:fixed;inset:0;pointer-events:none;overflow:hidden}.wkconf i{position:absolute;top:-40px;font-style:normal;font-size:26px;animation:wkfall 2.6s ease-in forwards}@keyframes wkfall{to{transform:translateY(110vh) rotate(320deg);opacity:.2}}
 .rpmode{margin-bottom:10px;flex:0 0 auto;display:inline-flex}
+.wkfull{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at 50% 35%,#2b3d78 0%,#1D2B53 45%,#120c2e 100%);overflow:hidden;cursor:pointer;animation:wkIn .45s ease both}
+.wkfull.go{animation:wkOut .45s ease forwards}@keyframes wkIn{from{opacity:0}}@keyframes wkOut{to{opacity:0;transform:scale(1.04)}}
+.wkfull .wkconf{position:absolute;inset:0;pointer-events:none;z-index:1}.wkfull .wkconf i{position:absolute;top:-8vh;font-style:normal;animation:wkfall linear infinite}.wkfull .wkconf i.e{font-size:28px}.wkfull .wkconf i.p{width:10px;height:16px;border-radius:2px;opacity:.9}
+@keyframes wkfall{0%{transform:translateY(0) rotate(0)}100%{transform:translateY(118vh) rotate(540deg)}}
+.wkbox{position:relative;z-index:2;text-align:center;color:#fff;max-width:620px;animation:wkPop .8s cubic-bezier(.2,1.6,.4,1) .15s both}
+@keyframes wkPop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+.wkemo{font-size:clamp(70px,16vw,120px);line-height:1;animation:wkBounce 1.6s ease-in-out .9s infinite}@keyframes wkBounce{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-14px) rotate(6deg)}}
+.wkhi{font-size:clamp(30px,7vw,52px);font-weight:800;line-height:1.15;margin-top:14px;letter-spacing:-.5px}.wkhi span{background:linear-gradient(90deg,#ff5c9a,#ffd166);-webkit-background-clip:text;background-clip:text;color:transparent}
+.wksub{font-size:clamp(17px,4vw,22px);margin-top:14px;opacity:.95;font-weight:600}.wkout{display:inline-block;margin-top:24px;padding:10px 18px;border-radius:99px;background:rgba(255,255,255,.12);font-size:15px}.wktap{margin-top:22px;font-size:13px;opacity:.6}
+@media (prefers-reduced-motion:reduce){.wkfull .wkconf{display:none}.wkemo{animation:none}}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -998,10 +1008,15 @@ k.addEventListener('pointerup', end); k.addEventListener('pointercancel', end);
 function celebrate(kind, at, offline) {
 const el = document.createElement('div'); el.className = 'cel';
 const t = todayStr(), nx = addDays(t, 1), wk = kind === 'out' && !isWeekOff(t) && (isWeekOff(nx) || !!holOn(nx, S.me.office)), fn = esc(String(S.me.name || '').split(' ')[0]);
-const msg = wk ? (isWeekOff(nx) ? `<div class="st-w">🎉 Great work this week, ${fn}!<br>Thank you – have a wonderful weekend 🌴</div>` : `<div class="st-w">🎉 Thank you for today, ${fn}!<br>Enjoy your holiday tomorrow 🌴</div>`) : '';
-el.innerHTML = `<div class="card stamp ${wk ? 'wkend' : ''}"><div class="alg">${LOGO}</div><div class="st-k">${kind === 'in' ? 'CHECKED IN' : 'CHECKED OUT'}</div><div class="st-t">${hm12(at)}</div><div class="st-n">${esc(S.me.name)}</div><div class="small">${fmtD(todayStr())}${offline ? ' · ⏳ saved offline' : ''}</div>${msg}</div>${wk ? `<div class="wkconf">${[...Array(18)].map((_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 6) * 0.12}s">${['🎉', '✨', '🎊', '⭐'][i % 4]}</i>`).join('')}</div>` : ''}`;
-if (wk) el.onclick = () => el.remove();
-document.body.appendChild(el); setTimeout(() => el.classList.add('go'), wk ? 5200 : 2200); setTimeout(() => el.remove(), wk ? 5800 : 2800);
+if (wk) { const hol = !isWeekOff(nx), C2 = ['#e01664', '#ffd166', '#06d6a0', '#4cc9f0', '#ffffff', '#f72585'];
+el.className = 'wkfull'; el.innerHTML = `<div class="wkconf">${[...Array(70)].map((_, i) => `<i class="${i % 3 ? 'p' : 'e'}" style="left:${(i * 53) % 100}%;animation-delay:${((i * 7) % 25) / 10}s;animation-duration:${2.8 + (i % 5) * 0.45}s;${i % 3 ? `background:${C2[i % C2.length]};` : ''}">${i % 3 ? '' : ['🎉', '✨', '🎊', '⭐', '🌴'][i % 5]}</i>`).join('')}</div>
+<div class="wkbox"><div class="wkemo">🎉</div><div class="wkhi">${hol ? 'Thank you for today' : 'Great work this week'},<br><span>${fn}!</span></div>
+<div class="wksub">${hol ? 'Enjoy your holiday tomorrow 🌴' : 'Thank you – have a wonderful weekend 🌴'}</div>
+<div class="wkout">✅ Checked out at <b>${hm12(at)}</b> · ${fmtD(t)}${offline ? ' · ⏳ saved offline' : ''}</div><div class="wktap">Tap anywhere to close</div></div>`;
+el.onclick = () => { el.classList.add('go'); setTimeout(() => el.remove(), 450); };
+document.body.appendChild(el); setTimeout(() => el.classList.add('go'), 7500); setTimeout(() => el.remove(), 8000); return; }
+el.innerHTML = `<div class="card stamp"><div class="alg">${LOGO}</div><div class="st-k">${kind === 'in' ? 'CHECKED IN' : 'CHECKED OUT'}</div><div class="st-t">${hm12(at)}</div><div class="st-n">${esc(S.me.name)}</div><div class="small">${fmtD(todayStr())}${offline ? ' · ⏳ saved offline' : ''}</div></div>`;
+document.body.appendChild(el); setTimeout(() => el.classList.add('go'), 2200); setTimeout(() => el.remove(), 2800);
 }
 async function extraDlg() {
 const mon = todayStr().slice(0, 7);
@@ -2847,7 +2862,7 @@ const EMO_IC = { '🔒': 'lock', '🔓': 'unlock', '⬇': 'download', '📥': 'd
 '😀': 'mood4:g', '😊': 'mood4:g', '🙂': 'mood3', '😐': 'mood2:w', '🙁': 'mood1:r', '📅': 'my', '🎁': 'party', '💡': 'spark', '🔗': 'clip', '📋': 'plan', '📈': 'insights', '📉': 'insights', '🙏': 'handshake', '❤️': 'pulse', '💪': 'zap', '🚀': 'zap' };
 const EMO_ANY = /(\p{Extended_Pictographic}|[⬆⬇])(️|‍\p{Extended_Pictographic}️?|\p{Emoji_Modifier})*/gu;
 const EMO_ONE = /(\p{Extended_Pictographic}|[\u2B06\u2B07])/u;
-const EMO_SKIP = 'script,style,textarea,input,select,option,svg,[contenteditable],.noico,.rx,.wkconf,.st-w';
+const EMO_SKIP = 'script,style,textarea,input,select,option,svg,[contenteditable],.noico,.rx,.wkconf,.st-w,.wkbox';
 function emoIcons(root) {
 if (!root || root.nodeType !== 1 || root.closest?.(EMO_SKIP)) return;
 const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => EMO_ONE.test(n.nodeValue) && !n.parentElement?.closest(EMO_SKIP) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP }), L = [];
