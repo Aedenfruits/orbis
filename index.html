@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795763385"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795763531"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -568,6 +568,8 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .tp12 input[data-tp]{width:3.1em;min-width:0;text-align:center;padding-left:4px;padding-right:4px;font-variant-numeric:tabular-nums}.tp12 .tpap{min-width:3.4em;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg2,#eef1f8);font-weight:700;cursor:pointer;align-self:stretch}.tp12.bad input[data-tp]{border-color:var(--crit)}
 .wrst{align-items:flex-end;gap:12px;margin-top:6px}.wrst label{margin:0;flex:0 1 220px}
 .ptk.mdp{border-left-color:#f59e0b!important}
+.wpr{display:table;white-space:nowrap;font-size:11px;font-weight:800;padding:1px 7px;border-radius:99px;margin:0 0 3px}.wp .wpm{flex:1 1 auto;min-width:0}.wp .wpm>div:first-child{display:block}.wpr.hi{background:#fde2e6;color:#b4123a}.wpr.md{background:#fff1d6;color:#a45a00}.wrst label.chk{flex:1 1 auto;align-self:center}
+@media(max-width:760px){.wp{flex-wrap:wrap}.wp .wpm{flex:1 1 calc(100% - 100px);word-break:normal;overflow-wrap:break-word}.wp>select{flex:1 1 auto;width:auto;max-width:none;margin-left:92px}}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -1093,7 +1095,7 @@ const job = prev.catch(() => { }).then(() => q(sb.from('work_plans').upsert({ em
 planQ.p[day] = job; try { await job; } finally { planQ.n--; }
 }
 const planIdle = () => !planQ.n;
-function planRow(it, ed, day) { const [t, c, ic] = WST[it.st || 'plan']; return `<div class="wp st-${it.st || 'plan'} ${it.urgent ? 'urg' : ''}"><div class="wpt"><b>${t12(it.from)}</b><small>${t12(it.to)}</small></div><div class="wpm"><div>${it.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(it.task)}</div>${it.note ? `<small>📝 ${esc(it.note)}</small>` : ''}${it.carry ? '<small>↪ carried from yesterday</small>' : ''}${it.extra ? '<small>➕ Other work (not in plan)</small>' : ''}</div>
+function planRow(it, ed, day) { const [t, c, ic] = WST[it.st || 'plan']; return `<div class="wp st-${it.st || 'plan'} ${it.urgent ? 'urg' : ''}"><div class="wpt"><b>${t12(it.from)}</b><small>${t12(it.to)}</small></div><div class="wpm"><div>${it.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${it.pr === 'high' ? '<span class="wpr hi">⚡ High</span>' : it.pr === 'medium' ? '<span class="wpr md">🔸 Medium</span>' : ''}${esc(it.task)}</div>${it.note ? `<small>📝 ${esc(it.note)}</small>` : ''}${it.carry ? '<small>↪ carried from yesterday</small>' : ''}${it.extra ? '<small>➕ Other work (not in plan)</small>' : ''}</div>
 ${ed ? `<select data-wst="${it.id}" data-d="${day}">${Object.entries(WST).map(([k, v]) => `<option value="${k}" ${(it.st || 'plan') === k ? 'selected' : ''}>${v[2]} ${v[0]}</option>`).join('')}</select><button class="btn sm" data-wdel="${it.id}" data-d="${day}">✕</button>` : `<span class="chip ${c}">${ic} ${t}</span>`}</div>`; }
 const planSum = it => { const m = it.reduce((s, i) => s + Math.max(0, toMin(i.to) - toMin(i.from)), 0); return `<span class="small muted">${it.length} tasks · ${hmm(m)} · ✅ ${it.filter(x => x.st === 'done').length} · 🔄 ${it.filter(x => x.st === 'on').length} · ❌ ${it.filter(x => x.st === 'not').length}</span>`; };
 const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
@@ -1106,13 +1108,13 @@ return `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</sp
 ${iy.length ? `<div class="card"><div class="row"><h3>Yesterday — update status</h3>${planSum(iy)}</div><div class="stack" style="gap:6px">${iy.map(i => planRow(i, true, y)).join('')}</div>${open.length ? `<div class="right"><button class="btn sm" id="wp_carry">↪ Move ${open.length} unfinished to today</button></div>` : ''}</div>` : ''}
 <div class="card"><div class="row"><h3>Today's plan</h3>${it.length ? planSum(it) : ''}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, true, t)).join('')}</div>` : '<p class="small muted">No tasks yet — plan your day hour by hour.</p>'}
 <div class="wpadd"><div class="grid3"><label>From${tp12('wp_f', last)}</label><label>To${tp12('wp_t', addMinHM(last, 60))}</label><label class="grow">Work<input id="wp_k" maxlength="140" placeholder="e.g. Bank entry"></label></div>
-<div class="row"><label class="chk"><input type="checkbox" id="wp_u"> ⚡ Emergency / urgent work</label><button class="btn pri" id="wp_add">+ Add to plan</button></div></div></div>${rvc}</div>`;
+<div class="row wrst"><label>Priority<select id="wp_p"><option value="normal">Normal</option><option value="medium">🔸 Medium</option><option value="high">⚡ High</option></select></label><label class="chk"><input type="checkbox" id="wp_u"> ⚡ Emergency / urgent work</label><button class="btn pri" id="wp_add">+ Add to plan</button></div></div></div>${rvc}</div>`;
 };
 document.addEventListener('click', async e => {
 const b = e.target.closest('button'); if (!b || S.view !== 'plan') return; const t = todayStr();
 try {
 if (b.id === 'wp_add') { const f = $('#wp_f').value, to = $('#wp_t').value, k = $('#wp_k').value.trim(), u = $('#wp_u').checked; if (!k) return toast('Write the work', true); if (!f || !to || to <= f) return toast('"To" must be after "From"', true);
-const items = [...S.planT, { id: Math.random().toString(36).slice(2, 10), from: f, to, task: k, st: u ? 'on' : 'plan', urgent: u }]; await savePlan(t, items); toast(u ? '⚡ Urgent work added' : 'Added'); render(); }
+const items = [...S.planT, { id: Math.random().toString(36).slice(2, 10), from: f, to, task: k, st: u ? 'on' : 'plan', urgent: u, pr: $('#wp_p')?.value || 'normal' }]; await savePlan(t, items); toast(u ? '⚡ Urgent work added' : 'Added'); render(); }
 if (b.dataset.wdel) { const day = b.dataset.d, items = (day === t ? S.planT : S.planY).filter(x => x.id !== b.dataset.wdel); await savePlan(day, items); render(); }
 if (b.id === 'wp_carry') { const items = [...S.planT]; S.planY.filter(x => x.st !== 'done' && !items.some(z => z.src === x.id)).forEach(x => items.push({ id: Math.random().toString(36).slice(2, 10), from: x.from, to: x.to, task: x.task, st: 'plan', urgent: !!x.urgent, carry: true, src: x.id })); await savePlan(t, items); toast('Moved to today'); render(); }
 } catch (er) { toast(errMsg(er), true); }
@@ -5994,7 +5996,7 @@ return `<div class="card"><div class="row"><div><h3>📝 Work report · ${fmtD(d
 <div class="card"><div class="row"><h3>➕ Other work I did</h3>${extra.length ? `<span class="small muted">${extra.length} · ${hmm(extra.reduce((s, i) => s + Math.max(0, toMin(i.to) - toMin(i.from)), 0))}</span>` : ''}</div>
 ${extra.length ? `<div class="stack" style="gap:6px">${extra.map(i => planRow(i, true, d)).join('')}</div>` : '<p class="small muted">Work that was not in your plan – add it with the time you spent.</p>'}
 <div class="wpadd"><div class="grid3"><label>From${tp12('wr_f', last)}</label><label>To${tp12('wr_t', addMinHM(last, 60))}</label><label class="grow">Work<input id="wr_k" maxlength="140" placeholder="e.g. Helped stock count"></label></div>
-<div class="row wrst"><label>Status<select id="wr_s"><option value="done">✅ Done</option><option value="on">🔄 Ongoing</option><option value="not">❌ Not done</option></select></label><button class="btn" id="wr_add">+ Add other work</button></div></div></div>
+<div class="row wrst"><label>Priority<select id="wr_p"><option value="normal">Normal</option><option value="medium">🔸 Medium</option><option value="high">⚡ High</option></select></label><label>Status<select id="wr_s"><option value="done">✅ Done</option><option value="on">🔄 Ongoing</option><option value="not">❌ Not done</option></select></label><button class="btn" id="wr_add">+ Add other work</button></div></div></div>
 <div style="padding-bottom:70px"><button class="btn pri wide" id="wr_sub">${S.wrSub ? '✓ Update work report' : '✅ Submit work report'}</button></div>`; }
 const _wrV = VIEWS.plan;
 VIEWS.plan = async () => { const tab = S.wpTab || 'today';
@@ -6005,7 +6007,7 @@ return `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</sp
 document.addEventListener('click', async e => { const b = e.target.closest('#wr_add,#wr_sub'); if (!b || S.view !== 'plan' || b.disabled) return; const d = S.wrDay; if (!d) return;
 try {
 if (b.id === 'wr_add') { const f = $('#wr_f').value, to = $('#wr_t').value, k = $('#wr_k').value.trim(); if (!k) return toast('Write the work you did', true); if (!f || !to || to <= f) return toast('"To" must be after "From"', true);
-await savePlan(d, [...(S.planY || []), { id: Math.random().toString(36).slice(2, 10), from: f, to, task: k, st: $('#wr_s')?.value || 'done', extra: true }]); toast('Added'); render(); }
+await savePlan(d, [...(S.planY || []), { id: Math.random().toString(36).slice(2, 10), from: f, to, task: k, st: $('#wr_s')?.value || 'done', pr: $('#wr_p')?.value || 'normal', extra: true }]); toast('Added'); render(); }
 if (b.id === 'wr_sub') { b.disabled = true; await q(sb.from('work_plans').upsert({ employee_id: S.me.id, day: d, items: S.planY || [], updated_at: new Date().toISOString(), report_at: new Date().toISOString() })); toast('Work report submitted ✓'); render(); }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; } });
 }
