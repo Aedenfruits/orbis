@@ -695,6 +695,7 @@ html.glass body .htile:hover::before,html.glass body .htile:hover::after{opacity
 html.glass body .htile>*{position:relative;z-index:1}
 html.glass body .htile:hover{transform:translateY(-3px);box-shadow:0 0 0 .5px rgba(20,30,60,.06),0 22px 40px -18px rgba(29,43,83,.35)}
 @media (prefers-reduced-motion:reduce){html.glass body.app::before{animation:none}}
+.ckl{margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(29,43,83,.035);display:flex;flex-direction:column;gap:6px}.ckl.empty{background:none;padding:4px 0 0}.ckh{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#4a4f6a}.ckbar{flex:1;height:6px;border-radius:9px;background:rgba(29,43,83,.08);overflow:hidden;display:block}.ckbar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#ff3d8b,#a855f7);transition:width .4s}.cki{display:flex;align-items:center;gap:10px;font-size:14px}.cki.on span{text-decoration:line-through;color:#8a93ab}.ckb{flex:none;width:22px;height:22px;border-radius:7px;border:1.6px solid #b9c0d4;background:#fff;color:#fff;font-weight:800;font-size:13px;line-height:1;display:grid;place-items:center;cursor:pointer;padding:0;transition:background .2s,border-color .2s,transform .15s}.ckb:active{transform:scale(.85)}.cki.on .ckb{background:#10b981;border-color:#10b981}.ckb:disabled{cursor:default;opacity:.7}.ckx{margin-left:auto;border:0;background:none;color:#a0a7bd;cursor:pointer;font-size:12px}.ckadd input{width:100%;border:1px dashed #cfd5e4;background:transparent;border-radius:10px;padding:7px 10px;font:inherit;font-size:13.5px}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -2453,7 +2454,7 @@ if (a === 'add') { const title = $('#tk_t').value.trim(); if (!title) return toa
 const mode = document.querySelector('.tkmode .on')?.dataset.tkmo || 'one', ppl = taskPeople().filter(p => p.id !== S.me.id);
 const to = mode === 'many' ? [...document.querySelectorAll('.tkpl input:checked')].map(x => x.value) : mode === 'dept' ? ppl.filter(p => (p.dept || 'Other') === $('#tk_dep').value).map(p => p.id) : [$('#tk_to').value];
 if (!to.length) return toast(mode === 'many' ? 'Tick at least one person' : 'Nobody in that department', true);
-const base = { title, notes: $('#tk_n').value.trim(), assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value, review_req: $('#tk_rv') ? $('#tk_rv').value !== '0' : true };
+const base = { title, notes: $('#tk_n').value.trim(), assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value, checklist: ckLines('tk_c'), review_req: $('#tk_rv') ? $('#tk_rv').value !== '0' : true };
 b.disabled = true; await q(sb.from('tasks').insert(to.map(id => ({ ...base, assigned_to: id }))));
 closeDlg(); toast(to.length > 1 ? `✓ Task sent to ${to.length} people` : to[0] === S.me.id ? 'Task added' : '✓ Task sent'); if (to.length > 1 || to[0] !== S.me.id) S.tkTab = 'given'; render(); refreshBadges(); }
 if (a === 'reply') { const t = S.tasks.find(x => x.id === id); dlg('Reply / update', `<p><b>${esc(t.title)}</b></p><label>Your note for ${esc(empById(t.assigned_by)?.name || 'the sender')}<textarea id="tk_r" rows="3">${esc(t.reply || '')}</textarea></label>`, `<button class="btn pri" data-tk="rsave" data-id="${id}">Save</button>`); }
@@ -6396,7 +6397,7 @@ ${t.due ? `<p class="small muted" style="margin:4px 0 0">The subtask deadline ca
 const title = $('#sb_t').value.trim(), due = $('#sb_d').value || null; if (!title) return toast('Write the subtask', true);
 if (t.due && due && due > t.due) return toast(`Deadline can't be after ${fmtD(t.due)} — the main task deadline`, true);
 const to = $('#sb_to').value; b.disabled = true;
-try { await q(sb.from('tasks').insert({ parent_id: t.id, title, notes: $('#sb_n').value.trim(), assigned_by: S.me.id, assigned_to: to, due: due || t.due || null, priority: $('#sb_p').value, review_req: $('#sb_rv').value !== '0' }));
+try { await q(sb.from('tasks').insert({ parent_id: t.id, title, notes: $('#sb_n').value.trim(), assigned_by: S.me.id, assigned_to: to, due: due || t.due || null, priority: $('#sb_p').value, checklist: ckLines('sb_c'), review_req: $('#sb_rv').value !== '0' }));
 closeDlg(); toast('↳ Subtask passed to ' + (empById(to)?.name || 'them').split(' ')[0]); render(); refreshBadges(); }
 catch (er) { b.disabled = false; toast(errMsg(er), true); }
 });
@@ -6415,4 +6416,29 @@ addEventListener('resize', lg); }
 if (ch && R.classList.contains('glass')) { const img = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100" preserveAspectRatio="none"><defs><linearGradient id="x" x1="0" x2="1"><stop offset="0" stop-color="#f00"/><stop offset=".14" stop-color="#800"/><stop offset=".86" stop-color="#800"/><stop offset="1" stop-color="#000"/></linearGradient><linearGradient id="y" y1="0" y2="1" x1="0" x2="0"><stop offset="0" stop-color="#0f0"/><stop offset=".28" stop-color="#080"/><stop offset=".72" stop-color="#080"/><stop offset="1" stop-color="#000"/></linearGradient></defs><rect width="200" height="100" fill="url(#x)"/><rect width="200" height="100" fill="url(#y)" style="mix-blend-mode:screen"/></svg>');
 document.body.insertAdjacentHTML('beforeend', `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lgRef" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feImage href="${img}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="m"/><feGaussianBlur in="m" stdDeviation="2" result="mb"/><feDisplacementMap in="SourceGraphic" in2="mb" scale="22" xChannelSelector="R" yChannelSelector="G"/></filter></svg>`); R.classList.add('lgref'); }
 addEventListener('pointermove', e => { const t = e.target.closest?.('.htile'); if (!t) return; const r = t.getBoundingClientRect(); t.style.setProperty('--mx', (e.clientX - r.left) + 'px'); t.style.setProperty('--my', (e.clientY - r.top) + 'px'); }, { passive: true }); }
+{ const _tcC = taskCard;
+taskCard = function (t) { let h = _tcC(t); const L = Array.isArray(t.checklist) ? t.checklist : [];
+const can = (t.assigned_to === S.me.id || t.assigned_by === S.me.id || isAdmin()) && t.status !== 'done';
+if (!L.length) return can ? h.replace('<div class="hstack">', `<div class="hstack"><button class="btn sm" data-ckopen="${t.id}" title="Add checklist steps — the task completes when all are ticked">☑️</button>`).replace(/<\/div>(\s*)<div class="hstack">/, S.ckOpen === t.id ? `<div class="ckl" data-ckt="${t.id}"><div class="ckadd"><input maxlength="140" placeholder="Type a step and press Enter — the task completes when all are ticked" data-cka="${t.id}"></div></div></div>$1<div class="hstack">` : '</div>$1<div class="hstack">') : h;
+const n = L.length, d = L.filter(x => x.d).length, pc = n ? Math.round(d / n * 100) : 0;
+const blk = n || can ? `<div class="ckl${n ? '' : ' empty'}" data-ckt="${t.id}">${n ? `<div class="ckh"><span>☑️ Checklist <b>${d}/${n}</b></span><i class="ckbar"><i style="width:${pc}%"></i></i></div>` : ''}
+${L.map((x, i) => `<div class="cki ${x.d ? 'on' : ''}"><button type="button" class="ckb" data-ck="${i}" ${can ? '' : 'disabled'} aria-label="${x.d ? 'Untick' : 'Tick'}">${x.d ? '✓' : ''}</button><span>${esc(x.t)}</span>${can && t.assigned_by === S.me.id ? `<button type="button" class="ckx" data-ckx="${i}" title="Remove step">✕</button>` : ''}</div>`).join('')}
+${can ? `<div class="ckadd"><input maxlength="140" placeholder="${n ? '+ Add a step' : '+ Add checklist steps — the task completes when all are ticked'}" data-cka="${t.id}"></div>` : ''}
+${n && d === n && t.status !== 'done' ? `<div class="small muted">All steps done${t.status === 'review' ? ' — sent for review' : ''}</div>` : ''}</div>` : '';
+return h.replace(/<\/div>(\s*)<div class="hstack">/, `${blk}</div>$1<div class="hstack">`); };
+const save = async (id, L, msg) => { const t = (S.tasks || []).find(x => x.id === id); if (!t) return; const was = t.status;
+try { const r = await q(sb.from('tasks').update({ checklist: L }).eq('id', id).select('status').single()); t.checklist = L;
+if (r?.status && r.status !== was) toast(r.status === 'done' ? '✅ All steps ticked — task completed' : r.status === 'review' ? '👀 All steps ticked — sent for review' : msg || '✓ Saved'); else if (msg) toast(msg);
+render(); refreshBadges(); } catch (er) { toast(errMsg(er), true); render(); } };
+document.addEventListener('click', e => { const b = e.target.closest('[data-ck],[data-ckx]'); if (!b || b.disabled) return; const box = b.closest('[data-ckt]'); if (!box) return;
+const id = box.dataset.ckt, t = (S.tasks || []).find(x => x.id === id); if (!t) return; const L = (t.checklist || []).map(x => ({ ...x }));
+if (b.dataset.ckx != null) { L.splice(+b.dataset.ckx, 1); return save(id, L); }
+const x = L[+b.dataset.ck]; x.d = !x.d; x.by = S.me.id; x.at = new Date().toISOString(); b.closest('.cki')?.classList.toggle('on', x.d); save(id, L); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-ckopen]'); if (!b) return; S.ckOpen = S.ckOpen === b.dataset.ckopen ? null : b.dataset.ckopen; render(); setTimeout(() => document.querySelector(`[data-cka="${b.dataset.ckopen}"]`)?.focus(), 120); });
+document.addEventListener('keydown', e => { const i = e.target.closest?.('[data-cka]'); if (!i || e.key !== 'Enter') return; e.preventDefault();
+const v = i.value.trim(); if (!v) return; const t = (S.tasks || []).find(x => x.id === i.dataset.cka); if (!t) return;
+save(t.id, [...(t.checklist || []), { t: v.slice(0, 140), d: false }], '＋ Step added'); }); }
+document.addEventListener('click', () => { setTimeout(() => {
+for (const [nid, cid] of [['#tk_n', 'tk_c'], ['#sb_n', 'sb_c']]) { const n = $(nid); if (n && !document.getElementById(cid)) n.closest('label').insertAdjacentHTML('afterend', `<label>Checklist steps (optional)<textarea id="${cid}" rows="3" placeholder="One step per line — e.g.&#10;Download bank statement&#10;Match entries in Tally&#10;Send summary"></textarea><small class="muted">When every step is ticked, the task completes by itself${nid === '#tk_n' ? ' (or goes for review)' : ''}.</small></label>`); } }, 0); }, true);
+const ckLines = id => ($('#' + id)?.value || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 30).map(t => ({ t: t.slice(0, 140), d: false }));
 </script></body></html>
