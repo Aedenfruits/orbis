@@ -588,6 +588,7 @@ dialog[open]::backdrop{animation:pmFade .18s ease}
 .rpf .rpfr{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.rpf .rpfr label{flex:1 1 150px;margin:0}.rpf .rpfr label.chk{flex:0 0 auto;display:flex;gap:6px;align-items:center;padding-bottom:10px}.rpf .rpfr label.chk input{width:auto;margin:0}.rpf .rpfr span{font-size:12px;color:var(--muted)}.rpl{display:flex;flex-direction:column}.rpi{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.rpi:first-child{border-top:0}.rpt{flex:0 0 auto;max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:10px;margin:6px 0 12px}.rpt table{font-size:12.5px}.rpt td,.rpt th{white-space:nowrap;padding:6px 9px}@media(max-width:760px){.rpi{flex-wrap:wrap}.rpi .hstack{width:100%}.rpi .hstack .btn{flex:1}}
 .pbtl{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:1fr}
 @media(max-width:760px){.seg [data-wpt]{padding-left:9px!important;padding-right:9px!important;font-size:13px}.seg:has([data-wpt]){overflow-x:auto;scrollbar-width:none}}
+.tkmode{display:flex;flex-wrap:wrap;margin:4px 0 8px;flex:0 0 auto}#tkm_many,#tkm_dept,.tkpl{flex:0 0 auto}.tkmode button{flex:1;white-space:nowrap}.tkpl{max-height:28vh}.tkpl label.chk{display:flex;gap:8px;align-items:center;font-weight:600;padding:6px 4px}.tkpl label.chk input{width:auto;margin:0}#tkm_many,#tkm_dept{margin-bottom:8px}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -2300,10 +2301,18 @@ const a = b.dataset.tk, id = b.dataset.id;
 try {
 if (a === 'new') { const ppl = taskPeople();
 dlg('New task', `<label>Task<input id="tk_t" maxlength="160" placeholder="e.g. Send GST working to auditor"></label><label>Details (optional)<textarea id="tk_n" rows="3"></textarea></label>
-<div class="grid3"><label>For<select id="tk_to">${ppl.map(p => `<option value="${p.id}" ${p.id === S.me.id ? 'selected' : ''}>${p.id === S.me.id ? 'Me' : esc(p.name)}</option>`).join('')}</select></label><label>Due date<input type="date" id="tk_d" min="${todayStr()}"></label><label>Priority<select id="tk_p"><option value="normal">Normal</option><option value="high">⚡ High</option></select></label></div>`, '<button class="btn pri" data-tk="add">Add task</button>'); $('#tk_t').focus(); }
+${(() => { const oth = ppl.filter(p => p.id !== S.me.id), deps = [...new Set(oth.map(p => p.dept || 'Other'))].sort();
+return oth.length > 1 ? `<label>Give to</label><div class="seg tkmode"><button type="button" class="on" data-tkm="one">One person</button><button type="button" data-tkm="many">Many people</button><button type="button" data-tkm="dept">Department</button></div>
+<div id="tkm_many" hidden><input id="tk_q" placeholder="Search name or department"><div class="iclist tkpl">${oth.map(p => `<label class="chk" data-tkn="${esc((p.name + ' ' + (p.dept || '')).toLowerCase())}"><input type="checkbox" value="${p.id}"> ${esc(p.name)} <span class="small muted">· ${esc(p.dept || 'Other')}</span></label>`).join('')}</div><div class="small muted" id="tk_cnt">0 selected</div></div>
+<div id="tkm_dept" hidden><select id="tk_dep">${deps.map(d => `<option value="${esc(d)}">${esc(d)} (${oth.filter(p => (p.dept || 'Other') === d).length} people)</option>`).join('')}</select><div class="small muted">Everyone in the department gets their own copy of the task.</div></div>` : ''; })()}
+<div class="grid3"><label id="tkm_one">For<select id="tk_to">${ppl.map(p => `<option value="${p.id}" ${p.id === S.me.id ? 'selected' : ''}>${p.id === S.me.id ? 'Me' : esc(p.name)}</option>`).join('')}</select></label><label>Due date<input type="date" id="tk_d" min="${todayStr()}"></label><label>Priority<select id="tk_p"><option value="normal">Normal</option><option value="high">⚡ High</option></select></label></div>`, '<button class="btn pri" data-tk="add">Add task</button>'); $('#tk_t').focus(); }
 if (a === 'add') { const title = $('#tk_t').value.trim(); if (!title) return toast('Write the task', true);
-await q(sb.from('tasks').insert({ title, notes: $('#tk_n').value.trim(), assigned_to: $('#tk_to').value, assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value }));
-closeDlg(); toast($('#tk_to')?.value === S.me.id ? 'Task added' : '✓ Task sent'); if ($('#tk_to') && $('#tk_to').value !== S.me.id) S.tkTab = 'given'; render(); refreshBadges(); }
+const mode = document.querySelector('.tkmode .on')?.dataset.tkm || 'one', ppl = taskPeople().filter(p => p.id !== S.me.id);
+const to = mode === 'many' ? [...document.querySelectorAll('.tkpl input:checked')].map(x => x.value) : mode === 'dept' ? ppl.filter(p => (p.dept || 'Other') === $('#tk_dep').value).map(p => p.id) : [$('#tk_to').value];
+if (!to.length) return toast(mode === 'many' ? 'Tick at least one person' : 'Nobody in that department', true);
+const base = { title, notes: $('#tk_n').value.trim(), assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value };
+b.disabled = true; await q(sb.from('tasks').insert(to.map(id => ({ ...base, assigned_to: id }))));
+closeDlg(); toast(to.length > 1 ? `✓ Task sent to ${to.length} people` : to[0] === S.me.id ? 'Task added' : '✓ Task sent'); if (to.length > 1 || to[0] !== S.me.id) S.tkTab = 'given'; render(); refreshBadges(); }
 if (a === 'reply') { const t = S.tasks.find(x => x.id === id); dlg('Reply / update', `<p><b>${esc(t.title)}</b></p><label>Your note for ${esc(empById(t.assigned_by)?.name || 'the sender')}<textarea id="tk_r" rows="3">${esc(t.reply || '')}</textarea></label>`, `<button class="btn pri" data-tk="rsave" data-id="${id}">Save</button>`); }
 if (a === 'rsave') { await q(sb.from('tasks').update({ reply: $('#tk_r').value.trim().slice(0, 500) }).eq('id', id)); closeDlg(); render(); }
 if (a === 'del') { if (!confirm('Delete this task?')) return; await q(sb.from('tasks').delete().eq('id', id)); render(); refreshBadges(); }
@@ -6009,4 +6018,8 @@ await savePlan(d, [...(S.planY || []), { id: Math.random().toString(36).slice(2,
 if (b.id === 'wr_sub') { b.disabled = true; await q(sb.from('work_plans').upsert({ employee_id: S.me.id, day: d, items: S.planY || [], updated_at: new Date().toISOString(), report_at: new Date().toISOString() })); toast('Work report submitted ✓'); render(); }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; } });
 }
+document.addEventListener('click', e => { const m = e.target.closest('[data-tkm]'); if (!m) return; document.querySelectorAll('.tkmode [data-tkm]').forEach(x => x.classList.toggle('on', x === m)); const k = m.dataset.tkm;
+const one = $('#tkm_one'); if (one) one.style.display = k === 'one' ? '' : 'none'; $('#tkm_many').hidden = k !== 'many'; $('#tkm_dept').hidden = k !== 'dept'; });
+document.addEventListener('input', e => { if (e.target.id !== 'tk_q') return; const v = e.target.value.trim().toLowerCase(); document.querySelectorAll('.tkpl [data-tkn]').forEach(l => { l.hidden = !!v && !l.dataset.tkn.includes(v); }); });
+document.addEventListener('change', e => { if (!e.target.closest('.tkpl')) return; const c = $('#tk_cnt'); if (c) c.textContent = document.querySelectorAll('.tkpl input:checked').length + ' selected'; });
 </script></body></html>
