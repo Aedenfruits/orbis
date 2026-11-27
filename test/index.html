@@ -590,6 +590,7 @@ dialog[open]::backdrop{animation:pmFade .18s ease}
 @media(max-width:760px){.seg [data-wpt]{padding-left:9px!important;padding-right:9px!important;font-size:13px}.seg:has([data-wpt]){overflow-x:auto;scrollbar-width:none}}
 .tkmode{display:flex;flex-wrap:wrap;margin:4px 0 8px;flex:0 0 auto}#tkm_many,#tkm_dept,.tkpl{flex:0 0 auto}.tkmode button{flex:1;white-space:nowrap}.tkpl{max-height:28vh}.tkpl label.chk{display:flex;gap:8px;align-items:center;font-weight:600;padding:6px 4px}.tkpl label.chk input{width:auto;margin:0}#tkm_many,#tkm_dept{margin-bottom:8px}
 .tklk{font-weight:800;text-decoration:underline;cursor:pointer;color:inherit}.tklk.r{color:var(--crit)}.tkpi{margin-bottom:10px;flex:0 0 auto}.tkth{margin-top:8px;border-left:3px solid var(--line);padding-left:10px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
+.tp12 input[data-tp]{width:3.1em;min-width:0;text-align:center;padding-left:4px;padding-right:4px;font-variant-numeric:tabular-nums}.tp12 .tpap{min-width:3.4em;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg2,#eef1f8);font-weight:700;cursor:pointer;align-self:stretch}.tp12.bad input[data-tp]{border-color:var(--crit)}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1088,13 +1089,21 @@ const mx = Math.max(0, ...E.map(e => String(e.code).toUpperCase().match(/^AFI(\d
 return { next: 'AFI' + String(mx + 1).padStart(3, '0'), last }; }
 const t12 = v => { if (!v || !/^\d{1,2}:\d{2}/.test(v)) return esc(v || ''); let [H, M] = v.split(':').map(Number); H = H % 24; return `${H % 12 || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`; };
 function tp12(id, v, cls) { const em = !v; let [H, M] = (v || '09:00').split(':').map(Number); H = (H || 0) % 24; M = M || 0; const h = H % 12 || 12, ap = H < 12 ? 'AM' : 'PM';
-const ms = [...new Set([...Array(12).keys()].map(i => i * 5).concat(M))].sort((x, y) => x - y);
-return `<span class="tp12" data-tpfor="${id || cls}"><input type="hidden" ${id ? `id="${id}"` : ''} ${cls ? `class="${cls}"` : ''} value="${em ? '' : pad(H) + ':' + pad(M)}"><select data-tp="h" aria-label="Hour">${em ? '<option value="" selected>--</option>' : ''}${[...Array(12)].map((_, i) => i + 1).map(x => `<option ${!em && x === h ? 'selected' : ''}>${x}</option>`).join('')}</select><b>:</b><select data-tp="m" aria-label="Minutes">${ms.map(x => `<option value="${x}" ${x === M ? 'selected' : ''}>${pad(x)}</option>`).join('')}</select><select data-tp="ap" aria-label="AM or PM"><option ${ap === 'AM' ? 'selected' : ''}>AM</option><option ${ap === 'PM' ? 'selected' : ''}>PM</option></select></span>`; }
+return `<span class="tp12" data-tpfor="${id || cls}"><input type="hidden" ${id ? `id="${id}"` : ''} ${cls ? `class="${cls}"` : ''} value="${em ? '' : pad(H) + ':' + pad(M)}"><input data-tp="h" inputmode="numeric" autocomplete="off" aria-label="Hour" placeholder="hh" value="${em ? '' : h}"><b>:</b><input data-tp="m" inputmode="numeric" autocomplete="off" aria-label="Minutes" placeholder="mm" value="${em ? '' : pad(M)}"><button type="button" class="tpap" data-tp="ap" aria-label="AM or PM – tap to switch">${ap}</button></span>`; }
 function tpSet(id, v) { const w = document.querySelector(`[data-tpfor="${id}"]`); if (w) w.outerHTML = tp12(id, v); }
-document.addEventListener('change', e => { const s = e.target.closest('[data-tp]'); if (!s) return; const w = s.closest('.tp12'); const g = k => w.querySelector(`[data-tp="${k}"]`).value;
-const hid = w.querySelector('input[type=hidden]'), id = w.dataset.tpfor; if (g('h') === '') { hid.value = ''; return; }
-let H = Number(g('h')) % 12; if (g('ap') === 'PM') H += 12; const v = `${pad(H)}:${pad(Number(g('m')))}`; hid.value = v;
-if (id === 'wp_f') { const to = $('#wp_t'); if (to && to.value <= v) tpSet('wp_t', addMinHM(v, 60)); } });
+function tpRead(w) { if (!('prev' in w.dataset)) w.dataset.prev = w.querySelector('input[type=hidden]').value; const hid = w.querySelector('input[type=hidden]'), hs = w.querySelector('[data-tp="h"]').value.trim(), ms = w.querySelector('[data-tp="m"]').value.trim(), ap = w.querySelector('[data-tp="ap"]').textContent.trim();
+const h = Number(hs), m = ms === '' ? 0 : Number(ms); const ok = /^\d{1,2}$/.test(hs) && h >= 1 && h <= 12 && /^\d{0,2}$/.test(ms) && m >= 0 && m <= 59;
+w.classList.toggle('bad', !ok && hs !== ''); if (!ok) { hid.value = ''; return ''; } let H = h % 12; if (ap === 'PM') H += 12; return hid.value = `${pad(H)}:${pad(m)}`; }
+function tpDone(w) { const v = tpRead(w), id = w.dataset.tpfor; if (v) { const m = w.querySelector('[data-tp="m"]'); if (m.value.length < 2) m.value = pad(Number(m.value) || 0); }
+const pv = w.dataset.prev || ''; if (v && (id === 'wp_f' || id === 'wr_f')) { const tid = id === 'wp_f' ? 'wp_t' : 'wr_t', to = document.getElementById(tid); if (to && (!to.value || to.value <= v || (pv && to.value === addMinHM(pv, 60)))) tpSet(tid, addMinHM(v, 60)); }
+if (v) w.dataset.prev = v;
+w.querySelector('input[type=hidden]').dispatchEvent(new Event('change', { bubbles: true })); }
+document.addEventListener('input', e => { const s = e.target.closest('.tp12 [data-tp]'); if (!s) return; s.value = s.value.replace(/\D/g, '').slice(-2); const w = s.closest('.tp12'); tpRead(w);
+if (s.dataset.tp === 'h' && (s.value.length === 2 || Number(s.value) > 1)) { const m = w.querySelector('[data-tp="m"]'); m.focus(); m.select(); } });
+document.addEventListener('focusin', e => { const s = e.target.closest('.tp12 input[data-tp]'); if (s) setTimeout(() => { try { s.select(); } catch { } }, 0); });
+document.addEventListener('click', e => { const s = e.target.closest('.tp12 input[data-tp]'); if (s) { try { s.select(); } catch { } } });
+document.addEventListener('change', e => { const s = e.target.closest('.tp12 input[data-tp]'); if (s) tpDone(s.closest('.tp12')); });
+document.addEventListener('click', e => { const b = e.target.closest('.tp12 [data-tp="ap"]'); if (!b) return; b.textContent = b.textContent.trim() === 'AM' ? 'PM' : 'AM'; tpDone(b.closest('.tp12')); });
 const WST = { plan: ['Planned', '', '🗓'], on: ['Ongoing', 'warn', '🔄'], done: ['Done', 'good', '✅'], not: ['Not done', 'crit', '❌'] };
 async function getPlan(emp, day) { const r = await q(sb.from('work_plans').select('*').eq('employee_id', emp).eq('day', day).maybeSingle()); return (r?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); }
 const planQ = { n: 0, p: {} };
@@ -6014,7 +6023,6 @@ if (tab !== 'rep') { const h = await _wrV(); return h.replace('data-wpt="done">C
 afterFns.push(() => { const k = $('#wr_k'); if (k) k.onkeydown = e => { if (e.key === 'Enter') $('#wr_add').click(); }; });
 return `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</span><h2>Work report</h2><p class="small muted">Seen only by you and your department head / reporting manager.</p></div>
 <div class="seg"><button data-wpt="today">Today's plan</button><button data-wpt="pend">Pending</button><button data-wpt="done">Completed</button><button class="on" data-wpt="rep">Report</button></div>${await wrPage()}</div>`; };
-document.addEventListener('change', e => { const s = e.target.closest('[data-tp]'); if (!s) return; const w = s.closest('.tp12'); if (w?.dataset.tpfor !== 'wr_f') return; const to = $('#wr_t'), v = $('#wr_f').value; if (to && to.value <= v) tpSet('wr_t', addMinHM(v, 60)); });
 document.addEventListener('click', async e => { const b = e.target.closest('#wr_add,#wr_sub'); if (!b || S.view !== 'plan' || b.disabled) return; const d = S.wrDay; if (!d) return;
 try {
 if (b.id === 'wr_add') { const f = $('#wr_f').value, to = $('#wr_t').value, k = $('#wr_k').value.trim(); if (!k) return toast('Write the work you did', true); if (!f || !to || to <= f) return toast('"To" must be after "From"', true);
