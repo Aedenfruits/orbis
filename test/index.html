@@ -600,7 +600,7 @@ body .authbox.splash.wl>.wg,body .authbox.splash.wl>.gobtn,body .authbox.splash.
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 *{-webkit-tap-highlight-color:transparent}
 button,.btn,a,label,select,summary{touch-action:manipulation}
-body.app{overscroll-behavior-y:none}
+html,body,body.app{overscroll-behavior-y:none}
 .mtop{padding-left:calc(14px + env(safe-area-inset-left));padding-right:calc(14px + env(safe-area-inset-right))}
 @media (orientation:landscape) and (max-width:950px){body.app{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}}
 .a2hs ol{list-style:none;padding:0;margin:14px 0;display:grid;gap:12px}.a2hs li{display:flex;gap:12px;align-items:flex-start}.a2n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}.a2i{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:8px;background:#e8f1ff;color:#2a62c9;vertical-align:middle;margin:0 2px}
@@ -4931,7 +4931,7 @@ if (!g) { const [loc, fd] = await Promise.all([gmLocate(), S.me?.field_punch ? s
 const w = $('#dlg .gmw'); if (!w) return; const df = $('#dlg .df');
 if (g.err) { w.innerHTML = `<div class="gmst bad"><b>Location is off</b>${g.err === 1 ? 'ORBIS is not allowed to see your location. Open phone <b>Settings → Location</b> and allow it for your browser / ORBIS, then try again.' : 'Could not find your location yet. Make sure <b>Location</b> is ON, step near a window or outside, then tap <b>Try again</b>.' + (g.err === 2 ? ' <small>(Phone could not get a position)</small>' : g.err === 3 ? ' <small>(Timed out)</small>' : '')}</div>`;
 df.insertAdjacentHTML('afterbegin', `<button class="btn pri" data-gmre>Try again</button>`); return; }
-const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = +o.radius || 300, inA = d - Math.min(g.acc || 0, 1500) <= rad, fld = !!S.me?.field_punch && !inA, ok = inA || (fld && !!S.fieldToday);
+const d = gmDist(o.lat, o.lng, g.lat, g.lng), rad = /out/i.test(verb) ? Math.max(+o.radius || 300, 300) : (+o.radius || 300), inA = d - Math.min(g.acc || 0, 1500) <= rad, fld = !!S.me?.field_punch && !inA, ok = inA || (fld && !!S.fieldToday);
 w.innerHTML = gmMap(o, g, ok) + (fld && S.fieldToday ? `<div class="gmst ok"><b>🚗 Field duty today — you can ${verb.toLowerCase()} from here</b>${esc(S.fieldToday.purpose)} · about ${gmFmt(d)} from the office. Your location is saved and shown to HR.<label style="display:block;margin-top:10px;font-weight:600">📍 Where are you now? <span style="color:#e01664">*</span><input id="fdPlace" maxlength="120" placeholder="Type the place — e.g. Lulu Mall, Edappally" style="margin-top:6px;width:100%;font-weight:400"></label></div>`
 : fld ? `<div class="gmst"><b>🚗 Going out for work today?</b>You are about ${gmFmt(d)} from the office. Write where you are going — your manager and HR will see it with your location.<label style="display:block;margin-top:8px;font-weight:600">Purpose <span style="color:#e01664">*</span><input id="fdPurp" maxlength="120" placeholder="e.g. Customer visit / Bank / Port" style="margin-top:6px;width:100%;font-weight:400"></label><label style="display:block;margin-top:10px;font-weight:600">📍 Where are you now? <span style="color:#e01664">*</span><input id="fdPlace" maxlength="120" placeholder="Type the place — e.g. Lulu Mall, Edappally" style="margin-top:6px;width:100%;font-weight:400"></label></div>` : ok ? `<div class="gmst ok"><b>✓ You are at the office</b>${d <= rad ? 'Inside the office area' : 'Near the office'} · about ${gmFmt(d)} from the office pin</div>`
 : `<div class="gmst bad"><b>You are not at the office</b>You are about <b>${gmFmt(d)}</b> away. Please go to the office to ${verb.toLowerCase()}.<small>On duty outside today? Use <b>On duty</b> instead.</small></div>`) + (g.acc > 80 ? `<div class="gmacc">GPS accuracy ±${gmFmt(g.acc)} — step near a window or outside for a better fix.</div>` : '');
@@ -5384,12 +5384,12 @@ return _gv(); };
 const freshen = async force => {
 try { await authFresh(); } catch { }
 if (busyT || !S.me || !S.session || document.hidden) return; if (!force && Date.now() - lastT < 20000) return;
-busyT = true; try { const before = JSON.stringify([S.today, S.breaks]); await loadToday(); lastT = Date.now(); if (JSON.stringify([S.today, S.breaks]) !== before && S.view === 'punch' && !document.querySelector('dialog[open]')) { const y = scrollY; await render(); scrollTo(0, y); } } catch { } finally { busyT = false; } };
+busyT = true; try { const before = JSON.stringify([S.today, S.breaks]); await loadToday(); lastT = Date.now(); if (JSON.stringify([S.today, S.breaks]) !== before && S.view === 'punch' && !document.querySelector('dialog[open]')) { await quietRender(); } } catch { } finally { busyT = false; } };
 document.addEventListener('visibilitychange', () => { if (!document.hidden) freshen(); });
 addEventListener('focus', () => freshen()); addEventListener('pageshow', () => freshen());
 setInterval(() => { if (S.view === 'punch') freshen(true); }, 120000); }
 { let ch = null, tMe = 0, tTeam = 0;
-const reRender = async () => { if (document.querySelector('dialog[open]')) return; const y = scrollY; await render(); scrollTo(0, y); };
+const reRender = async () => { if (document.querySelector('dialog[open]')) return; await quietRender(); };
 const onChange = p => { const emp = (p.new || p.old || {}).employee_id; if (!S.me) return;
 if (emp === S.me.id) { clearTimeout(tMe); tMe = setTimeout(async () => { try { await loadToday(); if (['punch', 'my', 'register', 'regularise', 'fix'].includes(S.view)) reRender(); } catch { } }, 350); }
 else if (['team', 'insights', 'register'].includes(S.view)) { clearTimeout(tTeam); tTeam = setTimeout(reRender, 1500); } };
@@ -5746,7 +5746,7 @@ const u = a.dataset.u, hs = u.includes('#') ? u.slice(u.indexOf('#') + 1) : ''; 
 if (e.target.closest('[data-nfall]')) { const t = new Date().toISOString(); (S.nf || []).forEach(n => { if (!n.read_at) n.read_at = t; }); try { await q(sb.from('notifications').update({ read_at: t }).eq('employee_id', S.me.id).is('read_at', null)); } catch { } render(); return; }
 if (e.target.closest('[data-nfmore]')) { S.nfAll = !S.nfAll; render(); } });
 let nch = null; const nfRt = () => { if (nch || !S.me || !S.session || !sb.channel) return;
-try { nch = sb.channel('orbis-nf-' + S.me.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `employee_id=eq.${S.me.id}` }, async () => { await nfLoad(); if (S.view === 'news' && !document.querySelector('dialog[open]')) { const y = scrollY; await render(); scrollTo(0, y); } }).subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(nch); } catch { } nch = null; setTimeout(nfRt, 15000); } }); } catch { nch = null; } };
+try { nch = sb.channel('orbis-nf-' + S.me.id).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `employee_id=eq.${S.me.id}` }, async () => { await nfLoad(); if (S.view === 'news' && !document.querySelector('dialog[open]')) { await quietRender(); } }).subscribe(st => { if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT') { try { sb.removeChannel(nch); } catch { } nch = null; setTimeout(nfRt, 15000); } }); } catch { nch = null; } };
 const _rrNf = render; render = async function () { const r = await _rrNf.apply(this, arguments); nfRt(); return r; };
 sb.auth.onAuthStateChange?.(ev => { if (ev === 'SIGNED_OUT' && nch) { try { sb.removeChannel(nch); } catch { } nch = null; } });
 }
