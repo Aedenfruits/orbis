@@ -586,6 +586,7 @@ dialog[open]::backdrop{animation:pmFade .18s ease}
 }
 @media (prefers-reduced-motion:no-preference) and (max-width:760px){#dlg[open]{animation:pmUp .26s var(--ease)}@keyframes pmUp{from{transform:translateY(100%)}}}
 .rpf .rpfr{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.rpf .rpfr label{flex:1 1 150px;margin:0}.rpf .rpfr label.chk{flex:0 0 auto;display:flex;gap:6px;align-items:center;padding-bottom:10px}.rpf .rpfr label.chk input{width:auto;margin:0}.rpf .rpfr span{font-size:12px;color:var(--muted)}.rpl{display:flex;flex-direction:column}.rpi{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.rpi:first-child{border-top:0}.rpt{flex:0 0 auto;max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:10px;margin:6px 0 12px}.rpt table{font-size:12.5px}.rpt td,.rpt th{white-space:nowrap;padding:6px 9px}@media(max-width:760px){.rpi{flex-wrap:wrap}.rpi .hstack{width:100%}.rpi .hstack .btn{flex:1}}
+.pbtl{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:1fr}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -4196,7 +4197,7 @@ const eve = ist(Date.now()).getHours(), gr = eve < 12 ? 'Good morning' : eve < 1
 const head = state === 'in' ? `${gr}, ${first} — worked today` : state === 'out' ? (ob ? `${first}, you're on a break — work time paused` : `Hi ${first} — you've been working`) : `Well done, ${first} — you worked`;
 const big = state === 'in' ? `<span id="pbBig" data-k="none">0h 00m</span><small>not started</small>` : `<span id="pbBig" data-k="work">${durHM(pbWorked())}</span><small id="pbSec">${pad(Math.floor(pbWorked() / 1000) % 60)}s</small>`;
 const tiles = state === 'in'
-? [['Shift', `${f12(sh.start || '09:00').replace(':00', '')} – ${f12(sh.end || '18:00').replace(':00', '')}`], ['Late after', f12(lateLim())], ['Breaks', `${allow} min`]]
+? [['Shift', `${f12(sh.start || '09:00').replace(':00', '')} – ${f12(sh.end || '18:00').replace(':00', '')}`], ['Breaks', `${allow} min`]]
 : [['In', `${hm(a.in_at)}${inDiff(a.in_at, sh)}`], ['Break', `${used} / ${allow} min`],
 state === 'done' ? ['Out', `${hm(a.out_at)}${outDiff(a.out_at, sh)}`] : ['Left', `<span id="pbLeft">${L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000)}</span>`]];
 const left = cfg.filter(b => !S.breaks.some(x => x.kind === b.k));
