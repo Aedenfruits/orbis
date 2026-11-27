@@ -599,6 +599,8 @@ dialog[open]::backdrop{animation:pmFade .18s ease}
 #dlg.xl{width:min(1150px,96vw);max-width:96vw}.ehrow{cursor:pointer}tr.ehrow:hover td,td.ehrow:hover{background:#f4f6fd}.ehtop{flex-wrap:wrap;gap:10px;margin-bottom:10px}.ehk{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin:6px 0 14px;flex:0 0 auto}.ehk>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}.ehk b{display:block;font-size:20px}.ehk span{font-size:12px;color:var(--muted)}.ehk .good b{color:#15803d}.ehk .warn b{color:#c2410c}.ehk .crit b{color:#be123c}.ehk .info b{color:#2563eb}.ehwrap{flex:0 0 auto;max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-bottom:14px}.eht{font-size:13px;width:100%}.eht td,.eht th{padding:7px 10px;white-space:nowrap;vertical-align:top}.eht td.small{white-space:normal;min-width:140px}.eht tr.off td{background:#f7f8fb;color:var(--muted)}.ehlbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;flex:0 0 auto}.ehlb{border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-width:110px}.ehlb b{font-size:18px;display:block}.ehlb span{font-size:12px;font-weight:700}.ehlb small{display:block;color:var(--muted);font-size:11px}#dlg .dh h3{display:flex;align-items:center;gap:10px}
 .sphero{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sph{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:14px;cursor:pointer;transition:box-shadow .2s,transform .2s}.sph:hover{box-shadow:0 6px 18px rgba(29,43,83,.1);transform:translateY(-1px)}.sph span{font-size:24px}.sph b{font-size:15px}.sph small{color:var(--muted);font-size:12px}.sprow{display:flex;gap:10px;align-items:center;cursor:pointer}.spv{white-space:nowrap}.spv.on{background:#fde2ea;border-color:#f4a3bd;color:#b4123a}.spk{margin-bottom:8px;flex:0 0 auto}@media(max-width:760px){.sphero{grid-template-columns:1fr}.sph{flex-direction:row;align-items:center;gap:10px}.sph small{display:none}}
 .rx{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;position:relative;align-items:center}.rxc{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:2px 8px;font-size:13px;line-height:1.5;cursor:pointer;color:inherit}.rxc.me{background:#fde8ef;border-color:#f3a6c0;color:#b4123a;font-weight:700}.rxc.rxadd{opacity:.55;padding:2px 7px}.rxc.rxadd b{font-size:11px;margin-left:1px}.rx:hover .rxadd,.rxc.rxadd:focus{opacity:1}.rxpick{position:absolute;bottom:calc(100% + 4px);left:0;z-index:20;display:flex;gap:2px;background:#fff;border:1px solid var(--line);border-radius:99px;padding:4px 6px;box-shadow:0 8px 24px rgba(29,43,83,.18)}.rxpick button{border:0;background:none;font-size:20px;padding:2px 4px;cursor:pointer;border-radius:8px;transition:transform .12s}.rxpick button:hover{transform:scale(1.25);background:#f4f6fb}.tcm .rx,.tkm .rx{margin-top:4px}
+.stamp .st-w{margin-top:12px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,#fde8ef,#eef2ff);color:#1D2B53;font-weight:700;font-size:15px;line-height:1.45}.wkconf{position:fixed;inset:0;pointer-events:none;overflow:hidden}.wkconf i{position:absolute;top:-40px;font-style:normal;font-size:26px;animation:wkfall 2.6s ease-in forwards}@keyframes wkfall{to{transform:translateY(110vh) rotate(320deg);opacity:.2}}
+.rpmode{margin-bottom:10px;flex:0 0 auto;display:inline-flex}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1020,8 +1022,11 @@ k.addEventListener('pointerup', end); k.addEventListener('pointercancel', end);
 }
 function celebrate(kind, at, offline) {
 const el = document.createElement('div'); el.className = 'cel';
-el.innerHTML = `<div class="card stamp"><div class="alg">${LOGO}</div><div class="st-k">${kind === 'in' ? 'CHECKED IN' : 'CHECKED OUT'}</div><div class="st-t">${hm12(at)}</div><div class="st-n">${esc(S.me.name)}</div><div class="small">${fmtD(todayStr())}${offline ? ' · ⏳ saved offline' : ''}</div></div>`;
-document.body.appendChild(el); setTimeout(() => el.classList.add('go'), 2200); setTimeout(() => el.remove(), 2800);
+const t = todayStr(), nx = addDays(t, 1), wk = kind === 'out' && !isWeekOff(t) && (isWeekOff(nx) || !!holOn(nx, S.me.office)), fn = esc(String(S.me.name || '').split(' ')[0]);
+const msg = wk ? (isWeekOff(nx) ? `<div class="st-w">🎉 Great work this week, ${fn}!<br>Thank you – have a wonderful weekend 🌴</div>` : `<div class="st-w">🎉 Thank you for today, ${fn}!<br>Enjoy your holiday tomorrow 🌴</div>`) : '';
+el.innerHTML = `<div class="card stamp ${wk ? 'wkend' : ''}"><div class="alg">${LOGO}</div><div class="st-k">${kind === 'in' ? 'CHECKED IN' : 'CHECKED OUT'}</div><div class="st-t">${hm12(at)}</div><div class="st-n">${esc(S.me.name)}</div><div class="small">${fmtD(todayStr())}${offline ? ' · ⏳ saved offline' : ''}</div>${msg}</div>${wk ? `<div class="wkconf">${[...Array(18)].map((_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 6) * 0.12}s">${['🎉', '✨', '🎊', '⭐'][i % 4]}</i>`).join('')}</div>` : ''}`;
+if (wk) el.onclick = () => el.remove();
+document.body.appendChild(el); setTimeout(() => el.classList.add('go'), wk ? 5200 : 2200); setTimeout(() => el.remove(), wk ? 5800 : 2800);
 }
 async function extraDlg() {
 const mon = todayStr().slice(0, 7);
@@ -1242,7 +1247,7 @@ const ym = S.regMonth || todayStr().slice(0, 7); const [y, m] = ym.split('-').ma
 const [att, brk, lv] = await Promise.all([q(sb.from('attendance').select('*').gte('day', ym + '-01').lte('day', `${ym}-${pad(last)}`)), q(sb.from('breaks').select('*').gte('day', ym + '-01').lte('day', `${ym}-${pad(last)}`)), q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', `${ym}-${pad(last)}`).gte('to_date', ym + '-01'))]);
 S.reg = { ym, last, att, brk, lv };
 const emps = S.emps.filter(e => e.active && (typeof regFilt !== 'function' || regFilt(e)));
-const head = [...Array(last)].map((_, i) => `<th class="c ${dowOf(`${ym}-${pad(i + 1)}`) === 0 ? 'wo' : ''}">${i + 1}</th>`).join('');
+const head = [...Array(last)].map((_, i) => `<th class="c ${dowOf(`${ym}-${pad(i + 1)}`) === 0 || altSatOff(`${ym}-${pad(i + 1)}`, {}) ? 'wo' : ''}">${i + 1}</th>`).join('');
 const rows = emps.map(e => { let P = 0, L = 0, lt = 0; const cells = [...Array(last)].map((_, i) => { const ds = `${ym}-${pad(i + 1)}`; const a = att.find(x => x.employee_id === e.id && x.day === ds); const l = lv.find(x => x.employee_id === e.id && x.from_date <= ds && x.to_date >= ds);
 if (a?.in_at) { P++; const late = hm(a.in_at) > lateLim(e, a.day); if (late) lt++; return `<td class="c p ${late ? 'lt' : ''}" title="${hm12(a.in_at)}–${hm12(a.out_at)}">P</td>`; }
 if (l) { L++; return `<td class="c l" title="${esc(ltName(l.type))}">L</td>`; } if (isWeekOff(ds, e)) return '<td class="c wo">–</td>'; if (holOn(ds, e.office)) return `<td class="c h" title="${esc(holOn(ds, e.office).name)}">H</td>`; if (ds > todayStr()) return '<td class="c"></td>'; return '<td class="c a">A</td>'; }).join('');
@@ -1326,6 +1331,7 @@ ${ips.map(x => `<div class="li"><span>${esc(x)}</span><button class="btn sm" dat
 ${holSetupCard()}${yearEndCard()}${backupCard()}
 <div class="card"><h3>Rules</h3><div class="grid3"><label>Shift start${tp12('c_ss', C().shiftStart || '09:00')}</label><label>Shift end${tp12('c_se', C().shiftEnd || '18:00')}</label><label>Grace (min)<input type="number" id="c_gr" value="${C().graceMin ?? 10}"></label>
 ${brCfg().map((b, i) => `<label>${esc(b.name)} break (min)<input type="number" id="c_b${i}" value="${b.min}"></label>`).join('')}<label>Extra break per month (min)<input type="number" id="c_x" value="${C().extraMonthlyMin ?? 30}"></label></div>
+<h4>Saturdays off</h4><div class="hstack" style="flex-wrap:wrap;gap:14px">${['1st', '2nd', '3rd', '4th', '5th'].map((x, i) => `<label class="chk"><input type="checkbox" class="c_sat" value="${i + 1}" ${satOffs().includes(i + 1) ? 'checked' : ''}> ${x} Saturday</label>`).join('')}</div>
 <h4>Leave per year</h4><div class="grid3">${ltypes().map((t, i) => `<label>${esc(t.name)}<input type="number" id="c_l${i}" value="${t.days}"></label>`).join('')}</div>
 <div class="grid2"><label>Departments (one per line)<textarea id="c_depts" rows="5">${esc((C().depts || []).join('\n'))}</textarea></label><label>Offices (one per line)<textarea id="c_offs" rows="5">${esc((C().offices || []).join('\n'))}</textarea></label></div>
 <button class="btn pri" id="cfgSave">Save rules</button></div></div>`;
@@ -1341,7 +1347,7 @@ if (b.dataset.devoff) { await q(sb.from('devices').update({ active: b.dataset.on
 if (b.id === 'ipAdd') { const ip = await rpc('my_ip'); await saveSettings({ officeIps: [...new Set([...(C().officeIps || []), ip])] }); toast('Office network added'); render(); }
 if (b.dataset.iprm) { await saveSettings({ officeIps: (C().officeIps || []).filter(x => x !== b.dataset.iprm) }); render(); }
 if (b.id === 'cfgSave') { const lines = id => $('#' + id).value.split('\n').map(x => x.trim()).filter(Boolean);
-await saveSettings({ shiftStart: $('#c_ss').value, shiftEnd: $('#c_se').value, graceMin: Number($('#c_gr').value) || 0, extraMonthlyMin: Number($('#c_x').value) || 0,
+await saveSettings({ satOff: [...document.querySelectorAll('.c_sat:checked')].map(x => Number(x.value)), shiftStart: $('#c_ss').value, shiftEnd: $('#c_se').value, graceMin: Number($('#c_gr').value) || 0, extraMonthlyMin: Number($('#c_x').value) || 0,
 breaks: brCfg().map((x, i) => ({ ...x, min: Number($('#c_b' + i).value) || x.min })), leaveTypes: ltypes().map((t, i) => ({ ...t, days: Number($('#c_l' + i).value) || 0 })), depts: lines('c_depts'), offices: lines('c_offs') }); toast('Rules saved'); render(); }
 } catch (er) { toast(errMsg(er), true); }
 });
@@ -2866,7 +2872,7 @@ const EMO_IC = { '🔒': 'lock', '🔓': 'unlock', '⬇': 'download', '📥': 'd
 '😀': 'mood4:g', '😊': 'mood4:g', '🙂': 'mood3', '😐': 'mood2:w', '🙁': 'mood1:r', '📅': 'my', '🎁': 'party', '💡': 'spark', '🔗': 'clip', '📋': 'plan', '📈': 'insights', '📉': 'insights', '🙏': 'handshake', '❤️': 'pulse', '💪': 'zap', '🚀': 'zap' };
 const EMO_ANY = /(\p{Extended_Pictographic}|[⬆⬇])(️|‍\p{Extended_Pictographic}️?|\p{Emoji_Modifier})*/gu;
 const EMO_ONE = /(\p{Extended_Pictographic}|[\u2B06\u2B07])/u;
-const EMO_SKIP = 'script,style,textarea,input,select,option,svg,[contenteditable],.noico,.rx';
+const EMO_SKIP = 'script,style,textarea,input,select,option,svg,[contenteditable],.noico,.rx,.wkconf,.st-w';
 function emoIcons(root) {
 if (!root || root.nodeType !== 1 || root.closest?.(EMO_SKIP)) return;
 const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => EMO_ONE.test(n.nodeValue) && !n.parentElement?.closest(EMO_SKIP) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP }), L = [];
@@ -3535,7 +3541,10 @@ function shiftsCfg() { const c = C(); return [{ k: 'gen', name: 'General', start
 function shiftOf(e, day) { e = e || S.me; const l = shiftsCfg(), r = S.ros?.[`${e?.id}|${day || todayStr()}`]; return (r && r !== 'off' && l.find(s => s.k === r)) || l.find(s => s.k === e?.shift) || l[0]; }
 function lateLim(e, day) { const s = shiftOf(e, day); return addMinHM(s.start, Number(s.grace) || 0); }
 function weekOffs(e) { const w = (e || S.me)?.week_off; return Array.isArray(w) && w.length ? w : (Array.isArray(C().weekOff) && C().weekOff.length ? C().weekOff : [0]); }
-function isWeekOff(ds, e) { const r = S.ros?.[`${(e || S.me)?.id}|${ds}`]; if (r) return r === 'off'; return weekOffs(e).includes(dowOf(ds)); }
+function satOffs() { return Array.isArray(C().satOff) ? C().satOff.map(Number) : []; }
+function altSatOff(ds, e) { const w = (e || S.me)?.week_off; if (Array.isArray(w) && w.length) return false; if (dowOf(ds) !== 6) return false; return satOffs().includes(Math.ceil(Number(ds.slice(8, 10)) / 7)); }
+const satTxt = () => { const n = satOffs(), o = ['', '1st', '2nd', '3rd', '4th', '5th']; return n.length ? ` + ${n.map(x => o[x]).join(' & ')} Saturday` : ''; };
+function isWeekOff(ds, e) { const r = S.ros?.[`${(e || S.me)?.id}|${ds}`]; if (r) return r === 'off'; return weekOffs(e).includes(dowOf(ds)) || altSatOff(ds, e); }
 const DOW3 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const woBoxes = (id, sel) => `<div class="wobox" id="${id}">${DOW3.map((d, i) => `<label><input type="checkbox" value="${i}" ${sel.includes(i) ? 'checked' : ''}><span>${d}</span></label>`).join('')}</div>`;
 const woRead = id => [...document.querySelectorAll(`#${id} input:checked`)].map(i => Number(i.value));
@@ -3644,13 +3653,13 @@ dlg(kind === 'offer' ? 'Offer letter' : `Appointment letter · ${esc(e.name)}`, 
 <label>Monthly gross salary (₹)<input type="number" id="lt_s" placeholder="e.g. 25000"></label><label>Probation (months)<input type="number" id="lt_p" value="6"></label>
 <label>Reports to<select id="lt_r"><option value="">—</option>${S.emps.filter(o => o.active).map(o => `<option value="${esc(o.name)}" ${e?.reports_to === o.id ? 'selected' : ''}>${esc(o.name)}</option>`).join('')}</select></label>
 ${kind === 'offer' ? `<label>Accept offer by<input type="date" id="lt_x" value="${addDays(todayStr(), 7)}"></label>` : `<label>Notice period (days)<input type="number" id="lt_np" value="${noticeDays()}"></label>`}</div>
-<p class="small muted">Working hours: ${esc(sh.name)} shift ${sh.start}–${sh.end}, weekly off ${weekOffs(e).map(i => DOW3[i]).join(', ')}. Change these in Employees / settings.</p>`, '<button class="btn pri" id="ltGo">🖨 Create letter</button>');
+<p class="small muted">Working hours: ${esc(sh.name)} shift ${sh.start}–${sh.end}, weekly off ${weekOffs(e).map(i => DOW3[i]).join(', ')}${satTxt()}. Change these in Employees / settings.</p>`, '<button class="btn pri" id="ltGo">🖨 Create letter</button>');
 S.ltr = { kind, e };
 }
 function ltrMake() {
 const { kind, e } = S.ltr, g = id => ($('#' + id)?.value || '').trim(), co = idCfg(), name = g('lt_n'), sal = Number(g('lt_s')), sh = e ? shiftOf(e) : shiftsCfg()[0];
 if (!name || !g('lt_d')) return toast('Enter the name and designation', true); if (!sal) return toast('Enter the monthly salary', true);
-const leave = ltypes().map(t => `${t.days} days ${t.name.toLowerCase()}`).join(', '), wo = weekOffs(e).map(i => DOWN[i]).join(' and ');
+const leave = ltypes().map(t => `${t.days} days ${t.name.toLowerCase()}`).join(', '), wo = weekOffs(e).map(i => DOWN[i]).join(' and ') + satTxt();
 const to = `<p>To,<br><b>${esc(name)}</b>${g('lt_a') ? '<br>' + esc(g('lt_a')) : ''}</p>`;
 if (kind === 'offer') openDoc(letterHTML('Offer of employment', `${to}<p>Dear ${esc(name.split(' ')[0])},</p>
 <p>We are pleased to offer you the position of <b>${esc(g('lt_d'))}</b> in our <b>${esc(g('lt_dp'))}</b> department at <b>${esc(g('lt_o'))}</b>, with ${esc(co.company)}.</p>
@@ -4298,7 +4307,7 @@ async function rosterView(team) {
 const wk = S.rosWk || monOf(todayStr()), days = [...Array(7)].map((_, i) => addDays(wk, i)), t = todayStr(), L = shiftsCfg();
 await loadRoster(addDays(wk, -7), addDays(wk, 6));
 const shTxt = s => `${s.name} ${f12(s.start).replace(':00', '')}–${f12(s.end).replace(':00', '')}`;
-const base = (e, d) => { const r = S.ros[`${e.id}|${d}`]; return r || (weekOffs(e).includes(dowOf(d)) ? 'off' : (e.shift && L.some(s => s.k === e.shift) ? e.shift : 'gen')); };
+const base = (e, d) => { const r = S.ros[`${e.id}|${d}`]; return r || (weekOffs(e).includes(dowOf(d)) || altSatOff(d, e) ? 'off' : (e.shift && L.some(s => s.k === e.shift) ? e.shift : 'gen')); };
 const cell = (e, d) => { const r = S.ros[`${e.id}|${d}`] || '', cur = base(e, d), cls = cur === 'off' ? 'off' : 'sh' + Math.max(0, L.findIndex(s => s.k === cur));
 return `<td class="${d === t ? 'tdy' : ''}"><select class="rsel ${cls} ${r ? 'set' : ''}" data-re="${e.id}" data-rd="${d}"><option value="">${cur === 'off' && !r ? 'Off' : !r ? esc(L.find(s => s.k === cur)?.name || 'General') : '↺ Usual'}</option>${L.map(s => `<option value="${s.k}" ${r === s.k ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}<option value="off" ${r === 'off' ? 'selected' : ''}>Week off</option></select></td>`; };
 const count = d => { const m = {}; team.forEach(e => { const b = base(e, d); m[b] = (m[b] || 0) + 1; }); return L.filter(s => m[s.k]).map(s => `${esc(s.name)} ${m[s.k]}`).concat(m.off ? [`Off ${m.off}`] : []).join('<br>'); };
@@ -5870,6 +5879,7 @@ const _rrG = render; render = async function () { const r = await _rrG.apply(thi
 {
 const RP = [
 ['Attendance', [
+['wk', 'Weekly summary', 'For the chosen week (or period): days worked, late, leave, absent, hours, breaks over limit and tasks done – plus a day-by-day grid.'],
 ['att', 'Monthly attendance summary', 'Present, absent, leave, half days, late marks, missed check-outs and hours worked for each person.'],
 ['late', 'Late coming report', 'Every late check-in with the person\'s shift, the late limit and minutes late, plus a total per person.'],
 ['miss', 'Missing check-out & corrections', 'Days with no check-out and whether they were fixed, plus every correction request and its status.'],
@@ -5888,8 +5898,10 @@ const RP = [
 const rpOk = k => k !== 'wp' || isDev();
 const RPN = Object.fromEntries(RP.flatMap(g => g[1]).map(r => [r[0], r[1]]));
 const ymOf = () => S.rpM || todayStr().slice(0, 7);
+const monOf = d => addDays(d, -((dowOf(d) + 6) % 7)), rpMode = () => S.rpMode || (S.rpCustom ? 'dates' : 'month');
 const rng = () => { const ym = ymOf(), [y, m] = ym.split('-').map(Number), last = new Date(y, m, 0).getDate();
-return S.rpCustom && S.rpF && S.rpT ? { from: S.rpF <= S.rpT ? S.rpF : S.rpT, to: S.rpF <= S.rpT ? S.rpT : S.rpF, ym: (S.rpF <= S.rpT ? S.rpF : S.rpT).slice(0, 7), custom: true } : { from: ym + '-01', to: `${ym}-${pad(last)}`, ym, custom: false }; };
+if (rpMode() === 'week') { const f = S.rpWk || monOf(todayStr()); return { from: f, to: addDays(f, 6), ym: f.slice(0, 7), custom: true, week: true }; }
+return rpMode() === 'dates' && S.rpF && S.rpT ? { from: S.rpF <= S.rpT ? S.rpF : S.rpT, to: S.rpF <= S.rpT ? S.rpT : S.rpF, ym: (S.rpF <= S.rpT ? S.rpF : S.rpT).slice(0, 7), custom: true } : { from: ym + '-01', to: `${ym}-${pad(last)}`, ym, custom: false }; };
 const rpEmps = () => S.emps.filter(e => (S.rpInact || e.active) && (!S.rpD || (e.dept || 'Other') === S.rpD) && (!S.rpL || (e.office || '') === S.rpL));
 const nm = id => empById(id)?.name || '';
 const cd = id => empById(id)?.code || '';
@@ -5924,6 +5936,22 @@ const ids = new Set(E.map(e => e.code));
 const rows = sum.filter(r => ids.has(r.Code)).map(r => { const e = S.emps.find(x => x.code === r.Code); const mine = att.filter(a => a.employee_id === e?.id); const wm = mine.reduce((s, a) => s + worked(a, brk), 0);
 return { Code: r.Code, Name: r.Name, Department: r.Department, Location: r.Office, Shift: e ? shTxt(e, R.ym + '-01') : '', 'Working days': r['Working days'], Present: r.Present, 'Late days': r['Late days'], 'Half days': r['Half days'], 'Leave taken (days)': r['Leave taken (days)'], 'Absent / LOP': r['Absent / LOP days'], 'Missed check-outs': r['Missed check-outs'], 'Break over limit (min)': r['Break over limit (min)'], 'Hours worked': hrs(wm), 'Avg hours / day': hrs(mine.filter(a => a.out_at).length ? wm / mine.filter(a => a.out_at).length : 0) }; });
 return [{ name: 'Attendance summary', rows }]; },
+async wk(R, E) { const [att, brk, lv] = await Promise.all([L.att(R.from, R.to), L.brk(R.from, R.to), L.lv(R.from, R.to)]); const t = todayStr(), half = C().halfDayMin || 240, allow = brCfg().reduce((s, b) => s + b.min, 0);
+const [dn, od] = await Promise.all([ld('wkd' + R.from + R.to, () => all(() => sb.from('tasks').select('assigned_to,done_at').eq('status', 'done').gte('done_at', R.from + 'T00:00:00+05:30').lte('done_at', R.to + 'T23:59:59+05:30')).catch(() => [])),
+ld('wko' + R.to, () => all(() => sb.from('tasks').select('assigned_to,due,status').neq('status', 'done').lt('due', R.to < t ? R.to : t)).catch(() => []))]);
+const D = days(R.from, R.to), grid = [];
+const rows = E.map(e => { const k = { wd: 0, p: 0, l: 0, hd: 0, lv: 0, a: 0, mo: 0, wm: 0, bo: 0 }, g = { Code: e.code, Name: e.name };
+D.forEach(ds => { const lab = `${DOW[dowOf(ds)]} ${Number(ds.slice(8))}`; if (e.join_date && ds < e.join_date) { g[lab] = ''; return; }
+const a = att.find(x => x.employee_id === e.id && x.day === ds), l = lv.find(x => x.employee_id === e.id && x.status === 'approved' && x.from_date <= ds && x.to_date >= ds), off = isWeekOff(ds, e), hol = holOn(ds, e.office);
+const bm = brk.filter(x => x.employee_id === e.id && x.day === ds).reduce((s, x) => s + (x.end_at ? mins(x.start_at, x.end_at) : 0), 0);
+if (!off && !hol && ds <= t) k.wd++;
+if (a?.in_at) { k.p++; const lt = lateM(e, a) > 0; if (lt) k.l++; if (bm > allow) k.bo += bm - allow; let c = lt ? 'Late' : 'P';
+if (!a.out_at && ds < t) { k.mo++; c += ' (no out)'; } else if (a.out_at) { const w = mins(a.in_at, a.out_at) - bm; k.wm += Math.max(0, w); if (w < half) { k.hd++; c = 'Half day'; } } g[lab] = c; }
+else if (off) g[lab] = 'Off'; else if (hol) g[lab] = 'Holiday'; else if (l) { k.lv += l.half ? 0.5 : 1; g[lab] = l.type + (l.half ? ' ½' : ''); }
+else if (e.no_punch) g[lab] = 'P'; else if (ds < t) { k.a++; g[lab] = 'Absent'; } else g[lab] = ''; });
+grid.push(g); const pd = att.filter(x => x.employee_id === e.id && x.out_at).length;
+return { Code: e.code, Name: e.name, Department: e.dept || '', Shift: shTxt(e, R.from), 'Working days': k.wd, Present: k.p, Late: k.l, 'Half days': k.hd, 'Leave days': k.lv, Absent: k.a, 'No check-out': k.mo, 'Hours worked': hrs(k.wm), 'Avg / day': hrs(pd ? k.wm / pd : 0), 'Break over limit (min)': k.bo, 'Tasks done': dn.filter(x => x.assigned_to === e.id).length, 'Tasks overdue': od.filter(x => x.assigned_to === e.id && x.status !== 'review').length }; });
+return [{ name: 'Weekly summary', rows }, { name: 'Day by day', rows: grid }]; },
 async late(R, E) { const att = await L.att(R.from, R.to); const out = [];
 E.forEach(e => att.filter(a => a.employee_id === e.id).forEach(a => { const m = lateM(e, a); if (m > 0) { const s = shiftOf(e, a.day); out.push({ Date: dmy(a.day), Code: e.code, Name: e.name, Department: e.dept || '', Shift: s?.name || '', 'Shift start': s ? brT12(s.start) : '', 'Late after': brT12(lateLim(e, a.day)), 'Checked in': brT12(hm(a.in_at)), 'Minutes late': m }); } }));
 const per = E.map(e => { const mine = out.filter(r => r.Code === e.code); return { Code: e.code, Name: e.name, Department: e.dept || '', Shift: shTxt(e, R.to), 'Late days': mine.length, 'Total minutes late': mine.reduce((s, r) => s + r['Minutes late'], 0), 'Average minutes late': mine.length ? Math.round(mine.reduce((s, r) => s + r['Minutes late'], 0) / mine.length) : 0 }; }).filter(r => r['Late days']).sort((a, b) => b['Late days'] - a['Late days']);
@@ -5996,16 +6024,16 @@ const body = `<p style="text-align:center;color:#666;margin-top:-12px">${esc(sco
 openDoc(letterHTML(RPN[z.k], body).replace('max-width:780px', 'max-width:1100px').replace('</style>', '@page{size:A4 landscape;margin:10mm}th,td{padding:4px 6px!important}</style>')); }
 VIEWS.reports = async () => { if (!isAdmin()) return '<div class="card">Reports are for HR and management.</div>'; const R = rng(), act = S.emps.filter(e => e.active), dp = [...new Set(act.map(e => e.dept || 'Other'))].sort(), lc = [...new Set(act.map(e => e.office).filter(Boolean))].sort();
 return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · management</span><h2>Reports</h2></div><button class="btn pri" id="rpPack">⬇ Monthly pack – all reports in one Excel</button></div>
-<div class="card rpf"><div class="rpfr"><label><span>Month</span><input type="month" id="rpM" value="${ymOf()}" max="${todayStr().slice(0, 7)}" ${S.rpCustom ? 'disabled' : ''}></label>
-<label class="chk"><input type="checkbox" id="rpCustom" ${S.rpCustom ? 'checked' : ''}> Choose dates</label>${S.rpCustom ? `<label><span>From</span><input type="date" id="rpF" value="${S.rpF || R.from}"></label><label><span>To</span><input type="date" id="rpT" value="${S.rpT || R.to}"></label>` : ''}
+<div class="card rpf"><div class="seg rpmode">${[['month', 'Month'], ['week', 'Week'], ['dates', 'Dates']].map(([k, l]) => `<button class="${rpMode() === k ? 'on' : ''}" data-rpmode="${k}">${l}</button>`).join('')}</div><div class="rpfr">${rpMode() === 'month' ? `<label><span>Month</span><input type="month" id="rpM" value="${ymOf()}" max="${todayStr().slice(0, 7)}"></label>` : ''}${rpMode() === 'week' ? `<label><span>Week</span><select id="rpWk">${[...Array(16)].map((_, i) => addDays(monOf(todayStr()), -7 * i)).map(w => `<option value="${w}" ${(S.rpWk || monOf(todayStr())) === w ? 'selected' : ''}>${fmtD(w)} – ${fmtD(addDays(w, 6))}${w === monOf(todayStr()) ? ' (this week)' : ''}</option>`).join('')}</select></label>` : ''}
+${rpMode() === 'dates' ? `<label><span>From</span><input type="date" id="rpF" value="${S.rpF || R.from}"></label><label><span>To</span><input type="date" id="rpT" value="${S.rpT || R.to}"></label>` : ''}
 <label><span>Department</span><select id="rpD"><option value="">All departments</option>${dp.map(d => `<option ${S.rpD === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
 <label><span>Location</span><select id="rpL"><option value="">All locations</option>${lc.map(d => `<option ${S.rpL === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
 <label class="chk"><input type="checkbox" id="rpInact" ${S.rpInact ? 'checked' : ''}> Include staff who left</label></div>
-<p class="small muted">${esc(scope(R))} · ${rpEmps().length} staff${S.rpCustom ? ' · Attendance summary and Salary input always use the whole month of the From date.' : ''}</p></div>
+<p class="small muted">${esc(scope(R))} · ${rpEmps().length} staff${rpMode() !== 'month' ? ' · Attendance summary and Salary input always use the whole month.' : ''}</p></div>
 ${RP.map(([g, list]) => [g, list.filter(r => rpOk(r[0]))]).filter(([, list]) => list.length).map(([g, list]) => `<div class="card"><h3>${esc(g)}</h3><div class="rpl">${list.map(([k, t, d]) => `<div class="rpi"><div class="grow"><b>${esc(t)}</b><div class="small muted">${esc(d)}</div></div><div class="hstack"><button class="btn sm" data-rpx="view" data-k="${k}">👁 View</button><button class="btn sm pri" data-rpx="xls" data-k="${k}">⬇ Excel</button></div></div>`).join('')}</div></div>`).join('')}
 <p class="small muted">Reports contain staff data – keep the files private and delete them after use.</p></div>`; };
-document.addEventListener('change', e => { const id = e.target.id; if (!['rpM', 'rpCustom', 'rpF', 'rpT', 'rpD', 'rpL', 'rpInact'].includes(id)) return;
-if (id === 'rpM') S.rpM = e.target.value || todayStr().slice(0, 7); else if (id === 'rpCustom') { S.rpCustom = e.target.checked; if (S.rpCustom && !S.rpF) { const R = rng(); S.rpF = R.from; S.rpT = R.to; } } else if (id === 'rpF') S.rpF = e.target.value; else if (id === 'rpT') S.rpT = e.target.value;
+document.addEventListener('change', e => { const id = e.target.id; if (!['rpM', 'rpWk', 'rpF', 'rpT', 'rpD', 'rpL', 'rpInact'].includes(id)) return;
+if (id === 'rpM') S.rpM = e.target.value || todayStr().slice(0, 7); else if (id === 'rpWk') S.rpWk = e.target.value; else if (id === 'rpF') S.rpF = e.target.value; else if (id === 'rpT') S.rpT = e.target.value;
 else if (id === 'rpD') S.rpD = e.target.value; else if (id === 'rpL') S.rpL = e.target.value; else S.rpInact = e.target.checked; render(); });
 document.addEventListener('click', async e => { const b = e.target.closest('[data-rpx],#rpPack'); if (!b || b.disabled) return; const k = b.dataset.k, a = b.dataset.rpx || 'pack';
 if (a === 'pdf') return rpPdf(); const t = b.innerHTML; b.disabled = true; b.innerHTML = 'Preparing…';
@@ -6223,4 +6251,6 @@ const a = e.target.closest('.rx [data-rxp]'); if (a) { e.preventDefault(); e.sto
 box.insertAdjacentHTML('beforeend', `<span class="rxpick">${RX_EMO.map(x => `<button type="button" data-rxpe="${x}">${x}</button>`).join('')}</span>`); return; }
 if (!e.target.closest('.rxpick')) document.querySelectorAll('.rxpick').forEach(x => x.remove()); }, true);
 }
+document.addEventListener('click', e => { const b = e.target.closest('[data-rpmode]'); if (!b) return; S.rpMode = b.dataset.rpmode; S.rpCustom = S.rpMode === 'dates';
+if (S.rpMode === 'dates' && !S.rpF) { const t = todayStr(); S.rpF = t.slice(0, 8) + '01'; S.rpT = t; } render(); });
 </script></body></html>
