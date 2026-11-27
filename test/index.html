@@ -664,6 +664,10 @@ html.glass body .pb{background:linear-gradient(160deg,rgba(31,42,85,.8),rgba(46,
 html.glass body .chip{background-color:color-mix(in srgb,currentColor 10%,rgba(255,255,255,.5));-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.7)}
 html.glass body .btn.pri{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 18px -8px rgba(29,43,83,.6)}
 html.glass body .phnudge{background:rgba(255,255,255,.5)}
+html.glass body .pb{position:relative;background:linear-gradient(160deg,rgba(28,38,82,.97),rgba(48,30,92,.96))!important;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.06),0 34px 70px -26px rgba(40,30,110,.65)}
+html.glass body .pb::before{content:'';position:absolute;inset:0 0 auto 0;height:46%;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,0));pointer-events:none;border-radius:inherit}
+html.glass body .pb>*{position:relative}
+html.glass body .mtab{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto;border-radius:30px;background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(24px) saturate(190%);backdrop-filter:blur(24px) saturate(190%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 #fff,0 14px 40px -10px rgba(29,43,83,.35)}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
