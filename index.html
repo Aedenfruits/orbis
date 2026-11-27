@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795760603"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795762956"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -566,6 +566,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .tkmode{display:flex;flex-wrap:wrap;margin:4px 0 8px;flex:0 0 auto}#tkm_many,#tkm_dept,.tkpl{flex:0 0 auto}.tkmode button{flex:1;white-space:nowrap}.tkpl{max-height:28vh}.tkpl label.chk{display:flex;gap:8px;align-items:center;font-weight:600;padding:6px 4px}.tkpl label.chk input{width:auto;margin:0}#tkm_many,#tkm_dept{margin-bottom:8px}
 .tklk{font-weight:800;text-decoration:underline;cursor:pointer;color:inherit}.tklk.r{color:var(--crit)}.tkpi{margin-bottom:10px;flex:0 0 auto}.tkth{margin-top:8px;border-left:3px solid var(--line);padding-left:10px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
 .tp12 input[data-tp]{width:3.1em;min-width:0;text-align:center;padding-left:4px;padding-right:4px;font-variant-numeric:tabular-nums}.tp12 .tpap{min-width:3.4em;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg2,#eef1f8);font-weight:700;cursor:pointer;align-self:stretch}.tp12.bad input[data-tp]{border-color:var(--crit)}
+.wrst{align-items:flex-end;gap:12px;margin-top:6px}.wrst label{margin:0;flex:0 1 220px}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -5990,7 +5991,7 @@ return `<div class="card"><div class="row"><div><h3>📝 Work report · ${fmtD(d
 <div class="card"><div class="row"><h3>➕ Other work I did</h3>${extra.length ? `<span class="small muted">${extra.length} · ${hmm(extra.reduce((s, i) => s + Math.max(0, toMin(i.to) - toMin(i.from)), 0))}</span>` : ''}</div>
 ${extra.length ? `<div class="stack" style="gap:6px">${extra.map(i => planRow(i, true, d)).join('')}</div>` : '<p class="small muted">Work that was not in your plan – add it with the time you spent.</p>'}
 <div class="wpadd"><div class="grid3"><label>From${tp12('wr_f', last)}</label><label>To${tp12('wr_t', addMinHM(last, 60))}</label><label class="grow">Work<input id="wr_k" maxlength="140" placeholder="e.g. Helped stock count"></label></div>
-<div class="right"><button class="btn" id="wr_add">+ Add other work</button></div></div></div>
+<div class="row wrst"><label>Status<select id="wr_s"><option value="done">✅ Done</option><option value="on">🔄 Ongoing</option><option value="not">❌ Not done</option></select></label><button class="btn" id="wr_add">+ Add other work</button></div></div></div>
 <div style="padding-bottom:70px"><button class="btn pri wide" id="wr_sub">${S.wrSub ? '✓ Update work report' : '✅ Submit work report'}</button></div>`; }
 const _wrV = VIEWS.plan;
 VIEWS.plan = async () => { const tab = S.wpTab || 'today';
@@ -6001,7 +6002,7 @@ return `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</sp
 document.addEventListener('click', async e => { const b = e.target.closest('#wr_add,#wr_sub'); if (!b || S.view !== 'plan' || b.disabled) return; const d = S.wrDay; if (!d) return;
 try {
 if (b.id === 'wr_add') { const f = $('#wr_f').value, to = $('#wr_t').value, k = $('#wr_k').value.trim(); if (!k) return toast('Write the work you did', true); if (!f || !to || to <= f) return toast('"To" must be after "From"', true);
-await savePlan(d, [...(S.planY || []), { id: Math.random().toString(36).slice(2, 10), from: f, to, task: k, st: 'done', extra: true }]); toast('Added'); render(); }
+await savePlan(d, [...(S.planY || []), { id: Math.random().toString(36).slice(2, 10), from: f, to, task: k, st: $('#wr_s')?.value || 'done', extra: true }]); toast('Added'); render(); }
 if (b.id === 'wr_sub') { b.disabled = true; await q(sb.from('work_plans').upsert({ employee_id: S.me.id, day: d, items: S.planY || [], updated_at: new Date().toISOString(), report_at: new Date().toISOString() })); toast('Work report submitted ✓'); render(); }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; } });
 }
