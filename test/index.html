@@ -1050,7 +1050,7 @@ return `<div class="punch">
 <div class="t"><span id="clk">${hm12(d)}</span><small id="clks">:${pad(d.getSeconds())}</small></div>
 ${mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Working outside today? Ask for on duty.</span><button class="pbbr" data-od="" style="margin-top:10px;width:100%">🚗 Request on duty</button></div>` : ''}<div class="swz" ${mob ? 'hidden' : ''}><button id="swipe" class="sw ${state === 'out' ? 'out' : ''} ${state === 'done' ? 'done' : ''}" ${!dev && state !== 'done' ? 'data-nodev="1"' : ''}>
 <span class="sw-fill"></span><span class="sw-knob">${state === 'done' ? '✓' : '›'}</span>
-<span class="sw-txt"><b>${state === 'in' ? 'Check In' : state === 'out' ? 'Check Out' : 'Done for today'}</b><small>${state === 'done' ? 'See you tomorrow' : 'Swipe right to ' + (state === 'in' ? 'check in' : 'check out')}</small></span>
+<span class="sw-txt"><b>${state === 'in' ? 'Check In' : state === 'out' ? 'Check Out' : 'Done for today'}</b><small>${state === 'done' ? 'See you ' + seeYou() : 'Swipe right to ' + (state === 'in' ? 'check in' : 'check out')}</small></span>
 <span class="sw-chev"><i>›</i><i>›</i><i>›</i></span></button></div>
 <div class="tiles">
 <div><small>Check in</small><b>${a?.in_at ? hm(a.in_at) : '--:--'}</b><i>${a?.in_at ? (late ? '<em class="late">Late</em>' : '<em class="ok">On time</em>') : 'Not yet'}</i></div>
@@ -2052,6 +2052,8 @@ ${pages.map((g, i) => `<div class="sheet"><div class="lab">FRONT · sheet ${i + 
 </body></html>`;
 }
 document.addEventListener('click', ev => { if (ev.target.closest('[data-idc]')) idDlg(); });
+function seeYou() { const t = todayStr(); let d = addDays(t, 1), n = 1; while (n < 21 && (isWeekOff(d) || holOn(d, S.me?.office))) { d = addDays(d, 1); n++; }
+if (n === 1) return 'tomorrow'; const wd = new Date(d + 'T12:00:00').toLocaleDateString('en-IN', { weekday: 'long' }); return n < 7 ? wd : `on ${wd}, ${fmtD(d)}`; }
 const holOn = (ds, office) => (S.holidays || []).find(h => h.day === ds && (!h.office || !office || h.office === office));
 function holCard() {
 const t = todayStr(), up = (S.holidays || []).filter(h => h.day >= t).sort((a, b) => a.day.localeCompare(b.day)).slice(0, 6);
@@ -4387,7 +4389,7 @@ const btns = S.me.no_punch ? `<div class="pbnote">✓ No punching needed for you
 : mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Working outside today? Ask for on duty.</span><button class="pbbr" data-od="" style="margin-top:10px;width:100%">🚗 Request on duty</button></div>`
 : state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${nodev}>Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
 : state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}<button class="pbgo" id="pbGo" ${nodev} ${ob ? 'disabled title="End your break first"' : ''}>Check Out →</button></div>`
-: `<div class="pbdone">✓ Done for today · see you tomorrow</div>`;
+: `<div class="pbdone">✓ Done for today · see you ${seeYou()}</div>`;
 const btnsD = isDev() ? `<div class="pbb">${state === 'out' && !ob && dev ? `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>` : ''}<button class="pbgo" id="pbGo">${state === 'out' ? 'Check Out →' : state === 'done' ? 'Check In again →' : 'Check In →'}</button></div><div class="pbnote">🛠️ Developer: punch any time, from anywhere</div>` : null;
 afterFns.push(startTicker, () => { const g = $('#pbGo'); if (g) g.onclick = () => { if (g.dataset.nodev) return toast(noDevMsg(), true); stationAction('punch'); }; });
 return `<div class="punch">
