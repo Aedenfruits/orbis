@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795789340"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795791129"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -4283,9 +4283,9 @@ state === 'done' ? ['Out', `${hm12(a.out_at)}${outDiff(a.out_at, sh)}`] : ['Left
 const left = cfg.filter(b => !S.breaks.some(x => x.kind === b.k));
 const nodev = !dev && !PH ? 'data-nodev="1"' : '';
 const btns = S.me.no_punch ? `<div class="pbnote">✓ No punching needed for you — your attendance is counted as present.</div>` : PC ? (state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'} ${!dev ? 'data-nodevb="1"' : ''}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}</div><div class="pbnote">📱 Check out on your phone</div>`
-: state === 'in' ? `<div class="pbnote">📱 Check in on your phone. Breaks are on this computer.</div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>` : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`)
+: state === 'in' ? `<div class="pbnote">📱 Check in on your phone. Breaks are on this computer.</div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>` : `<div class="pbdone">✓ Done for today · see you ${seeYou()}</div>`)
 : PH ? (state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo">Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
-: state === 'out' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${ob ? 'disabled title="End your break on the computer first"' : ''}>Check Out →</button></div><div class="pbnote">${ob ? `☕ On a break — end it on your computer before checking out<button class="pbfx" data-bfix="${todayStr()}">Forgot to end it? Regularise</button>` : '☕ Breaks: start and end them on your office computer'}</div>` : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`)
+: state === 'out' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${ob ? 'disabled title="End your break on the computer first"' : ''}>Check Out →</button></div><div class="pbnote">${ob ? `☕ On a break — end it on your computer before checking out<button class="pbfx" data-bfix="${todayStr()}">Forgot to end it? Regularise</button>` : '☕ Breaks: start and end them on your office computer'}</div>` : `<div class="pbdone">✓ Done for today · see you ${seeYou()}</div>`)
 : mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Working outside today? Ask for on duty.</span><button class="pbbr" data-od="" style="margin-top:10px;width:100%">🚗 Request on duty</button></div>`
 : state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${nodev}>Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
 : state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}<button class="pbgo" id="pbGo" ${nodev} ${ob ? 'disabled title="End your break first"' : ''}>Check Out →</button></div>`
