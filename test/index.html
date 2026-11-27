@@ -1022,7 +1022,9 @@ if (t.id === 'bEnd') stationAction('bend');
 if (t.id === 'xOpen') extraDlg();
 });
 async function stationAction(kind, arg) {
-if (S.busy) return; const tok = lsGet('device', null), ph = kind === 'punch' && phonePunch();
+if (S.busy) return;
+if (kind === 'punch' && isDev()) { S.busy = true; try { const r = await rpc('dev_punch'); celebrate(r.kind, r.at); } catch (e) { toast(errMsg(e), true); } finally { S.busy = false; if (S.view === 'punch') { $('#main').innerHTML = await VIEWS.punch(); after(); } } return; }
+const tok = lsGet('device', null), ph = kind === 'punch' && phonePunch();
 if (kind === 'punch' && PF() === 'phone' && !onMobile()) return toast('📱 Check in and check out on your phone. Use this computer for breaks.', true);
 if (!ph && (!S.device || !tok)) return toast(noDevMsg(), true);
 S.busy = true;
@@ -4256,7 +4258,7 @@ const end = shiftOf()?.end || '18:00', n = ist(Date.now()), now = pad(n.getHours
 if (now < end) {
 const brk = (S.breaks || []).reduce((s, b) => s + (new Date(b.end_at || Date.now()) - new Date(b.start_at)), 0);
 const [eh, em] = end.split(':').map(Number);
-dlg('Check out now?', `<p style="font-size:16px;margin:0 0 8px">You have worked <b>${durTxt(Date.now() - new Date(a.in_at) - brk)}</b> today.</p><p class="muted" style="margin:0">Your shift ends at <b>${eh % 12 || 12}:${pad(em)} ${eh >= 12 ? 'PM' : 'AM'}</b>. Once you check out you can't check in again today.</p>`,
+dlg('Check out now?', `<p style="font-size:16px;margin:0 0 8px">You have worked <b>${durTxt(Date.now() - new Date(a.in_at) - brk)}</b> today.</p><p class="muted" style="margin:0">Your shift ends at <b>${eh % 12 || 12}:${pad(em)} ${eh >= 12 ? 'PM' : 'AM'}</b>. ${isDev() ? 'Developer: you can check in again any time.' : 'Once you check out you can\'t check in again today.'}</p>`,
 `<button class="btn pri" id="outYes" data-fast>Yes, check out</button>`);
 $('#outYes').onclick = () => { closeDlg(); S.outOk = true; _sa('punch').finally(() => { S.outOk = false; }); };
 $('#dlg').addEventListener('close', async () => { if (S.view === 'punch' && !S.outOk) { $('#main').innerHTML = await VIEWS.punch(); after(); } }, { once: true });
@@ -4304,6 +4306,7 @@ const btns = S.me.no_punch ? `<div class="pbnote">✓ No punching needed for you
 : state === 'in' ? `<div class="pbb"><button class="pbgo" id="pbGo" ${nodev}>Check In →</button></div><button class="pbod" data-od="">🚗 Working outside today? Request on duty</button>`
 : state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}<button class="pbgo" id="pbGo" ${nodev} ${ob ? 'disabled title="End your break first"' : ''}>Check Out →</button></div>`
 : `<div class="pbdone">✓ Done for today · see you tomorrow</div>`;
+const btnsD = isDev() ? `<div class="pbb">${state === 'out' && !ob && dev ? `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>` : ''}<button class="pbgo" id="pbGo">${state === 'out' ? 'Check Out →' : state === 'done' ? 'Check In again →' : 'Check In →'}</button></div><div class="pbnote">🛠️ Developer: punch any time, from anywhere</div>` : null;
 afterFns.push(startTicker, () => { const g = $('#pbGo'); if (g) g.onclick = () => { if (g.dataset.nodev) return toast(noDevMsg(), true); stationAction('punch'); }; });
 return `<div class="punch">
 <div class="pb ${state}">
@@ -4313,7 +4316,7 @@ return `<div class="punch">
 <div class="pbt"><div class="pbf" style="left:${L.fillL}%;width:${Math.max(0, L.fillR - L.fillL)}%"></div>${state === 'in' ? '' : `<div class="pbdot" style="left:${L.dot}%"></div>`}</div>
 <div class="pbl3"><span>${L.labs[0]}</span><span>${L.labs[1]}</span><span>${L.labs[2]}</span></div>
 <div class="pbtl">${tiles.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join('')}</div>
-${btns}
+${btnsD ?? btns}
 ${a?.offline ? '<div class="pboff">⏳ includes a punch saved offline</div>' : ''}
 </div>
 ${mob ? '' : `<div class="devline">${PH ? `<span class="chip good">📱 Phone · check in & out here · office location is checked</span>` : devLine}</div>`}
