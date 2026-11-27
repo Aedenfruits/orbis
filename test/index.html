@@ -587,6 +587,7 @@ dialog[open]::backdrop{animation:pmFade .18s ease}
 @media (prefers-reduced-motion:no-preference) and (max-width:760px){#dlg[open]{animation:pmUp .26s var(--ease)}@keyframes pmUp{from{transform:translateY(100%)}}}
 .rpf .rpfr{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.rpf .rpfr label{flex:1 1 150px;margin:0}.rpf .rpfr label.chk{flex:0 0 auto;display:flex;gap:6px;align-items:center;padding-bottom:10px}.rpf .rpfr label.chk input{width:auto;margin:0}.rpf .rpfr span{font-size:12px;color:var(--muted)}.rpl{display:flex;flex-direction:column}.rpi{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.rpi:first-child{border-top:0}.rpt{flex:0 0 auto;max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:10px;margin:6px 0 12px}.rpt table{font-size:12.5px}.rpt td,.rpt th{white-space:nowrap;padding:6px 9px}@media(max-width:760px){.rpi{flex-wrap:wrap}.rpi .hstack{width:100%}.rpi .hstack .btn{flex:1}}
 .pbtl{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:1fr}
+@media(max-width:760px){.seg [data-wpt]{padding-left:9px!important;padding-right:9px!important;font-size:13px}.seg:has([data-wpt]){overflow-x:auto;scrollbar-width:none}}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -1094,13 +1095,13 @@ const WST = { plan: ['Planned', '', '🗓'], on: ['Ongoing', 'warn', '🔄'], do
 async function getPlan(emp, day) { const r = await q(sb.from('work_plans').select('*').eq('employee_id', emp).eq('day', day).maybeSingle()); return (r?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); }
 const planQ = { n: 0, p: {} };
 async function savePlan(day, items) {
-if (day === todayStr()) S.planT = items; else if (day === addDays(todayStr(), -1)) S.planY = items;
+if (day === todayStr()) S.planT = items; else S.planY = items;
 planQ.n++; const prev = planQ.p[day] || Promise.resolve();
 const job = prev.catch(() => { }).then(() => q(sb.from('work_plans').upsert({ employee_id: S.me.id, day, items, updated_at: new Date().toISOString() })));
 planQ.p[day] = job; try { await job; } finally { planQ.n--; }
 }
 const planIdle = () => !planQ.n;
-function planRow(it, ed, day) { const [t, c, ic] = WST[it.st || 'plan']; return `<div class="wp st-${it.st || 'plan'} ${it.urgent ? 'urg' : ''}"><div class="wpt"><b>${t12(it.from)}</b><small>${t12(it.to)}</small></div><div class="wpm"><div>${it.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(it.task)}</div>${it.note ? `<small>📝 ${esc(it.note)}</small>` : ''}${it.carry ? '<small>↪ carried from yesterday</small>' : ''}</div>
+function planRow(it, ed, day) { const [t, c, ic] = WST[it.st || 'plan']; return `<div class="wp st-${it.st || 'plan'} ${it.urgent ? 'urg' : ''}"><div class="wpt"><b>${t12(it.from)}</b><small>${t12(it.to)}</small></div><div class="wpm"><div>${it.urgent ? '<span class="u">⚡ Urgent</span>' : ''}${esc(it.task)}</div>${it.note ? `<small>📝 ${esc(it.note)}</small>` : ''}${it.carry ? '<small>↪ carried from yesterday</small>' : ''}${it.extra ? '<small>➕ Other work (not in plan)</small>' : ''}</div>
 ${ed ? `<select data-wst="${it.id}" data-d="${day}">${Object.entries(WST).map(([k, v]) => `<option value="${k}" ${(it.st || 'plan') === k ? 'selected' : ''}>${v[2]} ${v[0]}</option>`).join('')}</select><button class="btn sm" data-wdel="${it.id}" data-d="${day}">✕</button>` : `<span class="chip ${c}">${ic} ${t}</span>`}</div>`; }
 const planSum = it => { const m = it.reduce((s, i) => s + Math.max(0, toMin(i.to) - toMin(i.from)), 0); return `<span class="small muted">${it.length} tasks · ${hmm(m)} · ✅ ${it.filter(x => x.st === 'done').length} · 🔄 ${it.filter(x => x.st === 'on').length} · ❌ ${it.filter(x => x.st === 'not').length}</span>`; };
 const toMin = t => { const [h, m] = (t || '0:0').split(':').map(Number); return h * 60 + m; };
@@ -5874,7 +5875,7 @@ fix: (f, t) => ld('fx' + f + t, () => all(() => sb.from('punch_fixes').select('*
 fld: (f, t) => ld('fd' + f + t, () => all(() => sb.from('field_days').select('*').gte('day', f).lte('day', t).order('day')).then(inR(f, t)).catch(() => [])),
 lv: (f, t) => ld('lv' + f + t, () => all(() => sb.from('leave_requests').select('*').lte('from_date', t).gte('to_date', f).order('from_date'))),
 adj: yr => ld('adj' + yr, () => all(() => sb.from('leave_adjust').select('*').eq('year', Number(yr))).catch(() => [])),
-wp: (f, t) => ld('wp' + f + t, () => all(() => sb.from('work_plans').select('employee_id,day,items').gte('day', f).lte('day', t)).then(inR(f, t)).catch(() => [])),
+wp: (f, t) => ld('wp' + f + t, () => all(() => sb.from('work_plans').select('employee_id,day,items,report_at').gte('day', f).lte('day', t)).then(inR(f, t)).catch(() => [])),
 prv: (f, t) => ld('pr' + f + t, () => all(() => sb.from('plan_reviews').select('*').gte('day', f).lte('day', t)).then(inR(f, t)).catch(() => [])),
 tsk: (f, t) => ld('tk' + f + t, () => all(() => sb.from('tasks').select('id,title,assigned_to,assigned_by,due,priority,status,created_at,done_at,first_due,due_edits').gte('created_at', f + 'T00:00:00+05:30').lte('created_at', t + 'T23:59:59+05:30').order('created_at')).catch(() => [])),
 sal: ym => ld('sal' + ym, () => salaryRows(ym)) };
@@ -5920,7 +5921,7 @@ const per = E.map(e => { const r = { Code: e.code, Name: e.name }; let tot = 0; 
 return [{ name: 'Leave taken', rows }, { name: 'Approved per person', rows: per }]; },
 async wp(R, E) { if (!isDev()) return [{ name: 'Work plans', rows: [] }]; const [wp, pr, att] = await Promise.all([L.wp(R.from, R.to), L.prv(R.from, R.to), L.att(R.from, R.to)]); const t = todayStr();
 const rows = E.map(e => { const wd = att.filter(a => a.employee_id === e.id && a.in_at && a.day <= t).map(a => a.day), mine = wp.filter(w => w.employee_id === e.id && (!Array.isArray(w.items) || w.items.length)), rv = pr.filter(p => p.employee_id === e.id);
-const sub = new Set(mine.map(w => w.day)); return { Code: e.code, Name: e.name, Department: e.dept || '', 'Days worked': wd.length, 'Plans submitted': sub.size, 'Plans missed (worked, no plan)': wd.filter(d => !sub.has(d)).length, 'Reviews got': rv.length, 'Average rating': rv.length ? Math.round(rv.reduce((s, p) => s + Number(p.rating || 0), 0) / rv.length * 10) / 10 : '' }; });
+const sub = new Set(mine.map(w => w.day)); return { Code: e.code, Name: e.name, Department: e.dept || '', 'Days worked': wd.length, 'Plans submitted': sub.size, 'Plans missed (worked, no plan)': wd.filter(d => !sub.has(d)).length, 'Work reports submitted': wp.filter(w => w.employee_id === e.id && w.report_at).length, 'Other work added': wp.filter(w => w.employee_id === e.id).reduce((s, w) => s + (Array.isArray(w.items) ? w.items.filter(i => i.extra).length : 0), 0), 'Reviews got': rv.length, 'Average rating': rv.length ? Math.round(rv.reduce((s, p) => s + Number(p.rating || 0), 0) / rv.length * 10) / 10 : '' }; });
 const rev = pr.filter(p => E.some(e => e.id === p.employee_id)).map(p => ({ Date: dmy(p.day), Code: cd(p.employee_id), Name: nm(p.employee_id), Reviewer: nm(p.reviewer), Rating: p.rating, Comment: p.comment || '' }));
 return [{ name: 'Work plans per person', rows }, { name: 'Plan reviews', rows: rev }]; },
 async tsk(R, E) { const tk = await L.tsk(R.from, R.to); const t = todayStr(), ids = new Set(E.map(e => e.id)), mine = tk.filter(x => ids.has(x.assigned_to) || ids.has(x.assigned_by));
@@ -5977,5 +5978,35 @@ const _navRp = navList; navList = function () { const n = _navRp.apply(this, arg
 try { const P = '<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20V4a.5.5 0 0 1 .5-.5z"/><path d="M14 3.5V8h4"/><path class="a" d="M9 17v-3M12 17v-5M15 17v-2"/>';
 if (typeof MI === 'object') MI.reports = P; if (typeof ICP === 'object') ICP.reports = P; if (typeof ICGRP === 'object') ICGRP.reports = 'b'; if (typeof MCOL === 'object') MCOL.reports = '#5b3f8f'; if (typeof EMO2IC === 'object') EMO2IC['📑'] = 'reports';
 const hr = MGROUPS.find(g => g[0] === 'HR & admin'); if (hr && !hr[1].includes('reports')) hr[1].splice(Math.max(0, hr[1].indexOf('register') + 1), 0, 'reports'); } catch { }
+}
+{
+async function wrDay() { const t = todayStr();
+const [a, p] = await Promise.all([q(sb.from('attendance').select('day').eq('employee_id', S.me.id).lt('day', t).gte('day', addDays(t, -10)).order('day', { ascending: false }).limit(1)).catch(() => []),
+q(sb.from('work_plans').select('day').eq('employee_id', S.me.id).lt('day', t).gte('day', addDays(t, -10)).order('day', { ascending: false }).limit(1)).catch(() => [])]);
+const d = [a[0]?.day, p[0]?.day].filter(Boolean).sort().pop(); return d || addDays(t, -1); }
+async function wrPage() { const d = await wrDay(); const row = await q(sb.from('work_plans').select('*').eq('employee_id', S.me.id).eq('day', d).maybeSingle()).catch(() => null);
+const items = (row?.items || []).slice().sort((x, y) => (x.from || '').localeCompare(y.from || '')); S.planY = items; S.wrDay = d; S.wrSub = row?.report_at || null;
+const plan = items.filter(i => !i.extra), extra = items.filter(i => i.extra), last = items.length ? items.map(i => i.to || '09:00').sort().pop() : '09:00';
+const open = plan.filter(i => !i.st || i.st === 'plan').length;
+return `<div class="card"><div class="row"><div><h3>📝 Work report · ${fmtD(d)}</h3><div class="small muted">Mark what you finished and add any other work you did.</div></div>${S.wrSub ? `<span class="chip good">✓ Submitted ${esc(new Date(S.wrSub).toLocaleTimeString('en-IN', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }))}</span>` : ''}</div></div>
+<div class="card"><div class="row"><h3>Planned work</h3>${plan.length ? planSum(plan) : ''}</div>${plan.length ? `<div class="stack" style="gap:6px">${plan.map(i => planRow(i, true, d)).join('')}</div>${open ? `<p class="small" style="color:var(--warn)">⚠️ ${open} item${open > 1 ? 's are' : ' is'} still "Planned" – set each one to Done, Ongoing or Not done.</p>` : ''}` : '<p class="small muted">You had no plan for this day. Add the work you did below.</p>'}</div>
+<div class="card"><div class="row"><h3>➕ Other work I did</h3>${extra.length ? `<span class="small muted">${extra.length} · ${hmm(extra.reduce((s, i) => s + Math.max(0, toMin(i.to) - toMin(i.from)), 0))}</span>` : ''}</div>
+${extra.length ? `<div class="stack" style="gap:6px">${extra.map(i => planRow(i, true, d)).join('')}</div>` : '<p class="small muted">Work that was not in your plan – add it with the time you spent.</p>'}
+<div class="wpadd"><div class="grid3"><label>From${tp12('wr_f', last)}</label><label>To${tp12('wr_t', addMinHM(last, 60))}</label><label class="grow">Work<input id="wr_k" maxlength="140" placeholder="e.g. Helped stock count"></label></div>
+<div class="right"><button class="btn" id="wr_add">+ Add other work</button></div></div></div>
+<div style="padding-bottom:70px"><button class="btn pri wide" id="wr_sub">${S.wrSub ? '✓ Update work report' : '✅ Submit work report'}</button></div>`; }
+const _wrV = VIEWS.plan;
+VIEWS.plan = async () => { const tab = S.wpTab || 'today';
+if (tab !== 'rep') { const h = await _wrV(); return h.replace('data-wpt="done">Completed</button></div>', 'data-wpt="done">Completed</button><button data-wpt="rep">Report</button></div>'); }
+afterFns.push(() => { const k = $('#wr_k'); if (k) k.onkeydown = e => { if (e.key === 'Enter') $('#wr_add').click(); }; });
+return `<div class="stack narrow"><div><span class="eyebrow">Daily work plan</span><h2>Work report</h2><p class="small muted">Seen only by you and your department head / reporting manager.</p></div>
+<div class="seg"><button data-wpt="today">Today's plan</button><button data-wpt="pend">Pending</button><button data-wpt="done">Completed</button><button class="on" data-wpt="rep">Report</button></div>${await wrPage()}</div>`; };
+document.addEventListener('change', e => { const s = e.target.closest('[data-tp]'); if (!s) return; const w = s.closest('.tp12'); if (w?.dataset.tpfor !== 'wr_f') return; const to = $('#wr_t'), v = $('#wr_f').value; if (to && to.value <= v) tpSet('wr_t', addMinHM(v, 60)); });
+document.addEventListener('click', async e => { const b = e.target.closest('#wr_add,#wr_sub'); if (!b || S.view !== 'plan' || b.disabled) return; const d = S.wrDay; if (!d) return;
+try {
+if (b.id === 'wr_add') { const f = $('#wr_f').value, to = $('#wr_t').value, k = $('#wr_k').value.trim(); if (!k) return toast('Write the work you did', true); if (!f || !to || to <= f) return toast('"To" must be after "From"', true);
+await savePlan(d, [...(S.planY || []), { id: Math.random().toString(36).slice(2, 10), from: f, to, task: k, st: 'done', extra: true }]); toast('Added'); render(); }
+if (b.id === 'wr_sub') { b.disabled = true; await q(sb.from('work_plans').upsert({ employee_id: S.me.id, day: d, items: S.planY || [], updated_at: new Date().toISOString(), report_at: new Date().toISOString() })); toast('Work report submitted ✓'); render(); }
+} catch (er) { toast(errMsg(er), true); b.disabled = false; } });
 }
 </script></body></html>
