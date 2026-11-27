@@ -1,4 +1,5 @@
-const C = 'orbis-v118'; let pending = false;
+const C = 'orbis-v119'; let pending = false;
+const bn = t => +(((t || '').match(/name="orbis-build" content="(\d+)"/) || [])[1]) || 0;
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(C).then(c => c.addAll([new Request('/', { cache: 'no-cache' }), '/icon-orbis-s-192.png'])).catch(() => { })); });
 self.addEventListener('activate', e => { e.waitUntil((async () => { let had = false; for (const k of await caches.keys()) if (k !== C) { had = true; await caches.delete(k); } await self.clients.claim();
   /* an older version was running: tell open windows; the page refreshes quietly at a safe moment (no intro / welcome screen) */
@@ -14,7 +15,10 @@ self.addEventListener('fetch', e => {
       e.respondWith((async () => {
         const c = await caches.open(C), old = await c.match('/'), oldTxt = old ? await old.clone().text() : null;
         const net = fetch(r.url, { cache: 'no-cache', credentials: 'same-origin' }).then(async res => {
-          if (res.ok) { const copy = res.clone(), t = await res.clone().text(); await c.put('/', copy);
+          if (res.ok) { const copy = res.clone(), t = await res.clone().text();
+            /* the web host can briefly serve an older copy after an update: never go back to an older build (stops refresh loops) */
+            if (oldTxt !== null && bn(t) && bn(t) <= bn(oldTxt)) return res;
+            await c.put('/', copy);
             if (oldTxt !== null && oldTxt !== t) { pending = true; const all = await self.clients.matchAll({ type: 'window' }); all.forEach(w => w.postMessage({ orbis: 'update' })); } }
           return res; }).catch(() => old);
         if (old) { e.waitUntil(net.catch(() => { })); return old; }
