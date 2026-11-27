@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795771193"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795780264"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -609,6 +609,9 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .wkst{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:20px 0 16px}.wkst>div{background:#f5f7fc;border:1px solid #e6eaf4;border-radius:16px;padding:12px 6px}.wkst b{display:block;font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}.wkst span{font-size:12px;color:#6b7591}
 .wko{font-size:13.5px;color:#6b7591;margin-bottom:16px}.wkx{margin-top:2px}
 .spsev{display:inline-block;margin-left:8px;font-size:11px;font-weight:800;padding:1px 8px;border-radius:99px;vertical-align:2px}.spsev.serious{background:#fde2e6;color:#b4123a}.spsev.medium{background:#fff1d6;color:#a45a00}.spsev.minor{background:#e3f6ea;color:#15803d}.sprow.spser{border-left:4px solid #e01664;background:#fff7fa}
+.sbof{margin-top:4px;color:var(--muted,#667)}.sblist{margin-top:8px;border-left:3px solid #e5e7ef;padding:4px 0 4px 10px;display:flex;flex-direction:column;gap:6px}.sbh{font-size:12px;font-weight:700;color:#4a4f6a;display:flex;gap:6px;align-items:center}.sbi{display:flex;flex-direction:column;gap:1px;font-size:13px}.sbi.done>span{text-decoration:line-through;opacity:.65}.sbi small{display:flex;gap:4px;flex-wrap:wrap;align-items:center}.sbi .chip{font-size:11px;padding:1px 7px}
+@media (max-width:820px){.task>.hstack{flex-wrap:wrap!important}.task>.hstack [data-tksub]{order:9}.task>.hstack select{min-width:150px}}
+.ckl{margin-top:10px;padding:10px 12px;border-radius:14px;background:rgba(29,43,83,.035);display:flex;flex-direction:column;gap:6px}.ckl.empty{background:none;padding:4px 0 0}.ckh{display:flex;align-items:center;gap:10px;font-size:12.5px;color:#4a4f6a}.ckbar{flex:1;height:6px;border-radius:9px;background:rgba(29,43,83,.08);overflow:hidden;display:block}.ckbar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#ff3d8b,#a855f7);transition:width .4s}.cki{display:flex;align-items:center;gap:10px;font-size:14px}.cki.on span{text-decoration:line-through;color:#8a93ab}.ckb{flex:none;width:22px;height:22px;border-radius:7px;border:1.6px solid #b9c0d4;background:#fff;color:#fff;font-weight:800;font-size:13px;line-height:1;display:grid;place-items:center;cursor:pointer;padding:0;transition:background .2s,border-color .2s,transform .15s}.ckb:active{transform:scale(.85)}.cki.on .ckb{background:#10b981;border-color:#10b981}.ckb:disabled{cursor:default;opacity:.7}.ckx{margin-left:auto;border:0;background:none;color:#a0a7bd;cursor:pointer;font-size:12px}.ckadd input{width:100%;border:1px dashed #cfd5e4;background:transparent;border-radius:10px;padding:7px 10px;font:inherit;font-size:13.5px}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -2367,7 +2370,7 @@ if (a === 'add') { const title = $('#tk_t').value.trim(); if (!title) return toa
 const mode = document.querySelector('.tkmode .on')?.dataset.tkmo || 'one', ppl = taskPeople().filter(p => p.id !== S.me.id);
 const to = mode === 'many' ? [...document.querySelectorAll('.tkpl input:checked')].map(x => x.value) : mode === 'dept' ? ppl.filter(p => (p.dept || 'Other') === $('#tk_dep').value).map(p => p.id) : [$('#tk_to').value];
 if (!to.length) return toast(mode === 'many' ? 'Tick at least one person' : 'Nobody in that department', true);
-const base = { title, notes: $('#tk_n').value.trim(), assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value, review_req: $('#tk_rv') ? $('#tk_rv').value !== '0' : true };
+const base = { title, notes: $('#tk_n').value.trim(), assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value, checklist: ckLines('tk_c'), review_req: $('#tk_rv') ? $('#tk_rv').value !== '0' : true };
 b.disabled = true; await q(sb.from('tasks').insert(to.map(id => ({ ...base, assigned_to: id }))));
 closeDlg(); toast(to.length > 1 ? `✓ Task sent to ${to.length} people` : to[0] === S.me.id ? 'Task added' : '✓ Task sent'); if (to.length > 1 || to[0] !== S.me.id) S.tkTab = 'given'; render(); refreshBadges(); }
 if (a === 'reply') { const t = S.tasks.find(x => x.id === id); dlg('Reply / update', `<p><b>${esc(t.title)}</b></p><label>Your note for ${esc(empById(t.assigned_by)?.name || 'the sender')}<textarea id="tk_r" rows="3">${esc(t.reply || '')}</textarea></label>`, `<button class="btn pri" data-tk="rsave" data-id="${id}">Save</button>`); }
@@ -6284,4 +6287,29 @@ if (!e.target.closest('.rxpick')) document.querySelectorAll('.rxpick').forEach(x
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-rpmode]'); if (!b) return; S.rpMode = b.dataset.rpmode; S.rpCustom = S.rpMode === 'dates';
 if (S.rpMode === 'dates' && !S.rpF) { const t = todayStr(); S.rpF = t.slice(0, 8) + '01'; S.rpT = t; } render(); });
+{ const _tcC = taskCard;
+taskCard = function (t) { let h = _tcC(t); const L = Array.isArray(t.checklist) ? t.checklist : [];
+const can = (t.assigned_to === S.me.id || t.assigned_by === S.me.id || isAdmin()) && t.status !== 'done';
+if (!L.length) return can ? h.replace('<div class="hstack">', `<div class="hstack"><button class="btn sm" data-ckopen="${t.id}" title="Add checklist steps — the task completes when all are ticked">☑️</button>`).replace(/<\/div>(\s*)<div class="hstack">/, S.ckOpen === t.id ? `<div class="ckl" data-ckt="${t.id}"><div class="ckadd"><input maxlength="140" placeholder="Type a step and press Enter — the task completes when all are ticked" data-cka="${t.id}"></div></div></div>$1<div class="hstack">` : '</div>$1<div class="hstack">') : h;
+const n = L.length, d = L.filter(x => x.d).length, pc = n ? Math.round(d / n * 100) : 0;
+const blk = n || can ? `<div class="ckl${n ? '' : ' empty'}" data-ckt="${t.id}">${n ? `<div class="ckh"><span>☑️ Checklist <b>${d}/${n}</b></span><i class="ckbar"><i style="width:${pc}%"></i></i></div>` : ''}
+${L.map((x, i) => `<div class="cki ${x.d ? 'on' : ''}"><button type="button" class="ckb" data-ck="${i}" ${can ? '' : 'disabled'} aria-label="${x.d ? 'Untick' : 'Tick'}">${x.d ? '✓' : ''}</button><span>${esc(x.t)}</span>${can && t.assigned_by === S.me.id ? `<button type="button" class="ckx" data-ckx="${i}" title="Remove step">✕</button>` : ''}</div>`).join('')}
+${can ? `<div class="ckadd"><input maxlength="140" placeholder="${n ? '+ Add a step' : '+ Add checklist steps — the task completes when all are ticked'}" data-cka="${t.id}"></div>` : ''}
+${n && d === n && t.status !== 'done' ? `<div class="small muted">All steps done${t.status === 'review' ? ' — sent for review' : ''}</div>` : ''}</div>` : '';
+return h.replace(/<\/div>(\s*)<div class="hstack">/, `${blk}</div>$1<div class="hstack">`); };
+const save = async (id, L, msg) => { const t = (S.tasks || []).find(x => x.id === id); if (!t) return; const was = t.status;
+try { const r = await q(sb.from('tasks').update({ checklist: L }).eq('id', id).select('status').single()); t.checklist = L;
+if (r?.status && r.status !== was) toast(r.status === 'done' ? '✅ All steps ticked — task completed' : r.status === 'review' ? '👀 All steps ticked — sent for review' : msg || '✓ Saved'); else if (msg) toast(msg);
+render(); refreshBadges(); } catch (er) { toast(errMsg(er), true); render(); } };
+document.addEventListener('click', e => { const b = e.target.closest('[data-ck],[data-ckx]'); if (!b || b.disabled) return; const box = b.closest('[data-ckt]'); if (!box) return;
+const id = box.dataset.ckt, t = (S.tasks || []).find(x => x.id === id); if (!t) return; const L = (t.checklist || []).map(x => ({ ...x }));
+if (b.dataset.ckx != null) { L.splice(+b.dataset.ckx, 1); return save(id, L); }
+const x = L[+b.dataset.ck]; x.d = !x.d; x.by = S.me.id; x.at = new Date().toISOString(); b.closest('.cki')?.classList.toggle('on', x.d); save(id, L); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-ckopen]'); if (!b) return; S.ckOpen = S.ckOpen === b.dataset.ckopen ? null : b.dataset.ckopen; render(); setTimeout(() => document.querySelector(`[data-cka="${b.dataset.ckopen}"]`)?.focus(), 120); });
+document.addEventListener('keydown', e => { const i = e.target.closest?.('[data-cka]'); if (!i || e.key !== 'Enter') return; e.preventDefault();
+const v = i.value.trim(); if (!v) return; const t = (S.tasks || []).find(x => x.id === i.dataset.cka); if (!t) return;
+save(t.id, [...(t.checklist || []), { t: v.slice(0, 140), d: false }], '＋ Step added'); }); }
+document.addEventListener('click', () => { setTimeout(() => {
+for (const [nid, cid] of [['#tk_n', 'tk_c'], ['#sb_n', 'sb_c']]) { const n = $(nid); if (n && !document.getElementById(cid)) n.closest('label').insertAdjacentHTML('afterend', `<label>Checklist steps (optional)<textarea id="${cid}" rows="3" placeholder="One step per line — e.g.&#10;Download bank statement&#10;Match entries in Tally&#10;Send summary"></textarea><small class="muted">When every step is ticked, the task completes by itself${nid === '#tk_n' ? ' (or goes for review)' : ''}.</small></label>`); } }, 0); }, true);
+const ckLines = id => ($('#' + id)?.value || '').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 30).map(t => ({ t: t.slice(0, 140), d: false }));
 </script></body></html>
