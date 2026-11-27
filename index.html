@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795765915"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795766033"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -6117,30 +6117,29 @@ S.supT = t; S.supV = v; return t; }
 const votes = id => (S.supV || []).filter(x => x.ticket_id === id), voted = id => votes(id).some(x => x.employee_id === S.me.id);
 const row = t => { const [ic, kn] = KIND[t.kind] || KIND.bug, [sl, sc] = ST[t.status] || ST.open, n = votes(t.id).length;
 return `<div class="li sprow" data-sup="${t.id}"><div class="grow"><b>${ic} ${esc(t.subject)}</b><small>${kn} · ${t.employee_id === S.me.id ? 'you' : esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(t.created_at))}${t.page ? ' · ' + esc(t.page) : ''}</small></div>
-${t.kind === 'idea' ? `<button class="btn sm spv ${voted(t.id) ? 'on' : ''}" data-supv="${t.id}" title="Vote for this idea">👍 ${n}</button>` : ''}<span class="rst ${sc}">${sl}</span></div>`; };
-VIEWS.support = async () => { const all = await supLoad(), f = S.supF || 'open', tab = S.supTab || (dev() ? 'inbox' : 'mine');
-const mine = all.filter(t => t.employee_id === S.me.id), ideas = all.filter(t => t.kind === 'idea').sort((a, b) => votes(b.id).length - votes(a.id).length || String(b.created_at).localeCompare(String(a.created_at)));
+<span class="rst ${sc}">${sl}</span></div>`; };
+VIEWS.support = async () => { const all = await supLoad(), f = S.supF || 'open', tab = dev() ? (S.supTab || 'inbox') : 'mine';
+const mine = all.filter(t => t.employee_id === S.me.id), ideas = all.filter(t => t.kind === 'idea').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
 const inbox = all.filter(t => f === 'all' || (f === 'open' ? ['open', 'progress'].includes(t.status) : ['done', 'declined'].includes(t.status)));
-const tabs = [...(dev() ? [['inbox', `Inbox (${all.filter(t => t.status === 'open').length} new)`]] : []), ['mine', 'My tickets'], ['ideas', `💡 Ideas board (${ideas.length})`]];
+const tabs = dev() ? [['inbox', `Inbox (${all.filter(t => t.status === 'open').length} new)`], ['ideas', `💡 Ideas (${ideas.length})`], ['mine', 'My tickets']] : [['mine', 'My tickets']];
 return `<div class="stack narrow"><div class="row"><div><span class="eyebrow">Help us improve ORBIS</span><h2>🛠️ ORBIS support</h2></div><button class="btn pri" id="supNew">＋ New ticket</button></div>
 <div class="sphero">${Object.entries(KIND).map(([k, [ic, n, d]]) => `<button class="sph" data-supnew="${k}"><span>${ic}</span><b>${n}</b><small>${d}</small></button>`).join('')}</div>
 <div class="seg">${tabs.map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-suptab="${k}">${l}</button>`).join('')}</div>
 ${tab === 'inbox' ? `<div class="card"><div class="row"><h3>All tickets</h3><div class="seg">${[['open', 'Open'], ['closed', 'Closed'], ['all', 'All']].map(([k, l]) => `<button class="${f === k ? 'on' : ''}" data-supf="${k}">${l}</button>`).join('')}</div></div>${inbox.length ? inbox.map(row).join('') : '<p class="muted small">Nothing here.</p>'}</div>`
-: tab === 'ideas' ? `<div class="card"><h3>💡 What should ORBIS add next?</h3><p class="small muted">Everyone can see ideas. Vote 👍 for the ones you want – the most-voted ideas are built first.</p>${ideas.length ? ideas.map(row).join('') : '<p class="muted small">No ideas yet – be the first!</p>'}</div>`
+: tab === 'ideas' ? `<div class="card"><h3>💡 Ideas from staff</h3><p class="small muted">Only you (the Developer) see these. Newest first.</p>${ideas.length ? ideas.map(row).join('') : '<p class="muted small">No ideas yet – be the first!</p>'}</div>`
 : `<div class="card"><h3>My tickets</h3>${mine.length ? mine.map(row).join('') : '<p class="muted small">Found a problem, or have an idea to make ORBIS better? Tap <b>New ticket</b>. The ORBIS Developer reads every one and replies here.</p>'}</div>`}</div>`; };
 function supNew(kind) { kind = kind || 'bug';
 dlg('🛠️ New ORBIS ticket', `<div class="seg spk">${Object.entries(KIND).map(([k, [ic, n]]) => `<button type="button" class="${k === kind ? 'on' : ''}" data-spk="${k}">${ic} ${n}</button>`).join('')}</div>
 <label>Subject<input id="sp_s" maxlength="160" placeholder="${kind === 'idea' ? 'e.g. Show my leave balance on the home page' : kind === 'help' ? 'e.g. How do I apply half-day leave?' : 'e.g. Photo upload not working on my phone'}"></label>
 <label>Details<textarea id="sp_b" rows="4" maxlength="2000" placeholder="${kind === 'bug' ? 'What did you do, what happened, and what did you expect?' : 'Tell us more…'}"></textarea></label>
 <label>📷 Screenshot (optional)<input type="file" id="sp_f" accept="image/*,.pdf"><span class="small muted">A screenshot helps a lot for problems · up to 10 MB</span></label>
-<p class="small muted">${kind === 'idea' ? 'Ideas are visible to everyone so they can vote.' : 'Only you and the ORBIS Developer can see this.'} We add the page you came from (${esc(PAGE() || 'ORBIS')}) and your device automatically.</p>`, '<button class="btn pri" id="sp_go">Send</button>');
+<p class="small muted">🔒 Only you and the ORBIS Developer can see this. We add the page you came from (${esc(PAGE() || 'ORBIS')}) and your device automatically.</p>`, '<button class="btn pri" id="sp_go">Send</button>');
 S.supKind = kind; }
 async function supOpen(id) { const t = (S.supT || []).find(x => x.id === id); if (!t) return; const msgs = await q(sb.from('app_ticket_msgs').select('*').eq('ticket_id', id).order('created_at')).catch(() => []);
 const [ic, kn] = KIND[t.kind] || KIND.bug, mine = t.employee_id === S.me.id, can = mine || dev();
 dlg(`${ic} ${esc(t.subject)}`, `<p class="small muted">${kn} · ${esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(t.created_at))} ${hm12(t.created_at)}${t.page ? ' · page: ' + esc(t.page) : ''}${dev() && t.device ? '<br>📱 ' + esc(t.device) : ''}</p>
 <div class="tcthr">${t.body || t.shot_path ? `<div class="tcm ${t.employee_id === S.me.id ? 'me' : ''}"><small>${esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(t.created_at))} ${hm12(t.created_at)}</small>${t.body ? `<div>${esc(t.body)}</div>` : ''}${t.shot_path ? `<a href="#" class="tkfile" data-supshot="${esc(t.shot_path)}">📷 Open screenshot</a>` : ''}</div>` : ''}
 ${msgs.map(m => `<div class="tcm ${m.author === S.me.id ? 'me' : ''}"><small>${m.author === t.employee_id ? esc(empById(m.author)?.name || '') : '🛠️ ' + esc(empById(m.author)?.name || 'ORBIS Developer')} · ${fmtD(ymd(m.created_at))} ${hm12(m.created_at)}</small><div>${esc(m.body)}</div></div>`).join('')}</div>
-${t.kind === 'idea' ? `<p><button class="btn sm spv ${voted(t.id) ? 'on' : ''}" data-supv="${t.id}">👍 ${votes(t.id).length} vote${votes(t.id).length === 1 ? '' : 's'}</button></p>` : ''}
 ${can ? `<label>Reply<textarea id="sp_r" rows="3" maxlength="2000" placeholder="${dev() && !mine ? 'Reply to ' + esc((empById(t.employee_id)?.name || '').split(' ')[0]) + '…' : 'Add more details…'}"></textarea></label>` : ''}
 ${dev() ? `<label>Status<select id="sp_st">${Object.entries(ST).map(([k, [l]]) => `<option value="${k}" ${t.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}`,
 `${mine && !dev() && !['done', 'declined'].includes(t.status) ? '<button class="btn" id="sp_ok">✓ Solved – close it</button>' : ''}${can ? '<button class="btn pri" id="sp_send">Send</button>' : ''}`);
@@ -6161,7 +6160,7 @@ if (subject.length < 3) return toast('Write a short subject', true); if (fl && f
 b.disabled = true; b.textContent = 'Sending…';
 try { let shot_path = null; if (fl) { shot_path = `${S.me.id}/${Date.now()}-${fl.name.replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80)}`; const { error } = await sb.storage.from('orbis-app').upload(shot_path, fl, { contentType: fl.type || 'application/octet-stream' }); if (error) throw error; }
 await q(sb.from('app_tickets').insert({ kind: S.supKind || 'bug', subject, body: body || null, page: PAGE() || null, device: `${navigator.userAgent.slice(0, 200)} · ${innerWidth}×${innerHeight} · ${navigator.standalone || matchMedia('(display-mode: standalone)').matches ? 'installed app' : 'browser'}`, shot_path }));
-closeDlg(); toast(S.supKind === 'idea' ? '💡 Idea shared – thank you!' : '🛠️ Sent to the ORBIS Developer'); S.supTab = S.supKind === 'idea' ? 'ideas' : 'mine'; if (S.view === 'support') render(); else location.hash = 'support'; }
+closeDlg(); toast(S.supKind === 'idea' ? '💡 Idea shared – thank you!' : '🛠️ Sent to the ORBIS Developer'); S.supTab = 'mine'; if (S.view === 'support') render(); else location.hash = 'support'; }
 catch (er) { toast(errMsg(er), true); b.disabled = false; b.textContent = 'Send'; } return; }
 if (t.closest('#sp_send') || t.closest('#sp_ok')) { const k = S.supCur, body = $('#sp_r')?.value.trim(), ok = !!t.closest('#sp_ok'), st = $('#sp_st')?.value;
 try { if (body) await q(sb.from('app_ticket_msgs').insert({ ticket_id: k.id, body }));
