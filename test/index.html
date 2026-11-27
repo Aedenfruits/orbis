@@ -597,6 +597,7 @@ dialog[open]::backdrop{animation:pmFade .18s ease}
 @media(max-width:760px){.wp{flex-wrap:wrap}.wp .wpm{flex:1 1 calc(100% - 100px);word-break:normal;overflow-wrap:break-word}.wp>select{flex:1 1 auto;width:auto;max-width:none;margin-left:92px}}
 .tkfile{display:inline-block;margin-top:4px;font-weight:700;font-size:13px}
 #dlg.xl{width:min(1150px,96vw);max-width:96vw}.ehrow{cursor:pointer}tr.ehrow:hover td,td.ehrow:hover{background:#f4f6fd}.ehtop{flex-wrap:wrap;gap:10px;margin-bottom:10px}.ehk{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:8px;margin:6px 0 14px;flex:0 0 auto}.ehk>div{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff}.ehk b{display:block;font-size:20px}.ehk span{font-size:12px;color:var(--muted)}.ehk .good b{color:#15803d}.ehk .warn b{color:#c2410c}.ehk .crit b{color:#be123c}.ehk .info b{color:#2563eb}.ehwrap{flex:0 0 auto;max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:12px;margin-bottom:14px}.eht{font-size:13px;width:100%}.eht td,.eht th{padding:7px 10px;white-space:nowrap;vertical-align:top}.eht td.small{white-space:normal;min-width:140px}.eht tr.off td{background:#f7f8fb;color:var(--muted)}.ehlbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;flex:0 0 auto}.ehlb{border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-width:110px}.ehlb b{font-size:18px;display:block}.ehlb span{font-size:12px;font-weight:700}.ehlb small{display:block;color:var(--muted);font-size:11px}#dlg .dh h3{display:flex;align-items:center;gap:10px}
+.sphero{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sph{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:16px;padding:14px;cursor:pointer;transition:box-shadow .2s,transform .2s}.sph:hover{box-shadow:0 6px 18px rgba(29,43,83,.1);transform:translateY(-1px)}.sph span{font-size:24px}.sph b{font-size:15px}.sph small{color:var(--muted);font-size:12px}.sprow{display:flex;gap:10px;align-items:center;cursor:pointer}.spv{white-space:nowrap}.spv.on{background:#fde2ea;border-color:#f4a3bd;color:#b4123a}.spk{margin-bottom:8px;flex:0 0 auto}@media(max-width:760px){.sphero{grid-template-columns:1fr}.sph{flex-direction:row;align-items:center;gap:10px}.sph small{display:none}}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -6131,4 +6132,71 @@ ${lvY.length ? `<div class="scroll ehwrap"><table class="eht"><thead><tr><th>Typ
 document.addEventListener('click', e => { const r = e.target.closest('[data-eh]'); if (r && !e.target.closest('a,button,select,input')) { S.ehM = null; ehDlg(r.dataset.eh, S.view === 'register' ? ((S.regMode === 'day' ? S.regDay : S.regMonth) || '').slice(0, 7) || null : null); return; }
 const b = e.target.closest('[data-ehm]'); if (b && S.ehId) ehDlg(S.ehId, b.dataset.ehm); });
 document.addEventListener('close', e => { if (e.target.id === 'dlg') e.target.classList.remove('xl'); }, true);
+{
+const KIND = { bug: ['🐞', 'Problem', 'Something is not working'], idea: ['💡', 'Idea', 'What should ORBIS add next'], help: ['❓', 'How do I…', 'Ask how to do something'] };
+const ST = { open: ['New', 'amb'], progress: ['Working on it', 'blu'], done: ['Done', 'grn'], declined: ['Not planned', 'mut'] };
+const PAGE = () => { const n = (typeof navList === 'function' ? navList() : []).find(x => x[0] === S.supFrom); return n ? n[1] : (S.supFrom || ''); };
+const dev = () => typeof isDev === 'function' && isDev();
+async function supLoad() { const [t, v] = await Promise.all([q(sb.from('app_tickets').select('*').order('updated_at', { ascending: false }).limit(300)), q(sb.from('app_ticket_votes').select('ticket_id,employee_id')).catch(() => [])]);
+S.supT = t; S.supV = v; return t; }
+const votes = id => (S.supV || []).filter(x => x.ticket_id === id), voted = id => votes(id).some(x => x.employee_id === S.me.id);
+const row = t => { const [ic, kn] = KIND[t.kind] || KIND.bug, [sl, sc] = ST[t.status] || ST.open, n = votes(t.id).length;
+return `<div class="li sprow" data-sup="${t.id}"><div class="grow"><b>${ic} ${esc(t.subject)}</b><small>${kn} · ${t.employee_id === S.me.id ? 'you' : esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(t.created_at))}${t.page ? ' · ' + esc(t.page) : ''}</small></div>
+${t.kind === 'idea' ? `<button class="btn sm spv ${voted(t.id) ? 'on' : ''}" data-supv="${t.id}" title="Vote for this idea">👍 ${n}</button>` : ''}<span class="rst ${sc}">${sl}</span></div>`; };
+VIEWS.support = async () => { const all = await supLoad(), f = S.supF || 'open', tab = S.supTab || (dev() ? 'inbox' : 'mine');
+const mine = all.filter(t => t.employee_id === S.me.id), ideas = all.filter(t => t.kind === 'idea').sort((a, b) => votes(b.id).length - votes(a.id).length || String(b.created_at).localeCompare(String(a.created_at)));
+const inbox = all.filter(t => f === 'all' || (f === 'open' ? ['open', 'progress'].includes(t.status) : ['done', 'declined'].includes(t.status)));
+const tabs = [...(dev() ? [['inbox', `Inbox (${all.filter(t => t.status === 'open').length} new)`]] : []), ['mine', 'My tickets'], ['ideas', `💡 Ideas board (${ideas.length})`]];
+return `<div class="stack narrow"><div class="row"><div><span class="eyebrow">Help us improve ORBIS</span><h2>🛠️ ORBIS support</h2></div><button class="btn pri" id="supNew">＋ New ticket</button></div>
+<div class="sphero">${Object.entries(KIND).map(([k, [ic, n, d]]) => `<button class="sph" data-supnew="${k}"><span>${ic}</span><b>${n}</b><small>${d}</small></button>`).join('')}</div>
+<div class="seg">${tabs.map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-suptab="${k}">${l}</button>`).join('')}</div>
+${tab === 'inbox' ? `<div class="card"><div class="row"><h3>All tickets</h3><div class="seg">${[['open', 'Open'], ['closed', 'Closed'], ['all', 'All']].map(([k, l]) => `<button class="${f === k ? 'on' : ''}" data-supf="${k}">${l}</button>`).join('')}</div></div>${inbox.length ? inbox.map(row).join('') : '<p class="muted small">Nothing here.</p>'}</div>`
+: tab === 'ideas' ? `<div class="card"><h3>💡 What should ORBIS add next?</h3><p class="small muted">Everyone can see ideas. Vote 👍 for the ones you want – the most-voted ideas are built first.</p>${ideas.length ? ideas.map(row).join('') : '<p class="muted small">No ideas yet – be the first!</p>'}</div>`
+: `<div class="card"><h3>My tickets</h3>${mine.length ? mine.map(row).join('') : '<p class="muted small">Found a problem, or have an idea to make ORBIS better? Tap <b>New ticket</b>. The ORBIS Developer reads every one and replies here.</p>'}</div>`}</div>`; };
+function supNew(kind) { kind = kind || 'bug';
+dlg('🛠️ New ORBIS ticket', `<div class="seg spk">${Object.entries(KIND).map(([k, [ic, n]]) => `<button type="button" class="${k === kind ? 'on' : ''}" data-spk="${k}">${ic} ${n}</button>`).join('')}</div>
+<label>Subject<input id="sp_s" maxlength="160" placeholder="${kind === 'idea' ? 'e.g. Show my leave balance on the home page' : kind === 'help' ? 'e.g. How do I apply half-day leave?' : 'e.g. Photo upload not working on my phone'}"></label>
+<label>Details<textarea id="sp_b" rows="4" maxlength="2000" placeholder="${kind === 'bug' ? 'What did you do, what happened, and what did you expect?' : 'Tell us more…'}"></textarea></label>
+<label>📷 Screenshot (optional)<input type="file" id="sp_f" accept="image/*,.pdf"><span class="small muted">A screenshot helps a lot for problems · up to 10 MB</span></label>
+<p class="small muted">${kind === 'idea' ? 'Ideas are visible to everyone so they can vote.' : 'Only you and the ORBIS Developer can see this.'} We add the page you came from (${esc(PAGE() || 'ORBIS')}) and your device automatically.</p>`, '<button class="btn pri" id="sp_go">Send</button>');
+S.supKind = kind; }
+async function supOpen(id) { const t = (S.supT || []).find(x => x.id === id); if (!t) return; const msgs = await q(sb.from('app_ticket_msgs').select('*').eq('ticket_id', id).order('created_at')).catch(() => []);
+const [ic, kn] = KIND[t.kind] || KIND.bug, mine = t.employee_id === S.me.id, can = mine || dev();
+dlg(`${ic} ${esc(t.subject)}`, `<p class="small muted">${kn} · ${esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(t.created_at))} ${hm12(t.created_at)}${t.page ? ' · page: ' + esc(t.page) : ''}${dev() && t.device ? '<br>📱 ' + esc(t.device) : ''}</p>
+<div class="tcthr">${t.body || t.shot_path ? `<div class="tcm ${t.employee_id === S.me.id ? 'me' : ''}"><small>${esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(t.created_at))} ${hm12(t.created_at)}</small>${t.body ? `<div>${esc(t.body)}</div>` : ''}${t.shot_path ? `<a href="#" class="tkfile" data-supshot="${esc(t.shot_path)}">📷 Open screenshot</a>` : ''}</div>` : ''}
+${msgs.map(m => `<div class="tcm ${m.author === S.me.id ? 'me' : ''}"><small>${m.author === t.employee_id ? esc(empById(m.author)?.name || '') : '🛠️ ' + esc(empById(m.author)?.name || 'ORBIS Developer')} · ${fmtD(ymd(m.created_at))} ${hm12(m.created_at)}</small><div>${esc(m.body)}</div></div>`).join('')}</div>
+${t.kind === 'idea' ? `<p><button class="btn sm spv ${voted(t.id) ? 'on' : ''}" data-supv="${t.id}">👍 ${votes(t.id).length} vote${votes(t.id).length === 1 ? '' : 's'}</button></p>` : ''}
+${can ? `<label>Reply<textarea id="sp_r" rows="3" maxlength="2000" placeholder="${dev() && !mine ? 'Reply to ' + esc((empById(t.employee_id)?.name || '').split(' ')[0]) + '…' : 'Add more details…'}"></textarea></label>` : ''}
+${dev() ? `<label>Status<select id="sp_st">${Object.entries(ST).map(([k, [l]]) => `<option value="${k}" ${t.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}`,
+`${mine && !dev() && !['done', 'declined'].includes(t.status) ? '<button class="btn" id="sp_ok">✓ Solved – close it</button>' : ''}${can ? '<button class="btn pri" id="sp_send">Send</button>' : ''}`);
+S.supCur = t; }
+document.addEventListener('click', async e => { const t = e.target; if (!S.me) return;
+const v = t.closest('[data-supv]'); if (v) { e.stopPropagation(); const id = v.dataset.supv; v.disabled = true;
+try { if (voted(id)) await q(sb.from('app_ticket_votes').delete().eq('ticket_id', id).eq('employee_id', S.me.id)); else await q(sb.from('app_ticket_votes').insert({ ticket_id: id }));
+await supLoad(); if ($('#dlg').open && S.supCur?.id === id) supOpen(id); else render(); } catch (er) { toast(errMsg(er), true); v.disabled = false; } return; }
+if (t.closest('[data-suptab]')) { S.supTab = t.closest('[data-suptab]').dataset.suptab; return render(); }
+if (t.closest('[data-supf]')) { S.supF = t.closest('[data-supf]').dataset.supf; return render(); }
+if (t.closest('#supNew')) return supNew('bug');
+if (t.closest('[data-supnew]')) return supNew(t.closest('[data-supnew]').dataset.supnew);
+if (t.closest('[data-spk]')) { const k = t.closest('[data-spk]').dataset.spk, s = $('#sp_s')?.value, b = $('#sp_b')?.value; supNew(k); if (s) $('#sp_s').value = s; if (b) $('#sp_b').value = b; return; }
+if (t.closest('[data-sup]') && !t.closest('button')) return supOpen(t.closest('[data-sup]').dataset.sup);
+const sh = t.closest('[data-supshot]'); if (sh) { e.preventDefault(); const w = window.open('', '_blank'); try { const { data, error } = await sb.storage.from('orbis-app').createSignedUrl(sh.dataset.supshot, 300); if (error) throw error; if (w) w.location = data.signedUrl; else location.href = data.signedUrl; } catch (er) { try { w && w.close(); } catch { } toast(errMsg(er), true); } return; }
+if (t.closest('#sp_go')) { const b = t.closest('#sp_go'), subject = $('#sp_s').value.trim(), body = $('#sp_b').value.trim(), fl = $('#sp_f')?.files?.[0];
+if (subject.length < 3) return toast('Write a short subject', true); if (fl && fl.size > 10485760) return toast('File is bigger than 10 MB', true);
+b.disabled = true; b.textContent = 'Sending…';
+try { let shot_path = null; if (fl) { shot_path = `${S.me.id}/${Date.now()}-${fl.name.replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80)}`; const { error } = await sb.storage.from('orbis-app').upload(shot_path, fl, { contentType: fl.type || 'application/octet-stream' }); if (error) throw error; }
+await q(sb.from('app_tickets').insert({ kind: S.supKind || 'bug', subject, body: body || null, page: PAGE() || null, device: `${navigator.userAgent.slice(0, 200)} · ${innerWidth}×${innerHeight} · ${navigator.standalone || matchMedia('(display-mode: standalone)').matches ? 'installed app' : 'browser'}`, shot_path }));
+closeDlg(); toast(S.supKind === 'idea' ? '💡 Idea shared – thank you!' : '🛠️ Sent to the ORBIS Developer'); S.supTab = S.supKind === 'idea' ? 'ideas' : 'mine'; if (S.view === 'support') render(); else location.hash = 'support'; }
+catch (er) { toast(errMsg(er), true); b.disabled = false; b.textContent = 'Send'; } return; }
+if (t.closest('#sp_send') || t.closest('#sp_ok')) { const k = S.supCur, body = $('#sp_r')?.value.trim(), ok = !!t.closest('#sp_ok'), st = $('#sp_st')?.value;
+try { if (body) await q(sb.from('app_ticket_msgs').insert({ ticket_id: k.id, body }));
+const upd = {}; if (ok) upd.status = 'done'; else if (dev() && st && st !== k.status) upd.status = st; else if (dev() && body && k.status === 'open' && k.employee_id !== S.me.id) upd.status = 'progress';
+if (Object.keys(upd).length || body) await q(sb.from('app_tickets').update(Object.keys(upd).length ? upd : { body: k.body }).eq('id', k.id));
+closeDlg(); toast(ok ? '✔ Closed' : 'Sent'); render(); } catch (er) { toast(errMsg(er), true); } } });
+const _navSp = navList; navList = function () { const n = _navSp.apply(this, arguments); if (S.me && !n.some(x => x[0] === 'support')) n.push(['support', 'ORBIS support', '🛠️']); return n; };
+const _rSp = render; render = async function () { if (S.view !== 'support') S.supFrom = S.view; return _rSp.apply(this, arguments); };
+try { const P = '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L4 16.8V20h3.2l5.3-5.3a4 4 0 0 0 5.2-5.4l-2.4 2.4-2.4-.6-.6-2.4z"/><path class="a" d="M17 3.5l1 1"/>';
+if (typeof MI === 'object') MI.support = P; if (typeof ICP === 'object') ICP.support = P; if (typeof ICGRP === 'object') ICGRP.support = 'c'; if (typeof MCOL === 'object') MCOL.support = '#0f766e'; if (typeof EMO2IC === 'object') EMO2IC['🛠️'] = 'support';
+const g = MGROUPS.find(x => x[0] === 'Me'); if (g && !g[1].includes('support')) g[1].push('support'); } catch { }
+}
 </script></body></html>
