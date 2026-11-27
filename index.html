@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795753330"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795754053"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -564,6 +564,7 @@ dialog.gmdlg .btn.big{flex:1;padding:12px 18px;font-size:16px}
 .pbtl{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:1fr}
 @media(max-width:760px){.seg [data-wpt]{padding-left:9px!important;padding-right:9px!important;font-size:13px}.seg:has([data-wpt]){overflow-x:auto;scrollbar-width:none}}
 .tkmode{display:flex;flex-wrap:wrap;margin:4px 0 8px;flex:0 0 auto}#tkm_many,#tkm_dept,.tkpl{flex:0 0 auto}.tkmode button{flex:1;white-space:nowrap}.tkpl{max-height:28vh}.tkpl label.chk{display:flex;gap:8px;align-items:center;font-weight:600;padding:6px 4px}.tkpl label.chk input{width:auto;margin:0}#tkm_many,#tkm_dept{margin-bottom:8px}
+.tklk{font-weight:800;text-decoration:underline;cursor:pointer;color:inherit}.tklk.r{color:var(--crit)}.tkpi{margin-bottom:10px;flex:0 0 auto}.tkth{margin-top:8px;border-left:3px solid var(--line);padding-left:10px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}
 </style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yeiqyroqjvmwbecbgyvb.supabase.co" crossorigin>
 <style id="ios">
@@ -637,7 +638,7 @@ return m; };
 function toast(t, bad) { const el = $('#toast'); el.textContent = t; el.className = 'show' + (bad ? ' bad' : ''); clearTimeout(toast.t); toast.t = setTimeout(() => el.className = '', 3800); }
 const lsGet = (k, d) => { try { const v = localStorage.getItem('orbis.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem('orbis.' + k, JSON.stringify(v)); } catch { } };
-const RPC_READ = new Set(['my_ip', 'my_team', 'off_this_week', 'my_access', 'me', 'leaderboard', 'push_public_key', 'needs_setup', 'device_public', 'device_info', 'poll_results', 'plan_visible', 'pw_changed', 'approval_chain', 'flow_chain', 'can_see', 'is_admin', 'in_team', 'team_ids', 'station_check', 'chain_step']);
+const RPC_READ = new Set(['plan_team_ids', 'my_ip', 'my_team', 'off_this_week', 'my_access', 'me', 'leaderboard', 'push_public_key', 'needs_setup', 'device_public', 'device_info', 'poll_results', 'plan_visible', 'pw_changed', 'approval_chain', 'flow_chain', 'can_see', 'is_admin', 'in_team', 'team_ids', 'station_check', 'chain_step']);
 async function rpc(fn, args) { if (!RPC_READ.has(fn)) { QC.lastWrite = Date.now(); const { data, error } = await sb.rpc(fn, args || {}); if (error) throw error; return data; }
 const b = sb.rpc(fn, args || {}); return q({ method: 'GET', url: 'rpc:' + fn + ':' + JSON.stringify(args || {}), then: (r, j) => b.then(r, j) }); }
 /* ---- fast on slow internet: saved copy of what this phone already loaded ----
@@ -1142,7 +1143,7 @@ VIEWS.team = async () => {
 const ids = isAdmin() ? S.emps.filter(e => e.active && e.id !== S.me.id).map(e => e.id) : S.team;
 const team = S.emps.filter(e => ids.includes(e.id) && e.active);
 const tab = S.tmTab || 'today', t = todayStr();
-const seg = `<div class="seg">${[['today', 'Today'], ['leave', 'Leave approvals'], ['fixes', 'Corrections'], ['extra', 'Extra breaks'], ...(!isAdmin() || isDev() ? [['plans', 'Work plans']] : [])].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
+const seg = `<div class="seg">${[['today', 'Today'], ['leave', 'Leave approvals'], ['fixes', 'Corrections'], ['extra', 'Extra breaks'], ...(!isAdmin() || isDev() || (S.planIds || []).length ? [['plans', 'Work plans']] : [])].map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
 let body = '';
 if (tab === 'today') {
 const [att, brk, lv] = await Promise.all([q(sb.from('attendance').select('*').eq('day', t)), q(sb.from('breaks').select('*').eq('day', t)), q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', t).gte('to_date', t))]);
@@ -1175,7 +1176,7 @@ body = `<div class="card"><h3>Extra break requests</h3><p class="small muted">Mo
 if (tab === 'plans') {
 const d = S.tmDay || t;
 const plans = await q(sb.from('work_plans').select('*').eq('day', d)); S.prv = await q(sb.from('plan_reviews').select('*').eq('day', d)).catch(() => []);
-const vis = team.filter(e => S.me.access === 'md' || isDev() || S.team.includes(e.id));
+const vis = (isAdmin() && !isDev() ? S.emps.filter(e => e.active) : team).filter(e => isDev() || (isAdmin() ? (S.planIds || []).includes(e.id) : S.team.includes(e.id)));
 body = `<div class="row"><b>${d === t ? 'Today' : fmtD(d)}</b><div class="hstack"><button class="btn sm" data-fast data-tday="-1">‹</button><button class="btn sm" data-fast data-tday="1" ${d >= t ? 'disabled' : ''}>›</button></div></div>
 ${vis.map(e => { const p = plans.find(x => x.employee_id === e.id); const it = (p?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); return `<div class="card"><div class="row"><div><b>${esc(e.name)}</b><div class="small muted">${esc(e.dept)}</div></div>${it.length ? planSum(it) : '<span class="chip warn">No plan</span>'}</div>${it.length ? `<div class="stack" style="gap:6px">${it.map(i => planRow(i, false)).join('')}</div>${revHTML(S.prv.find(r => r.employee_id === e.id), e.id, d)}` : ''}</div>`; }).join('') || '<div class="card muted">No team members</div>'}`;
 }
@@ -2277,12 +2278,12 @@ try {
 if (a === 'new') { const ppl = taskPeople();
 dlg('New task', `<label>Task<input id="tk_t" maxlength="160" placeholder="e.g. Send GST working to auditor"></label><label>Details (optional)<textarea id="tk_n" rows="3"></textarea></label>
 ${(() => { const oth = ppl.filter(p => p.id !== S.me.id), deps = [...new Set(oth.map(p => p.dept || 'Other'))].sort();
-return oth.length > 1 ? `<label>Give to</label><div class="seg tkmode"><button type="button" class="on" data-tkm="one">One person</button><button type="button" data-tkm="many">Many people</button><button type="button" data-tkm="dept">Department</button></div>
+return oth.length > 1 ? `<label>Give to</label><div class="seg tkmode"><button type="button" class="on" data-tkmo="one">One person</button><button type="button" data-tkmo="many">Many people</button><button type="button" data-tkmo="dept">Department</button></div>
 <div id="tkm_many" hidden><input id="tk_q" placeholder="Search name or department"><div class="iclist tkpl">${oth.map(p => `<label class="chk" data-tkn="${esc((p.name + ' ' + (p.dept || '')).toLowerCase())}"><input type="checkbox" value="${p.id}"> ${esc(p.name)} <span class="small muted">· ${esc(p.dept || 'Other')}</span></label>`).join('')}</div><div class="small muted" id="tk_cnt">0 selected</div></div>
 <div id="tkm_dept" hidden><select id="tk_dep">${deps.map(d => `<option value="${esc(d)}">${esc(d)} (${oth.filter(p => (p.dept || 'Other') === d).length} people)</option>`).join('')}</select><div class="small muted">Everyone in the department gets their own copy of the task.</div></div>` : ''; })()}
 <div class="grid3"><label id="tkm_one">For<select id="tk_to">${ppl.map(p => `<option value="${p.id}" ${p.id === S.me.id ? 'selected' : ''}>${p.id === S.me.id ? 'Me' : esc(p.name)}</option>`).join('')}</select></label><label>Due date<input type="date" id="tk_d" min="${todayStr()}"></label><label>Priority<select id="tk_p"><option value="normal">Normal</option><option value="high">⚡ High</option></select></label></div>`, '<button class="btn pri" data-tk="add">Add task</button>'); $('#tk_t').focus(); }
 if (a === 'add') { const title = $('#tk_t').value.trim(); if (!title) return toast('Write the task', true);
-const mode = document.querySelector('.tkmode .on')?.dataset.tkm || 'one', ppl = taskPeople().filter(p => p.id !== S.me.id);
+const mode = document.querySelector('.tkmode .on')?.dataset.tkmo || 'one', ppl = taskPeople().filter(p => p.id !== S.me.id);
 const to = mode === 'many' ? [...document.querySelectorAll('.tkpl input:checked')].map(x => x.value) : mode === 'dept' ? ppl.filter(p => (p.dept || 'Other') === $('#tk_dep').value).map(p => p.id) : [$('#tk_to').value];
 if (!to.length) return toast(mode === 'many' ? 'Tick at least one person' : 'Nobody in that department', true);
 const base = { title, notes: $('#tk_n').value.trim(), assigned_by: S.me.id, due: $('#tk_d').value || null, priority: $('#tk_p').value };
@@ -3862,7 +3863,7 @@ VIEWS.team = async () => {
 const ids = teamIds(), team = S.emps.filter(e => ids.includes(e.id) && e.active);
 if (!S.tmTab) S.tmTab = (S.badge || {}).team ? 'inbox' : 'today';
 const tab = S.tmTab, pend = (S.badge || {}).team || 0;
-const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(!isAdmin() || isDev() ? [['plans', 'Work plans']] : []), ...(S.me.access !== 'hr' ? [['ttasks', 'Tasks']] : []), ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['lb', 'Late & breaks'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
+const tabs = [['today', 'Today'], ['inbox', `Approvals${pend ? ` <span class="sbadge">${pend}</span>` : ''}`], ...(!isAdmin() || isDev() || (S.planIds || []).length ? [['plans', 'Work plans']] : []), ...(S.me.access !== 'hr' ? [['ttasks', 'Tasks']] : []), ['cal', 'Leave calendar'], ['trev', 'Reviews'], ['lb', 'Late & breaks'], ['week', 'Weekly summary'], ['roster', 'Shift roster']];
 const on = ['leave', 'fixes', 'extra'].includes(tab) ? 'inbox' : tab;
 const seg = `<div class="seg">${tabs.map(([k, l]) => `<button class="${on === k ? 'on' : ''}" data-tm="${k}">${l}</button>`).join('')}</div>`;
 if (['today', 'leave', 'fixes', 'extra', 'plans'].includes(tab)) {
@@ -4088,14 +4089,15 @@ render();
 });
 const _teamWP = VIEWS.team;
 VIEWS.team = async () => {
-if (isAdmin() && !isDev() && S.tmTab === 'plans') S.tmTab = 'today';
+if (isAdmin() && !isDev()) { try { S.planIds = await rpc('plan_team_ids'); } catch { S.planIds = []; } }
+if (isAdmin() && !isDev() && !(S.planIds || []).length && S.tmTab === 'plans') S.tmTab = 'today';
 if (S.me.access === 'hr' && S.tmTab === 'ttasks') S.tmTab = 'today';
 let h = await _teamWP();
-if (isAdmin() && !isDev()) return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
+if (isAdmin() && !isDev() && !(S.planIds || []).length) return h.replace(/<button class="[^"]*" data-tm="plans">Work plans<\/button>/, '');
 if (S.tmTab !== 'plans') return h;
 const v = S.tmPlanV || 'day', sub = `<div class="seg sub"><button class="${v === 'day' ? 'on' : ''}" data-wpp="day">Day view</button><button class="${v === 'pend' ? 'on' : ''}" data-wpp="pend">Pending &amp; completed</button></div>`;
 if (v === 'day') return h.replace(/(<div class="seg">[\s\S]*?<\/div>)/, `$1${sub}`);
-const t = todayStr(), team = S.emps.filter(e => (isDev() ? e.id !== S.me.id : (S.team || []).includes(e.id)) && e.active), ids = team.map(e => e.id);
+const t = todayStr(), team = S.emps.filter(e => (isDev() ? e.id !== S.me.id : isAdmin() ? (S.planIds || []).includes(e.id) : (S.team || []).includes(e.id)) && e.active), ids = team.map(e => e.id);
 const rows0 = ids.length ? await q(sb.from('work_plans').select('employee_id,day,items').in('employee_id', ids).gte('day', addDays(t, -30))).catch(() => []) : []; const rows = rows0.filter(r => ids.includes(r.employee_id));
 const wk = addDays(t, -6);
 const per = team.map(e => { const r = wpTrack(rows.filter(x => x.employee_id === e.id), t); return { e, ...r, dW: r.done.filter(i => i.day >= wk).length, old: r.pend.filter(i => i.age >= 3).length }; }).sort((a, b) => b.old - a.old || b.pend.length - a.pend.length);
@@ -4823,7 +4825,7 @@ const T = k => perf.reduce((s, p) => s + p[k], 0), done = T('done'), ont = T('on
 return `<div class="row"><div class="hstack"><button class="btn sm" data-tkm="-1">‹</button><b>${new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b><button class="btn sm" data-tkm="1" ${M >= todayStr().slice(0, 7) ? 'disabled' : ''}>›</button></div><button class="btn pri" data-tkx="1">⬇ MIS report (Excel)</button></div>
 <div class="kpis"><div><b>${T('assigned')}</b><small>Assigned</small></div><div><b class="g">${done}</b><small>Completed</small></div><div><b class="g">${ont}</b><small>On time</small></div><div><b class="r">${T('delayed')}</b><small>Delayed</small></div><div><b>${done ? Math.round(ont / done * 100) : 0}%</b><small>On-time rate</small></div><div><b class="o">${dueL.length}</b><small>Deadlines changed</small></div><div><b class="r">${delL.length}</b><small>Deleted</small></div></div>
 <div class="card flush"><div class="row" style="padding:12px 14px"><h3 style="margin:0">Monthly task performance</h3><span class="small muted">Completion date = when the task was submitted for review (or completed)</span></div><div class="scrollx"><table><thead><tr><th>Employee</th><th>Assigned</th><th>Completed</th><th>On time</th><th>Delayed</th><th>Avg delay</th><th>Open now</th><th>Overdue now</th><th>On-time %</th><th>Score</th></tr></thead><tbody>
-${perf.map(p => `<tr><td><b>${esc(p.e.name)}</b></td><td>${p.assigned}</td><td>${p.done}</td><td class="g">${p.ontime}</td><td class="r">${p.delayed}</td><td>${p.avgDelay ? p.avgDelay + ' d' : '—'}</td><td>${p.open}</td><td class="r">${p.over || '—'}</td><td>${p.done ? p.rate + '%' : '—'}</td><td><span class="chip ${p.score >= 80 ? 'good' : p.score >= 50 ? 'warn' : p.assigned || p.done ? 'crit' : ''}">${p.assigned || p.done ? p.score : '—'}</span></td></tr>`).join('')}</tbody></table></div></div>
+${perf.map(p => `<tr><td><b>${esc(p.e.name)}</b></td><td>${p.assigned}</td><td>${p.done}</td><td class="g">${p.ontime}</td><td class="r">${p.delayed}</td><td>${p.avgDelay ? p.avgDelay + ' d' : '—'}</td><td>${p.open ? `<a href="#" class="tklk" data-tkpo="${p.e.id}" data-k="open" onclick="return false">${p.open}</a>` : 0}</td><td class="r">${p.over ? `<a href="#" class="tklk r" data-tkpo="${p.e.id}" data-k="over" onclick="return false">${p.over}</a>` : '—'}</td><td>${p.done ? p.rate + '%' : '—'}</td><td><span class="chip ${p.score >= 80 ? 'good' : p.score >= 50 ? 'warn' : p.assigned || p.done ? 'crit' : ''}">${p.assigned || p.done ? p.score : '—'}</span></td></tr>`).join('')}</tbody></table></div></div>
 <div class="two-col"><div class="card"><h3>🗓️ Deadline changes (${dueL.length})</h3>${dueL.length ? `<div class="stack" style="gap:6px">${dueL.map(l => `<div class="li"><div><b>${esc(l.title || '')}</b><small>${nm(l.assigned_to)} · ${l.old_val ? fmtD(l.old_val) : 'none'} → <strong>${l.new_val ? fmtD(l.new_val) : 'none'}</strong> · by ${nm(l.by)} on ${fmtD(ymd(l.at))}</small></div></div>`).join('')}</div>` : '<p class="muted small">No deadline changes this month</p>'}</div>
 <div class="card"><h3>🗑️ Deleted tasks (${delL.length})</h3>${delL.length ? `<div class="stack" style="gap:6px">${delL.map(l => `<div class="li"><div><b>${esc(l.title || '')}</b><small>For ${nm(l.assigned_to)} · was ${esc((TST[l.old_val] || [l.old_val])[0] || '')} · deleted by ${nm(l.by)} on ${fmtD(ymd(l.at))} ${hm(l.at)}</small></div></div>`).join('')}</div>` : '<p class="muted small">No tasks deleted this month</p>'}</div></div>`;
 }
@@ -5993,8 +5995,41 @@ await savePlan(d, [...(S.planY || []), { id: Math.random().toString(36).slice(2,
 if (b.id === 'wr_sub') { b.disabled = true; await q(sb.from('work_plans').upsert({ employee_id: S.me.id, day: d, items: S.planY || [], updated_at: new Date().toISOString(), report_at: new Date().toISOString() })); toast('Work report submitted ✓'); render(); }
 } catch (er) { toast(errMsg(er), true); b.disabled = false; } });
 }
-document.addEventListener('click', e => { const m = e.target.closest('[data-tkm]'); if (!m) return; document.querySelectorAll('.tkmode [data-tkm]').forEach(x => x.classList.toggle('on', x === m)); const k = m.dataset.tkm;
+document.addEventListener('click', e => { const m = e.target.closest('[data-tkmo]'); if (!m) return; document.querySelectorAll('.tkmode [data-tkmo]').forEach(x => x.classList.toggle('on', x === m)); const k = m.dataset.tkmo;
 const one = $('#tkm_one'); if (one) one.style.display = k === 'one' ? '' : 'none'; $('#tkm_many').hidden = k !== 'many'; $('#tkm_dept').hidden = k !== 'dept'; });
 document.addEventListener('input', e => { if (e.target.id !== 'tk_q') return; const v = e.target.value.trim().toLowerCase(); document.querySelectorAll('.tkpl [data-tkn]').forEach(l => { l.hidden = !!v && !l.dataset.tkn.includes(v); }); });
 document.addEventListener('change', e => { if (!e.target.closest('.tkpl')) return; const c = $('#tk_cnt'); if (c) c.textContent = document.querySelectorAll('.tkpl input:checked').length + ' selected'; });
+{
+const tkSt = x => x.status === 'done' ? 'done' : x.status === 'review' ? 'review' : x.due && x.due < todayStr() ? 'over' : x.status === 'doing' ? 'doing' : 'open';
+const stName = x => tkSt(x) === 'over' ? 'Overdue' : (TST[x.status] || TST.open)[0];
+const nm = id => empById(id)?.name || '—';
+const dmy = d => d ? fmtD(d) : '';
+const lateD = x => x.due && x.due < todayStr() ? Math.round((new Date(todayStr()) - new Date(x.due)) / 864e5) : 0;
+function pendList() { const t = S.tasks || [], who = S.tkP; return t.filter(x => x.status !== 'done' && (!who || x.assigned_to === who))
+.sort((a, b) => nm(a.assigned_to).localeCompare(nm(b.assigned_to)) || (a.due || '9999').localeCompare(b.due || '9999')); }
+const scopeTxt = () => S.tkP ? nm(S.tkP) : S.tkDept ? S.tkDept : 'All team';
+async function pendXls() { await loadTC(); const L = pendList();
+const rows = L.map(x => { const c = (S.tcom || {})[x.id] || [], lc = c[c.length - 1];
+return { 'Task owner': nm(x.assigned_to), Department: empById(x.assigned_to)?.dept || '', Task: x.title, Details: x.notes || '', 'Created by': nm(x.assigned_by), 'Created on': dmy(ymd(x.created_at)), Due: dmy(x.due), Status: stName(x), Priority: x.priority === 'high' ? 'High' : 'Normal', 'Days overdue': lateD(x) || '', Updates: c.length, 'Last update': lc ? `${nm(lc.author)}: ${lc.body}` : '', 'Last update on': lc ? new Date(lc.created_at).toLocaleString('en-IN', { timeZone: TZ, day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit' }) : '' }; });
+await xlsxOut(rows, 'Pending tasks', `ORBIS-pending-tasks-${scopeTxt().replace(/[^A-Za-z0-9]+/g, '-')}-${todayStr()}.xlsx`); toast(`Pending list downloaded (${rows.length})`); }
+function pendText() { const L = pendList(), by = {}; L.forEach(x => (by[x.assigned_to] = by[x.assigned_to] || []).push(x));
+let s = `*ORBIS – Pending tasks*\n${fmtD(todayStr())} · ${scopeTxt()} · ${L.length} task${L.length === 1 ? '' : 's'}\n`;
+Object.entries(by).forEach(([id, l]) => { s += `\n*${nm(id)}* (${l.length})\n`; l.forEach((x, i) => { const od = lateD(x);
+s += `${i + 1}. ${x.priority === 'high' ? '⚡ ' : ''}${x.title}\n    ${x.due ? (od ? `⚠️ Overdue ${od} day${od > 1 ? 's' : ''} (due ${fmtD(x.due)})` : `Due ${fmtD(x.due)}`) : 'No due date'} · ${(TST[x.status] || TST.open)[0]} · by ${nm(x.assigned_by)}\n`; }); });
+return L.length ? s : `*ORBIS – Pending tasks*\n${fmtD(todayStr())} · ${scopeTxt()}\nNo pending tasks 🎉`; }
+async function pendWA() { const text = pendText();
+if (navigator.share && onMobile()) { try { await navigator.share({ text }); return; } catch (er) { if (er?.name === 'AbortError') return; } }
+window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
+async function showTasks(title, L) { await loadTC();
+const thread = x => { const c = (S.tcom || {})[x.id] || []; return c.length ? `<div class="tkth">${c.map(m => `<div><b>${esc(nm(m.author))}</b> <span class="small muted">${new Date(m.created_at).toLocaleString('en-IN', { timeZone: TZ, day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit' })}</span><div>${esc(m.body)}</div></div>`).join('')}</div>` : '<div class="small muted" style="margin-top:6px">No messages yet.</div>'; };
+dlg(esc(title), L.length ? L.map(x => { const od = lateD(x), [lab, c] = TST[x.status] || TST.open;
+return `<div class="card tkpi"><div class="row"><b>${x.priority === 'high' ? '⚡ ' : ''}${esc(x.title)}</b><span class="chip ${tkSt(x) === 'over' ? 'crit' : c}">${tkSt(x) === 'over' ? 'Overdue' : lab}</span></div>
+<div class="small">Given by <b>${esc(nm(x.assigned_by))}</b> → to <b>${esc(nm(x.assigned_to))}</b> · ${dmy(ymd(x.created_at))}${x.due ? ` · due ${fmtD(x.due)}${od ? ` <span style="color:var(--crit)">(${od} day${od > 1 ? 's' : ''} late)</span>` : ''}` : ''}</div>${x.notes ? `<div class="small muted">${esc(x.notes)}</div>` : ''}${thread(x)}</div>`; }).join('') : '<p class="muted">No tasks.</p>'); }
+if (typeof mgrTasks === 'function') { const _mg = mgrTasks; mgrTasks = async function () { const h = await _mg.apply(this, arguments);
+return h.replace('<button class="btn pri" data-tk="new">+ Assign task</button>', '<button class="btn" data-tkpx="xls">⬇ Pending list</button><button class="btn" data-tkpx="wa">📤 WhatsApp</button><button class="btn pri" data-tk="new">+ Assign task</button>'); }; }
+document.addEventListener('click', async e => { const b = e.target.closest('[data-tkpx],[data-tkpo]'); if (!b) return;
+try { if (b.dataset.tkpx === 'xls') return await pendXls(); if (b.dataset.tkpx === 'wa') return await pendWA();
+const id = b.dataset.tkpo, k = b.dataset.k, t = todayStr(), mine = (S.tasks || []).filter(x => x.assigned_to === id && x.status !== 'done' && (k !== 'over' || (x.status !== 'review' && x.due && x.due < t)));
+await showTasks(`${k === 'over' ? 'Overdue' : 'Pending'} tasks · ${nm(id)}`, mine.sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'))); } catch (er) { toast(errMsg(er), true); } });
+}
 </script></body></html>
