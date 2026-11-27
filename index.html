@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta name="orbis-build" content="1795780264"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<html lang="en"><head><meta name="orbis-build" content="1795781404"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>ORBIS · Aeden Fruits</title><meta name="theme-color" content="#1D2B53">
 <link rel="icon" href="/icon-orbis-s-192.png"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1e2f58"><link rel="apple-touch-icon" href="/apple-touch-icon-s.png">
 <style>
@@ -6287,6 +6287,38 @@ if (!e.target.closest('.rxpick')) document.querySelectorAll('.rxpick').forEach(x
 }
 document.addEventListener('click', e => { const b = e.target.closest('[data-rpmode]'); if (!b) return; S.rpMode = b.dataset.rpmode; S.rpCustom = S.rpMode === 'dates';
 if (S.rpMode === 'dates' && !S.rpF) { const t = todayStr(); S.rpF = t.slice(0, 8) + '01'; S.rpT = t; } render(); });
+{ const _tcS = taskCard;
+taskCard = function (t) { let h = _tcS(t); const all = S.tasks || [], mine = t.assigned_to === S.me.id;
+const par = t.parent_id ? all.find(x => x.id === t.parent_id) : null;
+const subs = all.filter(x => x.parent_id === t.id), nd = subs.filter(x => x.status === 'done').length, today = todayStr();
+let blk = '';
+if (t.parent_id) blk += `<div class="small sbof">↳ Subtask of <b>${par ? esc(par.title) : 'another task'}</b>${par && par.assigned_by !== par.assigned_to ? ` · from ${esc(empById(par.assigned_by)?.name || '—')}` : ''}</div>`;
+if (subs.length) blk += `<div class="sblist"><div class="sbh">Subtasks <span class="chip ${nd === subs.length ? 'good' : ''}">${nd}/${subs.length} done</span></div>${subs.map(s => { const [lab, c, ic] = TST[s.status] || TST.open, od = s.due && s.status !== 'done' && s.due < today;
+return `<div class="sbi ${s.status}"><span>${ic} ${prIc(s.priority)}${esc(s.title)}</span><small class="muted">${esc((empById(s.assigned_to)?.name || '—'))}${s.due ? ` · <span class="${od ? 'pink' : ''}">🗓️ ${fmtD(s.due)}${od ? ' overdue' : ''}</span>` : ''} · <span class="chip ${c}">${lab}</span></small></div>`; }).join('')}</div>`;
+if (blk) h = h.replace(/<\/div>(\s*)<div class="hstack">/, `${blk}</div>$1<div class="hstack">`);
+if (mine && t.status !== 'done') h = h.replace('<div class="hstack">', `<div class="hstack"><button class="btn sm" data-tksub="${t.id}" title="Pass part of this task to someone as a subtask">↳ Pass on</button>`);
+return h; };
+}
+document.addEventListener('click', async e => {
+const b = e.target.closest('[data-tksub],[data-tksubgo]'); if (!b) return;
+const id = b.dataset.tksub || b.dataset.tksubgo, t = (S.tasks || []).find(x => x.id === id); if (!t) return;
+if (b.dataset.tksub) { const ppl = S.emps.filter(p => p.active && p.id !== S.me.id).sort((a, c) => (a.dept || '').localeCompare(c.dept || '') || a.name.localeCompare(c.name));
+const mn = todayStr() <= (t.due || '9999') ? todayStr() : '';
+return dlg('↳ Pass on as subtask', `<p class="small muted" style="margin:0 0 8px">Main task: <b>${esc(t.title)}</b>${t.due ? ` · deadline ${fmtD(t.due)}` : ''}. You stay responsible for the main task — you check the subtask when it's done.</p>
+<label>Subtask<input id="sb_t" maxlength="160" value="${esc(t.title)}"></label><label>Details (optional)<textarea id="sb_n" rows="2"></textarea></label>
+<div class="grid3"><label>Give to<select id="sb_to">${ppl.map(p => `<option value="${p.id}">${esc(p.name)} · ${esc(p.dept || 'Other')}</option>`).join('')}</select></label><label>Deadline<input type="date" id="sb_d" value="${t.due || ''}" ${mn ? `min="${mn}"` : ''} ${t.due ? `max="${t.due}"` : ''}></label><label>Priority<select id="sb_p">${['normal', 'medium', 'high'].map(k => `<option value="${k}" ${(t.priority || 'normal') === k ? 'selected' : ''}>${prName(k)}</option>`).join('')}</select></label></div>
+${t.due ? `<p class="small muted" style="margin:4px 0 0">The subtask deadline can't be after ${fmtD(t.due)} (the main task deadline).</p>` : ''}
+<label>When the subtask is finished<select id="sb_rv"><option value="1">🔍 Submit for review – I check and approve</option><option value="0">✅ No review needed – they can close it</option></select></label>`,
+`<button class="btn pri" data-tksubgo="${t.id}">Pass on</button>`); }
+const title = $('#sb_t').value.trim(), due = $('#sb_d').value || null; if (!title) return toast('Write the subtask', true);
+if (t.due && due && due > t.due) return toast(`Deadline can't be after ${fmtD(t.due)} — the main task deadline`, true);
+const to = $('#sb_to').value; b.disabled = true;
+try { await q(sb.from('tasks').insert({ parent_id: t.id, title, notes: $('#sb_n').value.trim(), assigned_by: S.me.id, assigned_to: to, due: due || t.due || null, priority: $('#sb_p').value, checklist: ckLines('sb_c'), review_req: $('#sb_rv').value !== '0' }));
+closeDlg(); toast('↳ Subtask passed to ' + (empById(to)?.name || 'them').split(' ')[0]); render(); refreshBadges(); }
+catch (er) { b.disabled = false; toast(errMsg(er), true); }
+});
+document.addEventListener('click', e => { const du = e.target.closest('[data-tkdue]'); if (!du) return; const t = (S.tasks || []).find(x => x.id === du.dataset.tkdue); const p = t?.parent_id && (S.tasks || []).find(x => x.id === t.parent_id);
+if (p?.due) setTimeout(() => { const i = $('#tdd'); if (i) { i.max = p.due; i.insertAdjacentHTML('afterend', `<small class="muted">Not after ${fmtD(p.due)} (main task)</small>`); } }, 0); });
 { const _tcC = taskCard;
 taskCard = function (t) { let h = _tcC(t); const L = Array.isArray(t.checklist) ? t.checklist : [];
 const can = (t.assigned_to === S.me.id || t.assigned_by === S.me.id || isAdmin()) && t.status !== 'done';
