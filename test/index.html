@@ -663,7 +663,7 @@ html.glass body .mtop .mt small{color:rgba(255,255,255,.65)}
 html.glass body .mtop .mt b{color:#fff}
 html.glass body .mtop .mav{box-shadow:0 0 0 2px rgba(255,255,255,.35);border-radius:50%}
 html.glass body main{position:relative}
-html.glass body main:has(.pb)::before{content:'';position:absolute;left:-16px;right:-16px;top:calc(-1 * (64px + env(safe-area-inset-top)));height:calc(132px + env(safe-area-inset-top));background:#1D2B53;border-radius:0 0 28px 28px;z-index:0;pointer-events:none}
+html.glass body main:has(.pb)::before{content:'';position:absolute;left:50%;width:100vw;transform:translateX(-50%);top:calc(-1 * (64px + env(safe-area-inset-top)));height:calc(132px + env(safe-area-inset-top));background:#1D2B53;border-radius:0 0 28px 28px;z-index:0;pointer-events:none}
 html.glass body main>*{position:relative;z-index:1}
 html.glass body .backbar{background:#fff;border:1px solid #E6EAF2;border-radius:10px;box-shadow:none}
 html.glass body .pb{border:1px solid rgba(255,255,255,.12)}
