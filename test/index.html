@@ -643,6 +643,7 @@ const ist = d => new Date(new Date(d).toLocaleString('en-US', { timeZone: TZ }))
 const ymd = d => { const x = ist(d); return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`; };
 const todayStr = () => ymd(Date.now());
 const hm = d => d ? new Date(d).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit' }) : '--:--';
+const hm12 = d => d ? new Date(d).toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }) : '--:--';
 const fmtD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }); };
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const dowOf = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).getDay(); };
@@ -922,7 +923,7 @@ const brkHTML = state === 'out' ? breakPanel(ob, cfg) : '';
 afterFns.push(setupSwipe, startTicker);
 return `<div class="punch">
 <div class="clock"><div class="alg w">${LOGO}</div><div class="d">${DOW[d.getDay()]}, ${fmtD(t)}</div><div class="hi">Hi, ${esc(S.me.name.split(' ')[0])} 👋</div>
-<div class="t"><span id="clk">${hm(d)}</span><small id="clks">:${pad(d.getSeconds())}</small></div>
+<div class="t"><span id="clk">${hm12(d)}</span><small id="clks">:${pad(d.getSeconds())}</small></div>
 ${mob ? `<div class="mobnote"><b>📱 You're on your phone</b><span>Check in and check out on your office computer. Working outside today? Ask for on duty.</span><button class="pbbr" data-od="" style="margin-top:10px;width:100%">🚗 Request on duty</button></div>` : ''}<div class="swz" ${mob ? 'hidden' : ''}><button id="swipe" class="sw ${state === 'out' ? 'out' : ''} ${state === 'done' ? 'done' : ''}" ${!dev && state !== 'done' ? 'data-nodev="1"' : ''}>
 <span class="sw-fill"></span><span class="sw-knob">${state === 'done' ? '✓' : '›'}</span>
 <span class="sw-txt"><b>${state === 'in' ? 'Check In' : state === 'out' ? 'Check Out' : 'Done for today'}</b><small>${state === 'done' ? 'See you tomorrow' : 'Swipe right to ' + (state === 'in' ? 'check in' : 'check out')}</small></span>
@@ -943,14 +944,14 @@ function breakPanel(ob, cfg) {
 if (ob) {
 const t = cfg.find(x => x.k === ob.kind) || { name: ob.kind, min: 15 };
 const extra = 0;
-return `<div class="card brk on"><div class="row"><div><b>☕ On ${esc(t.name.toLowerCase())} break</b><div class="small">Started ${hm(ob.start_at)} · ${t.min} min</div></div>
+return `<div class="card brk on"><div class="row"><div><b>☕ On ${esc(t.name.toLowerCase())} break</b><div class="small">Started ${hm12(ob.start_at)} · ${t.min} min</div></div>
 <div class="cd" id="cd" data-start="${ob.start_at}" data-min="${t.min + extra}">--:--</div></div>
 <button class="btn pri wide" id="bEnd">I'm back — end break</button></div>`;
 }
 const taken = S.breaks.map(b => b.kind);
 const left = cfg.filter(b => !taken.includes(b.k));
 if (!S.brPick) return `<div class="card brk">${left.length ? `<button class="btn wide brtake" id="bOpen">☕ Take a break <small>${left.map(b => `${esc(b.name)} ${b.min}m${brWinTxt(b) ? ' (' + brWinTxt(b) + ')' : ''}`).join(' · ')} left today</small></button>` : '<p class="small muted center">All breaks used for today.</p>'}
-${S.breaks.length ? `<div class="small muted" style="margin-top:8px">${S.breaks.map(b => `${esc((cfg.find(x => x.k === b.kind) || {}).name || b.kind)} ${hm(b.start_at)}–${hm(b.end_at)} (${mins(b.start_at, b.end_at)} min)`).join(' · ')}</div>` : ''}
+${S.breaks.length ? `<div class="small muted" style="margin-top:8px">${S.breaks.map(b => `${esc((cfg.find(x => x.k === b.kind) || {}).name || b.kind)} ${hm12(b.start_at)}–${hm12(b.end_at)} (${mins(b.start_at, b.end_at)} min)`).join(' · ')}</div>` : ''}
 <button class="btn sm" id="xOpen" style="margin-top:10px">⏱ Request extra break</button></div>`;
 const sel = S.brSel || left.find(brOpen)?.k || '';
 return `<div class="card brk"><div class="row"><b>Which break?</b><button class="btn sm" id="bCancel">✕</button></div>
@@ -961,7 +962,7 @@ function startTicker() {
 clearInterval(S.tick);
 const tickFn = () => {
 const c = $('#clk'); if (!c) { clearInterval(S.tick); return; }
-const d = new Date(); c.textContent = hm(d); $('#clks').textContent = ':' + pad(d.getSeconds());
+const d = new Date(); c.textContent = hm12(d); $('#clks').textContent = ':' + pad(d.getSeconds());
 const w = $('#worked'); if (w && w.dataset.in) { const ob = openBreak(); const brk = S.breaks.reduce((s, b) => s + (new Date(b.end_at || Date.now()) - new Date(b.start_at)), 0); const end = w.dataset.out ? new Date(w.dataset.out) : new Date(); w.textContent = hhmmss(end - new Date(w.dataset.in) - brk); }
 const cd = $('#cd'); if (cd) { const left = Number(cd.dataset.min) * 60000 - (Date.now() - new Date(cd.dataset.start)); cd.textContent = left >= 0 ? mmss(left) + ' left' : '+' + mmss(-left) + ' over'; cd.classList.toggle('over', left < 0); }
 };
@@ -1010,7 +1011,7 @@ k.addEventListener('pointerup', end); k.addEventListener('pointercancel', end);
 }
 function celebrate(kind, at, offline) {
 const el = document.createElement('div'); el.className = 'cel';
-el.innerHTML = `<div class="card stamp"><div class="alg">${LOGO}</div><div class="st-k">${kind === 'in' ? 'CHECKED IN' : 'CHECKED OUT'}</div><div class="st-t">${hm(at)}</div><div class="st-n">${esc(S.me.name)}</div><div class="small">${fmtD(todayStr())}${offline ? ' · ⏳ saved offline' : ''}</div></div>`;
+el.innerHTML = `<div class="card stamp"><div class="alg">${LOGO}</div><div class="st-k">${kind === 'in' ? 'CHECKED IN' : 'CHECKED OUT'}</div><div class="st-t">${hm12(at)}</div><div class="st-n">${esc(S.me.name)}</div><div class="small">${fmtD(todayStr())}${offline ? ' · ⏳ saved offline' : ''}</div></div>`;
 document.body.appendChild(el); setTimeout(() => el.classList.add('go'), 2200); setTimeout(() => el.remove(), 2800);
 }
 async function extraDlg() {
@@ -1039,7 +1040,7 @@ let present = 0, late = 0, worked = 0;
 const rows = []; for (let d = last; d >= 1; d--) {
 const ds = `${ym}-${pad(d)}`; if (ds > todayStr()) continue; const a = by[ds]; const bm = brk.filter(b => b.day === ds).reduce((s, b) => s + mins(b.start_at, b.end_at), 0);
 const w = a?.in_at && a?.out_at ? mins(a.in_at, a.out_at) - bm : 0; if (a?.in_at) { present++; worked += w; if (hm(a.in_at) > lateLim(S.me, ds)) late++; }
-rows.push(`<tr class="${isWeekOff(ds) ? 'wo' : ''}"><td>${DOW[dowOf(ds)]} ${fmtD(ds)}</td><td>${a?.in_at ? hm(a.in_at) : '—'}</td><td>${a?.out_at ? hm(a.out_at) : a?.in_at ? (ds < todayStr() ? `<button class="btn sm regbtn" data-fix="${ds}">⚠ Missed · Regularise</button>` : '<span class="chip warn">not yet</span>') : '—'}</td><td>${bm ? bm + ' min' : '—'}${brk.some(b => b.day === ds) ? ` <button class="btn sm" data-bfix="${ds}" title="Regularise break">✏️</button>` : ''}</td><td>${w ? hmm(w) : holOn(ds, S.me.office) && !a ? '🎉 ' + esc(holOn(ds, S.me.office).name) : '—'}</td><td><button class="btn sm" data-fix="${ds}" title="Request a correction">✏️</button></td></tr>`);
+rows.push(`<tr class="${isWeekOff(ds) ? 'wo' : ''}"><td>${DOW[dowOf(ds)]} ${fmtD(ds)}</td><td>${a?.in_at ? hm12(a.in_at) : '—'}</td><td>${a?.out_at ? hm12(a.out_at) : a?.in_at ? (ds < todayStr() ? `<button class="btn sm regbtn" data-fix="${ds}">⚠ Missed · Regularise</button>` : '<span class="chip warn">not yet</span>') : '—'}</td><td>${bm ? bm + ' min' : '—'}${brk.some(b => b.day === ds) ? ` <button class="btn sm" data-bfix="${ds}" title="Regularise break">✏️</button>` : ''}</td><td>${w ? hmm(w) : holOn(ds, S.me.office) && !a ? '🎉 ' + esc(holOn(ds, S.me.office).name) : '—'}</td><td><button class="btn sm" data-fix="${ds}" title="Request a correction">✏️</button></td></tr>`);
 }
 const missM = missCard(await missedOuts());
 return `<div class="stack">${missM}<div class="row"><div><span class="eyebrow">Me</span><h2>My attendance</h2></div><div class="hstack"><button class="btn sm" data-mm="-1">‹</button><b>${new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b><button class="btn sm" data-mm="1">›</button></div></div>
@@ -1086,12 +1087,13 @@ const last = E.slice().sort((p, q) => String(q.created_at || '').localeCompare(S
 const mx = Math.max(0, ...E.map(e => String(e.code).toUpperCase().match(/^AFI(\d+)$/)).filter(Boolean).map(z => Number(z[1])));
 return { next: 'AFI' + String(mx + 1).padStart(3, '0'), last }; }
 const t12 = v => { if (!v || !/^\d{1,2}:\d{2}/.test(v)) return esc(v || ''); let [H, M] = v.split(':').map(Number); H = H % 24; return `${H % 12 || 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`; };
-function tp12(id, v) { let [H, M] = (v || '09:00').split(':').map(Number); H = (H || 0) % 24; M = M || 0; const h = H % 12 || 12, ap = H < 12 ? 'AM' : 'PM';
+function tp12(id, v, cls) { const em = !v; let [H, M] = (v || '09:00').split(':').map(Number); H = (H || 0) % 24; M = M || 0; const h = H % 12 || 12, ap = H < 12 ? 'AM' : 'PM';
 const ms = [...new Set([...Array(12).keys()].map(i => i * 5).concat(M))].sort((x, y) => x - y);
-return `<span class="tp12" data-tpfor="${id}"><input type="hidden" id="${id}" value="${pad(H)}:${pad(M)}"><select data-tp="h" aria-label="Hour">${[...Array(12)].map((_, i) => i + 1).map(x => `<option ${x === h ? 'selected' : ''}>${x}</option>`).join('')}</select><b>:</b><select data-tp="m" aria-label="Minutes">${ms.map(x => `<option value="${x}" ${x === M ? 'selected' : ''}>${pad(x)}</option>`).join('')}</select><select data-tp="ap" aria-label="AM or PM"><option ${ap === 'AM' ? 'selected' : ''}>AM</option><option ${ap === 'PM' ? 'selected' : ''}>PM</option></select></span>`; }
+return `<span class="tp12" data-tpfor="${id || cls}"><input type="hidden" ${id ? `id="${id}"` : ''} ${cls ? `class="${cls}"` : ''} value="${em ? '' : pad(H) + ':' + pad(M)}"><select data-tp="h" aria-label="Hour">${em ? '<option value="" selected>--</option>' : ''}${[...Array(12)].map((_, i) => i + 1).map(x => `<option ${!em && x === h ? 'selected' : ''}>${x}</option>`).join('')}</select><b>:</b><select data-tp="m" aria-label="Minutes">${ms.map(x => `<option value="${x}" ${x === M ? 'selected' : ''}>${pad(x)}</option>`).join('')}</select><select data-tp="ap" aria-label="AM or PM"><option ${ap === 'AM' ? 'selected' : ''}>AM</option><option ${ap === 'PM' ? 'selected' : ''}>PM</option></select></span>`; }
 function tpSet(id, v) { const w = document.querySelector(`[data-tpfor="${id}"]`); if (w) w.outerHTML = tp12(id, v); }
 document.addEventListener('change', e => { const s = e.target.closest('[data-tp]'); if (!s) return; const w = s.closest('.tp12'); const g = k => w.querySelector(`[data-tp="${k}"]`).value;
-let H = Number(g('h')) % 12; if (g('ap') === 'PM') H += 12; const v = `${pad(H)}:${pad(Number(g('m')))}`; const id = w.dataset.tpfor; document.getElementById(id).value = v;
+const hid = w.querySelector('input[type=hidden]'), id = w.dataset.tpfor; if (g('h') === '') { hid.value = ''; return; }
+let H = Number(g('h')) % 12; if (g('ap') === 'PM') H += 12; const v = `${pad(H)}:${pad(Number(g('m')))}`; hid.value = v;
 if (id === 'wp_f') { const to = $('#wp_t'); if (to && to.value <= v) tpSet('wp_t', addMinHM(v, 60)); } });
 const WST = { plan: ['Planned', '', '🗓'], on: ['Ongoing', 'warn', '🔄'], done: ['Done', 'good', '✅'], not: ['Not done', 'crit', '❌'] };
 async function getPlan(emp, day) { const r = await q(sb.from('work_plans').select('*').eq('employee_id', emp).eq('day', day).maybeSingle()); return (r?.items || []).slice().sort((a, b) => (a.from || '').localeCompare(b.from || '')); }
@@ -1173,7 +1175,7 @@ let body = '';
 if (tab === 'today') {
 const [att, brk, lv] = await Promise.all([q(sb.from('attendance').select('*').eq('day', t)), q(sb.from('breaks').select('*').eq('day', t)), q(sb.from('leave_requests').select('*').eq('status', 'approved').lte('from_date', t).gte('to_date', t))]);
 const rows = team.filter(e => !e.no_punch).map(e => { const a = att.find(x => x.employee_id === e.id), ob = brk.find(x => x.employee_id === e.id && !x.end_at), l = lv.find(x => x.employee_id === e.id);
-let st, c; if (l) { st = '🏖️ On leave'; c = ''; } else if (ob) { const m = mins(ob.start_at); const lim = (brCfg().find(x => x.k === ob.kind) || {}).min || 15; st = `☕ On ${ob.kind} break · ${m} min${m > lim ? ' (over)' : ''}`; c = m > lim ? 'crit' : 'warn'; } else if (a?.note?.startsWith('On duty')) { st = '🚗 ' + esc(a.note.split(' · ').slice(0, 2).join(' · ')) + ` · ${hm(a.in_at)}–${hm(a.out_at)}`; c = 'good'; } else if (a?.out_at) { st = `Checked out ${hm(a.out_at)}`; c = ''; } else if (a?.in_at) { const late = hm(a.in_at) > lateLim(e), se = shiftOf(e).end || '18:00', nowHM = hm(new Date()); if (nowHM > addMinHM(se, 15)) { st = `⚠️ Not checked out · shift ended ${se} · in since ${hm(a.in_at)}`; c = 'crit'; } else { st = `✓ In since ${hm(a.in_at)}${late ? ' · late' : ''}`; c = late ? 'warn' : 'good'; } } else if (isWeekOff(t, e)) { st = 'Week off'; c = ''; } else { st = 'Not in yet'; c = 'crit'; }
+let st, c; if (l) { st = '🏖️ On leave'; c = ''; } else if (ob) { const m = mins(ob.start_at); const lim = (brCfg().find(x => x.k === ob.kind) || {}).min || 15; st = `☕ On ${ob.kind} break · ${m} min${m > lim ? ' (over)' : ''}`; c = m > lim ? 'crit' : 'warn'; } else if (a?.note?.startsWith('On duty')) { st = '🚗 ' + esc(a.note.split(' · ').slice(0, 2).join(' · ')) + ` · ${hm12(a.in_at)}–${hm12(a.out_at)}`; c = 'good'; } else if (a?.out_at) { st = `Checked out ${hm12(a.out_at)}`; c = ''; } else if (a?.in_at) { const late = hm(a.in_at) > lateLim(e), se = shiftOf(e).end || '18:00', nowHM = hm(new Date()); if (nowHM > addMinHM(se, 15)) { st = `⚠️ Not checked out · shift ended ${se} · in since ${hm12(a.in_at)}`; c = 'crit'; } else { st = `✓ In since ${hm12(a.in_at)}${late ? ' · late' : ''}`; c = late ? 'warn' : 'good'; } } else if (isWeekOff(t, e)) { st = 'Week off'; c = ''; } else { st = 'Not in yet'; c = 'crit'; }
 const allow = brCfg().reduce((s, b) => s + b.min, 0), used = brk.filter(x => x.employee_id === e.id).reduce((s, b) => s + mins(b.start_at, b.end_at), 0);
 const lb = used > allow; if (lb && !l) { st += ` · breaks ${used}/${allow} min`; if (c !== 'crit') c = 'crit'; }
 const lateM = a?.in_at && !a?.note?.startsWith('On duty') ? toMin(hm(a.in_at)) - toMin(shiftOf(e, t).start || '09:00') : null, lateX = lateM != null && hm(a.in_at) > lateLim(e, t);
@@ -1223,7 +1225,7 @@ S.reg = { ym, last, att, brk, lv };
 const emps = S.emps.filter(e => e.active && (typeof regFilt !== 'function' || regFilt(e)));
 const head = [...Array(last)].map((_, i) => `<th class="c ${dowOf(`${ym}-${pad(i + 1)}`) === 0 ? 'wo' : ''}">${i + 1}</th>`).join('');
 const rows = emps.map(e => { let P = 0, L = 0, lt = 0; const cells = [...Array(last)].map((_, i) => { const ds = `${ym}-${pad(i + 1)}`; const a = att.find(x => x.employee_id === e.id && x.day === ds); const l = lv.find(x => x.employee_id === e.id && x.from_date <= ds && x.to_date >= ds);
-if (a?.in_at) { P++; const late = hm(a.in_at) > lateLim(e, a.day); if (late) lt++; return `<td class="c p ${late ? 'lt' : ''}" title="${hm(a.in_at)}–${hm(a.out_at)}">P</td>`; }
+if (a?.in_at) { P++; const late = hm(a.in_at) > lateLim(e, a.day); if (late) lt++; return `<td class="c p ${late ? 'lt' : ''}" title="${hm12(a.in_at)}–${hm12(a.out_at)}">P</td>`; }
 if (l) { L++; return `<td class="c l" title="${esc(ltName(l.type))}">L</td>`; } if (isWeekOff(ds, e)) return '<td class="c wo">–</td>'; if (holOn(ds, e.office)) return `<td class="c h" title="${esc(holOn(ds, e.office).name)}">H</td>`; if (ds > todayStr()) return '<td class="c"></td>'; return '<td class="c a">A</td>'; }).join('');
 return `<tr><td class="nm"><b>${esc(e.name)}</b><small>${esc(e.code)} · ${esc(shiftOf(e)?.name || 'General')} ${shiftOf(e) ? brT12(shiftOf(e).start) + '–' + brT12(shiftOf(e).end) : ''}</small></td>${cells}<td class="c"><b>${P}</b></td><td class="c">${L}</td><td class="c">${lt}</td></tr>`; }).join('');
 return `<div class="stack"><div class="row"><div><span class="eyebrow">HR</span><h2>Attendance register</h2></div><div class="hstack"><button class="btn sm" data-rm="-1">‹</button><b>${new Date(y, m - 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</b><button class="btn sm" data-rm="1">›</button><button class="btn" id="regCsv">⬇ Daily times (CSV)</button><button class="btn sm pri" id="salXls">⬇ Salary summary (Excel)</button></div></div>
@@ -1303,7 +1305,7 @@ return `<div class="stack narrow"><div><span class="eyebrow">HR setup</span><h2>
 <p>This connection: <b>${esc(ip || 'unknown')}</b> ${ip && !ips.includes(ip) ? '<button class="btn sm pri" id="ipAdd">+ Add as office network</button>' : ips.includes(ip) ? '<span class="chip good">office network</span>' : ''}</p>
 ${ips.map(x => `<div class="li"><span>${esc(x)}</span><button class="btn sm" data-iprm="${esc(x)}">Remove</button></div>`).join('')}</div>
 ${holSetupCard()}${yearEndCard()}${backupCard()}
-<div class="card"><h3>Rules</h3><div class="grid3"><label>Shift start<input type="time" id="c_ss" value="${esc(C().shiftStart || '09:00')}"></label><label>Shift end<input type="time" id="c_se" value="${esc(C().shiftEnd || '18:00')}"></label><label>Grace (min)<input type="number" id="c_gr" value="${C().graceMin ?? 10}"></label>
+<div class="card"><h3>Rules</h3><div class="grid3"><label>Shift start${tp12('c_ss', C().shiftStart || '09:00')}</label><label>Shift end${tp12('c_se', C().shiftEnd || '18:00')}</label><label>Grace (min)<input type="number" id="c_gr" value="${C().graceMin ?? 10}"></label>
 ${brCfg().map((b, i) => `<label>${esc(b.name)} break (min)<input type="number" id="c_b${i}" value="${b.min}"></label>`).join('')}<label>Extra break per month (min)<input type="number" id="c_x" value="${C().extraMonthlyMin ?? 30}"></label></div>
 <h4>Leave per year</h4><div class="grid3">${ltypes().map((t, i) => `<label>${esc(t.name)}<input type="number" id="c_l${i}" value="${t.days}"></label>`).join('')}</div>
 <div class="grid2"><label>Departments (one per line)<textarea id="c_depts" rows="5">${esc((C().depts || []).join('\n'))}</textarea></label><label>Offices (one per line)<textarea id="c_offs" rows="5">${esc((C().offices || []).join('\n'))}</textarea></label></div>
@@ -1915,9 +1917,9 @@ if (b.dataset.hdel) { await q(sb.from('holidays').delete().eq('day', b.dataset.h
 function fixDlg(day) {
 const a = (S.myAtt || []).find(x => x.day === day) || (S.missC?.v || []).find(x => x.day === day);
 const mo = a?.in_at && !a.out_at && day && day < todayStr();
-dlg(mo ? '⚠ Regularise missed check-out' : '✏️ Regularise attendance', `<p class="small muted">${mo ? `You checked in at <b>${hm(a.in_at)}</b> on <b>${fmtD(day)}</b> but did not check out. Enter the time you left — it goes for approval.` : 'Forgot to check in or out, or the time is wrong? It goes for approval.'}</p>
+dlg(mo ? '⚠ Regularise missed check-out' : '✏️ Regularise attendance', `<p class="small muted">${mo ? `You checked in at <b>${hm12(a.in_at)}</b> on <b>${fmtD(day)}</b> but did not check out. Enter the time you left — it goes for approval.` : 'Forgot to check in or out, or the time is wrong? It goes for approval.'}</p>
 <div class="grid2"><label>Date<input type="date" id="fx_day" value="${day || todayStr()}" max="${todayStr()}"></label><span></span>
-<label>Correct check-in time<input type="time" id="fx_in" value="${a?.in_at ? hm(a.in_at) : ''}"></label><label>Correct check-out time<input type="time" id="fx_out" value="${a?.out_at ? hm(a.out_at) : mo ? (shiftOf(S.me, day)?.end || '') : ''}"></label></div>
+<label>Correct check-in time${tp12('fx_in', a?.in_at ? hm(a.in_at) : '')}</label><label>Correct check-out time${tp12('fx_out', a?.out_at ? hm(a.out_at) : mo ? (shiftOf(S.me, day)?.end || '') : '')}</label></div>
 <label>Reason<textarea id="fx_reason" rows="2" placeholder="e.g. Forgot to check out — left at 6:05 pm">${mo ? 'Forgot to check out' : ''}</textarea></label>`, `<button class="btn pri" id="fx_send">Send for approval</button>`);
 $('#fx_send').onclick = async () => { const d = $('#fx_day').value, i = $('#fx_in').value, o = $('#fx_out').value, r = $('#fx_reason').value.trim();
 if (!d || d > todayStr()) return toast('Pick a past date', true); if (!i && !o) return toast('Enter the check-in or check-out time', true); if (i && o && o <= i) return toast('Check-out must be after check-in', true); if (!r) return toast('Please write a reason', true);
@@ -2548,7 +2550,7 @@ return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · MD<
 <div class="hstack wrap"><button class="btn sm" data-lgd="-1">‹</button><input type="date" id="lg_d" value="${day}" max="${todayStr()}" style="width:auto"><button class="btn sm" data-lgd="1" ${day >= todayStr() ? 'disabled' : ''}>›</button>
 <select id="lg_w" style="width:auto"><option value="">Everyone</option>${S.emps.map(e => `<option value="${e.id}" ${e.id === who ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}</select>
 <select id="lg_t" style="width:auto"><option value="">Everything</option>${Object.entries(LOGT).map(([k, v]) => `<option value="${k}" ${k === tb ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
-<div class="card flush"><table><thead><tr><th>Time</th><th>Who</th><th>What</th><th>Details</th></tr></thead><tbody>${rows.map(l => { const x = logLine(l); return `<tr class="lg-${l.op}"><td>${hm(l.at)}</td><td>${esc(x.who)}</td><td>${esc(x.what)}</td><td class="small muted">${esc(x.d)}</td></tr>`; }).join('') || '<tr><td colspan=4 class="muted">Nothing recorded on this day.</td></tr>'}</tbody></table></div></div>`;
+<div class="card flush"><table><thead><tr><th>Time</th><th>Who</th><th>What</th><th>Details</th></tr></thead><tbody>${rows.map(l => { const x = logLine(l); return `<tr class="lg-${l.op}"><td>${hm12(l.at)}</td><td>${esc(x.who)}</td><td>${esc(x.what)}</td><td class="small muted">${esc(x.d)}</td></tr>`; }).join('') || '<tr><td colspan=4 class="muted">Nothing recorded on this day.</td></tr>'}</tbody></table></div></div>`;
 };
 document.addEventListener('change', e => { const t = e.target; if (t.id === 'lg_d') { S.logDay = t.value; render(); } if (t.id === 'lg_w') { S.logWho = t.value; render(); } if (t.id === 'lg_t') { S.logT = t.value; render(); } });
 document.addEventListener('click', async e => { const b = e.target.closest('[data-lgd],[data-lg]'); if (!b) return;
@@ -2573,13 +2575,13 @@ document.addEventListener('click', e => { if (e.target.id === 'kBack') { e.preve
 function renderKiosk(msg) {
 document.body.className = 'auth kiosk'; S.kPick = null;
 const d = lsGet('devPub', null) || {}; const ppl = d.people || [];
-$('#app').innerHTML = `<div class="kbox"><div class="khead"><div class="alg w">${LOGO}</div><div class="kclock"><b id="kclk">${hm(new Date())}</b><span>${DOW[new Date().getDay()]}, ${fmtD(todayStr())}</span></div><div class="kdev">🖥️ ${esc(d.name || 'Common PC')}${d.office ? ' · ' + esc(d.office) : ''}</div></div>
+$('#app').innerHTML = `<div class="kbox"><div class="khead"><div class="alg w">${LOGO}</div><div class="kclock"><b id="kclk">${hm12(new Date())}</b><span>${DOW[new Date().getDay()]}, ${fmtD(todayStr())}</span></div><div class="kdev">🖥️ ${esc(d.name || 'Common PC')}${d.office ? ' · ' + esc(d.office) : ''}</div></div>
 <h1>Tap your name to punch</h1>${msg ? `<div class="msg bad">${esc(msg)}</div>` : ''}
 <input id="kq" placeholder="🔍 Type your name or employee code" autocomplete="off">
 <div class="kgrid" id="kgrid">${ppl.map(p => `<button class="kp" data-kp="${esc(p.code)}" data-s="${esc((p.name + ' ' + p.code + ' ' + (p.dept || '')).toLowerCase())}"><span class="ava">${esc(initials(p.name))}</span><b>${esc(p.name)}</b><small>${esc(p.dept || p.office || '')}</small></button>`).join('') || '<p class="muted">Loading staff list… (needs internet the first time)</p>'}</div>
 <p class="small muted center">This is a shared computer. You can only check in, check out and take breaks here — you are signed out automatically.<br><a href="#" id="kHr">HR / admin sign in</a></p></div>`;
 $('#kq').oninput = () => { const s = $('#kq').value.trim().toLowerCase(); document.querySelectorAll('.kp').forEach(b => b.hidden = s && !b.dataset.s.includes(s)); };
-clearInterval(S.kclkI); S.kclkI = setInterval(() => { const c = $('#kclk'); if (c) c.textContent = hm(new Date()); else clearInterval(S.kclkI); }, 5000);
+clearInterval(S.kclkI); S.kclkI = setInterval(() => { const c = $('#kclk'); if (c) c.textContent = hm12(new Date()); else clearInterval(S.kclkI); }, 5000);
 if (!ppl.length) devPublic().then(x => { if (x?.people?.length && !S.me) renderKiosk(msg); });
 }
 function kioskAsk(code) {
@@ -2691,7 +2693,7 @@ const a = S.today, ss = shiftOf().start, se = shiftOf().end, lim = lateLim(), no
 const f = Math.max(0, Math.min(1, (toMin(now) - toMin(ss)) / Math.max(1, toMin(se) - toMin(ss))));
 const fmt = t => { const [h, m] = t.split(':').map(Number); return `${h % 12 || 12}${m ? ':' + pad(m) : ''} ${h >= 12 ? 'PM' : 'AM'}`; };
 let st, c;
-if (a?.out_at) { st = `Checked out ${hm(a.out_at)}`; c = 'g'; } else if (a?.in_at) { const late = hm(a.in_at) > lim; st = `${late ? 'Late' : 'On time'} · in ${hm(a.in_at)}`; c = late ? 'a' : 'g'; }
+if (a?.out_at) { st = `Checked out ${hm12(a.out_at)}`; c = 'g'; } else if (a?.in_at) { const late = hm(a.in_at) > lim; st = `${late ? 'Late' : 'On time'} · in ${hm12(a.in_at)}`; c = late ? 'a' : 'g'; }
 else if (isWeekOff(todayStr()) || holOn(todayStr(), S.me?.office)) { st = 'Day off today'; c = 'g'; } else if (now <= lim) { st = `Starts ${fmt(ss)}`; c = 'g'; } else { st = 'Not checked in'; c = 'a'; }
 return { range: `${fmt(ss)} – ${fmt(se)}`, st, c, f };
 }
@@ -3237,7 +3239,7 @@ async function astToday() {
 const a = await q(sb.from('attendance').select('*').eq('employee_id', S.me.id).eq('day', todayStr()).maybeSingle());
 if (!a?.in_at) return `You haven't checked in today. Shift starts at <b>${esc(shiftOf().start)}</b> (late after ${esc(lateLim())}).<br>${astGo('punch', 'Go to Punch')}`;
 const w = mins(a.in_at, a.out_at || new Date().toISOString());
-return `Checked in at <b>${hm(a.in_at)}</b>${a.out_at ? `, checked out at <b>${hm(a.out_at)}</b>` : ' — still at work'}. Time at work: <b>${Math.floor(w / 60)} h ${w % 60} min</b>.`;
+return `Checked in at <b>${hm12(a.in_at)}</b>${a.out_at ? `, checked out at <b>${hm12(a.out_at)}</b>` : ' — still at work'}. Time at work: <b>${Math.floor(w / 60)} h ${w % 60} min</b>.`;
 }
 async function astTasks() {
 const r = (await q(sb.from('tasks').select('*').eq('assigned_to', S.me.id).neq('status', 'done').order('due'))).slice(0, 8);
@@ -3525,7 +3527,7 @@ const card = `<div class="card"><h3>🕘 Shifts & weekly off</h3><p class="small
 <h4 style="margin-top:16px">Company weekly off</h4><p class="small muted">Used for everyone unless a different weekly off is set for the person.</p>${woBoxes('woCo', Array.isArray(C().weekOff) && C().weekOff.length ? C().weekOff : [0])}
 <button class="btn pri" id="shSave" style="margin-top:12px">Save shifts</button></div>`;
 return h.replace(/<\/div>\s*$/, card + '</div>'); };
-const shRow = s => `<div class="shrow" data-k="${esc(s?.k || 's' + Date.now().toString(36))}"><input class="sh_n" placeholder="Name, e.g. Warehouse early" value="${esc(s?.name || '')}"><label>Start<input type="time" class="sh_s" value="${esc(s?.start || '06:00')}"></label><label>End<input type="time" class="sh_e" value="${esc(s?.end || '15:00')}"></label><label>Grace (min)<input type="number" class="sh_g" min="0" value="${s?.grace ?? 10}"></label><button class="btn sm" data-shrm>✕</button></div>`;
+const shRow = s => `<div class="shrow" data-k="${esc(s?.k || 's' + Date.now().toString(36))}"><input class="sh_n" placeholder="Name, e.g. Warehouse early" value="${esc(s?.name || '')}"><label>Start${tp12('', s?.start || '06:00', 'sh_s')}</label><label>End${tp12('', s?.end || '15:00', 'sh_e')}</label><label>Grace (min)<input type="number" class="sh_g" min="0" value="${s?.grace ?? 10}"></label><button class="btn sm" data-shrm>✕</button></div>`;
 document.addEventListener('click', async e => {
 if (e.target.closest('#shAdd')) { $('#shList').insertAdjacentHTML('beforeend', shRow(null)); return; }
 if (e.target.closest('[data-shrm]')) { e.target.closest('.shrow').remove(); return; }
@@ -3692,7 +3694,7 @@ ${adm ? `<div class="card"><div class="row"><h3>HR inbox</h3><div class="seg">${
 async function tkOpen(id) {
 const t = S.tkAll.find(x => x.id === id), msgs = await q(sb.from('ticket_msgs').select('*').eq('ticket_id', id).order('created_at')), adm = isAdmin() && !t.mine;
 dlg(esc(t.subject), `<p class="small muted">${TK_TOPIC[t.topic] || ''} · ${t.anon ? '🕶️ Anonymous — HR cannot see who sent this' : esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(t.created_at))}</p>
-<div class="tkthread">${t.body ? `<div class="tkm u"><p>${esc(t.body)}</p></div>` : ''}${msgs.map(m => `<div class="tkm ${m.from_hr ? 'hr' : 'u'}"><small>${m.from_hr ? '🧑‍💼 ' + esc(empById(m.author)?.name || 'HR') : t.anon ? '🕶️ Anonymous' : esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(m.created_at))} ${hm(m.created_at)}</small><p>${esc(m.body)}</p></div>`).join('')}</div>
+<div class="tkthread">${t.body ? `<div class="tkm u"><p>${esc(t.body)}</p></div>` : ''}${msgs.map(m => `<div class="tkm ${m.from_hr ? 'hr' : 'u'}"><small>${m.from_hr ? '🧑‍💼 ' + esc(empById(m.author)?.name || 'HR') : t.anon ? '🕶️ Anonymous' : esc(empById(t.employee_id)?.name || '')} · ${fmtD(ymd(m.created_at))} ${hm12(m.created_at)}</small><p>${esc(m.body)}</p></div>`).join('')}</div>
 ${t.status !== 'closed' || adm ? `<label>Reply<textarea id="hd_r" rows="3" placeholder="${adm ? 'Write your answer…' : 'Add more details…'}"></textarea></label>` : '<p class="small muted">This question is closed.</p>'}
 ${adm ? `<label>Status<select id="hd_s">${Object.entries(TK_ST).map(([k, v]) => `<option value="${k}" ${t.status === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></label>` : ''}`,
 `${!adm && t.status !== 'closed' ? '<button class="btn" id="hdClose">Mark solved</button>' : ''}${t.status !== 'closed' || adm ? '<button class="btn pri" id="hdSend">Send</button>' : ''}`);
@@ -4210,8 +4212,8 @@ const head = state === 'in' ? `${gr}, ${first} — worked today` : state === 'ou
 const big = state === 'in' ? `<span id="pbBig" data-k="none">0h 00m</span><small>not started</small>` : `<span id="pbBig" data-k="work">${durHM(pbWorked())}</span><small id="pbSec">${pad(Math.floor(pbWorked() / 1000) % 60)}s</small>`;
 const tiles = state === 'in'
 ? [['Shift', `${f12(sh.start || '09:00').replace(':00', '')} – ${f12(sh.end || '18:00').replace(':00', '')}`], ['Breaks', `${allow} min`]]
-: [['In', `${hm(a.in_at)}${inDiff(a.in_at, sh)}`], ['Break', `${used} / ${allow} min`],
-state === 'done' ? ['Out', `${hm(a.out_at)}${outDiff(a.out_at, sh)}`] : ['Left', `<span id="pbLeft">${L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000)}</span>`]];
+: [['In', `${hm12(a.in_at)}${inDiff(a.in_at, sh)}`], ['Break', `${used} / ${allow} min`],
+state === 'done' ? ['Out', `${hm12(a.out_at)}${outDiff(a.out_at, sh)}`] : ['Left', `<span id="pbLeft">${L.left >= 0 ? durHM(L.left * 60000) : '+' + durHM(-L.left * 60000)}</span>`]];
 const left = cfg.filter(b => !S.breaks.some(x => x.kind === b.k));
 const nodev = !dev && !PH ? 'data-nodev="1"' : '';
 const btns = S.me.no_punch ? `<div class="pbnote">✓ No punching needed for you — your attendance is counted as present.</div>` : PC ? (state === 'out' ? `<div class="pbb">${ob ? '' : `<button class="pbbr" id="bOpen" ${left.length ? '' : 'disabled'} ${!dev ? 'data-nodevb="1"' : ''}>☕ ${left.length ? 'Start break' : 'Breaks used'}</button>`}</div><div class="pbnote">📱 Check out on your phone</div>`
@@ -4225,7 +4227,7 @@ const btns = S.me.no_punch ? `<div class="pbnote">✓ No punching needed for you
 afterFns.push(startTicker, () => { const g = $('#pbGo'); if (g) g.onclick = () => { if (g.dataset.nodev) return toast(noDevMsg(), true); stationAction('punch'); }; });
 return `<div class="punch">
 <div class="pb ${state}">
-<div class="pbh"><div class="alg w">${LOGO}</div><div class="pbd">${DOW[d.getDay()]}, ${fmtD(t)} · <span id="clk">${hm(d)}</span><small id="clks" hidden></small></div></div>
+<div class="pbh"><div class="alg w">${LOGO}</div><div class="pbd">${DOW[d.getDay()]}, ${fmtD(t)} · <span id="clk">${hm12(d)}</span><small id="clks" hidden></small></div></div>
 <div class="pbhi">${head}</div>
 <div class="pbbig">${big}</div>
 <div class="pbt"><div class="pbf" style="left:${L.fillL}%;width:${Math.max(0, L.fillR - L.fillL)}%"></div>${state === 'in' ? '' : `<div class="pbdot" style="left:${L.dot}%"></div>`}</div>
@@ -4250,7 +4252,7 @@ function odDlg() {
 const t = todayStr(), sh = shiftOf();
 dlg('🚗 Request on duty', `<p class="small muted">Working outside the office — client visit, bank, port, customs, market? Your manager approves it and the day counts as present. No punching needed.</p>
 <div class="grid2"><label>From date<input type="date" id="od_f" value="${t}" min="${addDays(t, -45)}" max="${addDays(t, 31)}"></label><label>To date<input type="date" id="od_t" value="${t}" min="${addDays(t, -45)}" max="${addDays(t, 31)}"></label>
-<label>From time<input type="time" id="od_i" value="${sh.start}"></label><label>To time<input type="time" id="od_o" value="${sh.end}"></label></div>
+<label>From time${tp12('od_i', sh.start)}</label><label>To time${tp12('od_o', sh.end)}</label></div>
 <label>Where<input id="od_p" maxlength="80" placeholder="e.g. Cochin port · CHA office"></label>
 <label>Work<textarea id="od_r" rows="2" maxlength="200" placeholder="e.g. Container clearance for Lot 42"></textarea></label>`, `<button class="btn pri" id="od_send">Send to manager</button>`);
 $('#od_send').onclick = async () => {
@@ -4383,7 +4385,7 @@ const br = ua => /Edg\//.test(ua || '') ? 'Edge' : /Chrome\//.test(ua || '') ? '
 const os = ua => /Windows/.test(ua || '') ? 'Windows' : /Mac OS/.test(ua || '') ? 'Mac' : /Android/.test(ua || '') ? 'Android' : /iPhone|iPad/.test(ua || '') ? 'iPhone/iPad' : /Linux/.test(ua || '') ? 'Linux' : '';
 const offIp = ip => (C().officeIps || []).includes(ip);
 return `<div class="card" style="border:2px solid #ff3d8b"><h3>🖥️ Computers waiting for approval (${rs.length})</h3><p class="small muted">Staff asked to use these computers for clocking in. Approve only computers you know are in the office.</p>
-${rs.map(r => `<div class="li"><div><div><b style="display:inline">${esc(r.name)}</b> <span class="chip">${r.kind === 'kiosk' ? 'Common PC' : 'Own computer'}</span></div><small style="display:block">Asked by <strong>${esc(empById(r.employee_id)?.name || '?')}</strong> · ${esc(r.office || '')} · ${os(r.ua)} ${br(r.ua)} · ${fmtD(ymd(r.created_at))} ${hm(r.created_at)}<br>Network ${esc(r.ip || '?')} ${(C().officeIps || []).length ? (offIp(r.ip) ? '<span class="chip good">office network</span>' : '<span class="chip crit">not the office network</span>') : ''}</small></div>
+${rs.map(r => `<div class="li"><div><div><b style="display:inline">${esc(r.name)}</b> <span class="chip">${r.kind === 'kiosk' ? 'Common PC' : 'Own computer'}</span></div><small style="display:block">Asked by <strong>${esc(empById(r.employee_id)?.name || '?')}</strong> · ${esc(r.office || '')} · ${os(r.ua)} ${br(r.ua)} · ${fmtD(ymd(r.created_at))} ${hm12(r.created_at)}<br>Network ${esc(r.ip || '?')} ${(C().officeIps || []).length ? (offIp(r.ip) ? '<span class="chip good">office network</span>' : '<span class="chip crit">not the office network</span>') : ''}</small></div>
 <div class="hstack">${r.kind === 'own' ? `<select data-drown="${r.id}" style="width:auto" title="Who may clock in on it"><option value="${r.employee_id}">Only ${esc(empById(r.employee_id)?.name.split(' ')[0] || 'them')}</option><option value="">Anyone</option></select>` : ''}<button class="btn sm pri" data-drdec="${r.id}" data-st="approved">Approve</button><button class="btn sm" data-drdec="${r.id}" data-st="rejected">Reject</button></div></div>`).join('')}</div>`;
 }
 { const _setupV = VIEWS.setup; VIEWS.setup = async () => { const [h, c] = await Promise.all([_setupV(), devReqCard()]); return c ? h.replace('<div class="card">', c + '<div class="card">') : h; }; }
@@ -4622,7 +4624,7 @@ const done = new Set(f.map(x => x.day)); const v = a.filter(x => x.in_at && !don
 }
 function missCard(m) {
 if (!m?.length) return '';
-return `<div class="card misscard"><div class="mch">⚠ <b>Missed check-out${m.length > 1 ? 's' : ''}</b><span class="small">Regularise so the day isn't counted short.</span></div>${m.slice(0, 5).map(x => `<div class="li"><div><b>${DOW[dowOf(x.day)]} ${fmtD(x.day)}</b><small>Checked in ${hm(x.in_at)} · no check-out</small></div><button class="btn sm pri" data-fix="${x.day}">Regularise</button></div>`).join('')}</div>`;
+return `<div class="card misscard"><div class="mch">⚠ <b>Missed check-out${m.length > 1 ? 's' : ''}</b><span class="small">Regularise so the day isn't counted short.</span></div>${m.slice(0, 5).map(x => `<div class="li"><div><b>${DOW[dowOf(x.day)]} ${fmtD(x.day)}</b><small>Checked in ${hm12(x.in_at)} · no check-out</small></div><button class="btn sm pri" data-fix="${x.day}">Regularise</button></div>`).join('')}</div>`;
 }
 { const _nlP = navList; navList = function () { const n = _nlP.apply(this, arguments); return onMobile() ? n.filter(x => !['people', 'advances'].includes(x[0])) : n; }; }
 function askReason(title, id, tbl) {
@@ -4715,7 +4717,7 @@ let subs = []; try { subs = await q(sb.from('doc_submissions').select('*').eq('s
 if (!subs.length) return ''; S.dsList = subs;
 if (!S.dek) return `<div class="card dsrev"><h3>📎 ${subs.length} document${subs.length > 1 ? 's' : ''} uploaded by staff</h3><p class="small muted" style="margin:0">Unlock the vault below to check and accept them.</p></div>`;
 return `<div class="card dsrev"><div class="row"><h3 style="margin:0">📎 Uploaded by staff <span class="rjn" style="background:#fef3c7;color:#92400e">${subs.length}</span></h3><span class="small muted">Check each one, then accept it into their file</span></div>
-<div class="stack" style="gap:6px;margin-top:10px">${subs.map(s => `<div class="li"><div><b>${esc(empById(s.employee_id)?.name || '?')} · ${esc(dkName(s.kind))}</b><small>${fmtSize(s.size)} · ${fmtD(ymd(s.created_at))} ${hm(s.created_at)}</small></div>
+<div class="stack" style="gap:6px;margin-top:10px">${subs.map(s => `<div class="li"><div><b>${esc(empById(s.employee_id)?.name || '?')} · ${esc(dkName(s.kind))}</b><small>${fmtSize(s.size)} · ${fmtD(ymd(s.created_at))} ${hm12(s.created_at)}</small></div>
 <div class="hstack"><button class="btn sm" data-dsview="${s.id}">View</button><button class="btn sm good" data-dsok="${s.id}">Accept</button><button class="btn sm bad" data-dsno="${s.id}">Reject</button></div></div>`).join('')}</div></div>`;
 }
 { const _dv = VIEWS.docs; VIEWS.docs = async () => {
@@ -4753,13 +4755,13 @@ async function brkFixDlg(day) {
 let bs = []; try { bs = await q(sb.from('breaks').select('*').eq('employee_id', S.me.id).eq('day', day).order('start_at')); } catch (er) { return toast(errMsg(er), true); }
 if (!bs.length) return toast('No break on that day to correct', true);
 const nm = k => (brCfg().find(x => x.k === k) || {}).name || k;
-const opt = b => `${nm(b.kind)} · ${hm(b.start_at)}–${b.end_at ? hm(b.end_at) : 'not ended'}`;
+const opt = b => `${nm(b.kind)} · ${hm12(b.start_at)}–${b.end_at ? hm(b.end_at) : 'not ended'}`;
 const first = bs.find(b => !b.end_at) || bs[0];
 dlg('☕ Regularise break', `<p class="small muted">Forgot to end a break, or the time is wrong? Enter the correct times — it goes for approval.</p>
 <label>Break<select id="bf_b">${bs.map(b => `<option value="${b.id}" ${b.id === first.id ? 'selected' : ''}>${esc(opt(b))}</option>`).join('')}</select></label>
-<div class="grid2"><label>Break started<input type="time" id="bf_s"></label><label>Break ended<input type="time" id="bf_e"></label></div>
+<div class="grid2"><label>Break started${tp12('bf_s', '')}</label><label>Break ended${tp12('bf_e', '')}</label></div>
 <label>Reason<textarea id="bf_r" rows="2" maxlength="200" placeholder="e.g. Forgot to end lunch break — came back at 1:40"></textarea></label>`, `<button class="btn pri" id="bf_send">Send for approval</button>`);
-const fill = () => { const b = bs.find(x => x.id === $('#bf_b').value); $('#bf_s').value = hm(b.start_at); const lim = (brCfg().find(x => x.k === b.kind) || {}).min || 15; $('#bf_e').value = b.end_at ? hm(b.end_at) : addMinHM(hm(b.start_at), lim); if (!b.end_at && !$('#bf_r').value) $('#bf_r').value = 'Forgot to end the break'; };
+const fill = () => { const b = bs.find(x => x.id === $('#bf_b').value); tpSet('bf_s', hm(b.start_at)); const lim = (brCfg().find(x => x.k === b.kind) || {}).min || 15; tpSet('bf_e', b.end_at ? hm(b.end_at) : addMinHM(hm(b.start_at), lim)); if (!b.end_at && !$('#bf_r').value) $('#bf_r').value = 'Forgot to end the break'; };
 fill(); $('#bf_b').onchange = fill;
 $('#bf_send').onclick = async () => { const s = $('#bf_s').value, e = $('#bf_e').value, r = $('#bf_r').value.trim();
 if (!s || !e) return toast('Enter both times', true); if (e <= s) return toast('Break end must be after the start', true); if (!r) return toast('Please write a reason', true);
@@ -4811,7 +4813,7 @@ function tcDlg(id, st) {
 const t = (S.tasks || []).find(x => x.id === id); if (!t) return render(); const L = (S.tcom || {})[id] || [], other = t.assigned_to === S.me.id ? empById(t.assigned_by) : empById(t.assigned_to);
 const sl = { open: 'Pending', doing: 'Ongoing', review: 'Under review', done: 'Completed' }, quick = st === 'doing' ? ['In progress — I will finish by ', 'Started — working on it', 'Need more information from you'] : st === 'done' ? ['Done ✓', 'Completed and shared with you'] : st === 'review' ? ['Completed — please review', 'Done, files shared with you', 'Done — please check and confirm'] : ['Noted, I will start soon', 'In progress — I will finish by ', 'Need more information from you'];
 dlg(st ? `Status: ${sl[st]} — add a note?` : '💬 Updates', `<p style="margin:0 0 8px"><b>${esc(t.title)}</b>${t.due ? ` <span class="small muted">· due ${fmtD(t.due)}</span>` : ''}</p>
-${L.length ? `<div class="tcthr">${L.map(c => `<div class="tcm ${c.author === S.me.id ? 'me' : ''}"><small>${esc(c.author === S.me.id ? 'You' : (empById(c.author)?.name || ''))}${c.status ? ' · ' + (sl[c.status] || '') : ''} · ${fmtD(ymd(c.created_at))} ${hm(c.created_at)}</small><div>${esc(c.body)}</div></div>`).join('')}</div>` : ''}
+${L.length ? `<div class="tcthr">${L.map(c => `<div class="tcm ${c.author === S.me.id ? 'me' : ''}"><small>${esc(c.author === S.me.id ? 'You' : (empById(c.author)?.name || ''))}${c.status ? ' · ' + (sl[c.status] || '') : ''} · ${fmtD(ymd(c.created_at))} ${hm12(c.created_at)}</small><div>${esc(c.body)}</div></div>`).join('')}</div>` : ''}
 <div class="tcq">${quick.map(x => `<button type="button" class="chip" data-tcq="${esc(x)}">${esc(x.trim())}${x.endsWith('by ') ? '…' : ''}</button>`).join('')}</div>
 <div class="grid2"><label style="grid-column:1/-1">Note for ${esc(other?.name?.split(' ')[0] || 'them')}<textarea id="tc_b" rows="2" maxlength="500" placeholder="e.g. In progress — I will finish by 30 Nov"></textarea></label><label>Expected finish (optional)<input type="date" id="tc_d" min="${todayStr()}"></label></div>`,
 `<button class="btn pri" id="tc_send">${st ? 'Save note' : 'Send'}</button>`);
@@ -4852,7 +4854,7 @@ return `<div class="row"><div class="hstack"><button class="btn sm" data-tkm="-1
 <div class="card flush"><div class="row" style="padding:12px 14px"><h3 style="margin:0">Monthly task performance</h3><span class="small muted">Completion date = when the task was submitted for review (or completed)</span></div><div class="scrollx"><table><thead><tr><th>Employee</th><th>Assigned</th><th>Completed</th><th>On time</th><th>Delayed</th><th>Avg delay</th><th>Open now</th><th>Overdue now</th><th>On-time %</th><th>Score</th></tr></thead><tbody>
 ${perf.map(p => `<tr><td><b>${esc(p.e.name)}</b></td><td>${p.assigned}</td><td>${p.done}</td><td class="g">${p.ontime}</td><td class="r">${p.delayed}</td><td>${p.avgDelay ? p.avgDelay + ' d' : '—'}</td><td>${p.open ? `<a href="#" class="tklk" data-tkpo="${p.e.id}" data-k="open" onclick="return false">${p.open}</a>` : 0}</td><td class="r">${p.over ? `<a href="#" class="tklk r" data-tkpo="${p.e.id}" data-k="over" onclick="return false">${p.over}</a>` : '—'}</td><td>${p.done ? p.rate + '%' : '—'}</td><td><span class="chip ${p.score >= 80 ? 'good' : p.score >= 50 ? 'warn' : p.assigned || p.done ? 'crit' : ''}">${p.assigned || p.done ? p.score : '—'}</span></td></tr>`).join('')}</tbody></table></div></div>
 <div class="two-col"><div class="card"><h3>🗓️ Deadline changes (${dueL.length})</h3>${dueL.length ? `<div class="stack" style="gap:6px">${dueL.map(l => `<div class="li"><div><b>${esc(l.title || '')}</b><small>${nm(l.assigned_to)} · ${l.old_val ? fmtD(l.old_val) : 'none'} → <strong>${l.new_val ? fmtD(l.new_val) : 'none'}</strong> · by ${nm(l.by)} on ${fmtD(ymd(l.at))}</small></div></div>`).join('')}</div>` : '<p class="muted small">No deadline changes this month</p>'}</div>
-<div class="card"><h3>🗑️ Deleted tasks (${delL.length})</h3>${delL.length ? `<div class="stack" style="gap:6px">${delL.map(l => `<div class="li"><div><b>${esc(l.title || '')}</b><small>For ${nm(l.assigned_to)} · was ${esc((TST[l.old_val] || [l.old_val])[0] || '')} · deleted by ${nm(l.by)} on ${fmtD(ymd(l.at))} ${hm(l.at)}</small></div></div>`).join('')}</div>` : '<p class="muted small">No tasks deleted this month</p>'}</div></div>`;
+<div class="card"><h3>🗑️ Deleted tasks (${delL.length})</h3>${delL.length ? `<div class="stack" style="gap:6px">${delL.map(l => `<div class="li"><div><b>${esc(l.title || '')}</b><small>For ${nm(l.assigned_to)} · was ${esc((TST[l.old_val] || [l.old_val])[0] || '')} · deleted by ${nm(l.by)} on ${fmtD(ymd(l.at))} ${hm12(l.at)}</small></div></div>`).join('')}</div>` : '<p class="muted small">No tasks deleted this month</p>'}</div></div>`;
 }
 function tkPerf(rows, team, from, to) {
 const t = todayStr();
@@ -5691,7 +5693,7 @@ ${show.map(r => { const dh = r.e.dept !== lastDept ? `<tr class="rdd"><td colspa
 return `${dh}<tr><td><div class="row" style="gap:10px;justify-content:flex-start">${avatarHTML(r.e, 'sm')}<div><b>${esc(r.e.name)}</b><div class="small muted">${esc(r.e.code)}${r.e.desig ? ' · ' + esc(r.e.desig) : ''}</div></div></div></td>
 <td>${(() => { const s = shiftOf(r.e, ds); return s ? `<b class="rsh">${esc(s.name)}</b><div class="small muted">${brT12(s.start)} – ${brT12(s.end)}${r.e.shift_locked ? ' · 🔒' : ''}</div>` : '—'; })()}</td>
 <td><span class="rst ${r.st.c}">${esc(r.st.t)}</span>${r.place ? `<div class="small muted">${esc(r.place)}</div>` : ''}${r.fdLoc ? `<a class="geot" data-gl="${r.fdLoc.split('q=')[1]}" data-gk="started here" href="${r.fdLoc}" target="_blank" rel="noopener">📍 Where they started</a>` : ''}</td>
-<td>${r.a?.in_at ? hm(r.a.in_at) + geoFld(r.a.in_geo) : '—'}</td><td>${r.a?.out_at ? hm(r.a.out_at) + geoFld(r.a.out_geo) : r.a?.in_at ? '<span class="small muted">working</span>' : '—'}</td>
+<td>${r.a?.in_at ? hm12(r.a.in_at) + geoFld(r.a.in_geo) : '—'}</td><td>${r.a?.out_at ? hm12(r.a.out_at) + geoFld(r.a.out_geo) : r.a?.in_at ? '<span class="small muted">working</span>' : '—'}</td>
 <td>${r.bm ? `<span class="rbk ${r.bm > brCfg().reduce((s, b) => s + b.min, 0) ? 'over' : ''}">${r.bm >= 60 ? `${Math.floor(r.bm / 60)}h ${r.bm % 60}m` : r.bm + ' min'}</span>` : '—'}</td><td>${r.a?.in_at ? hmz(r.wk) : '—'}</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Nobody in this list.</td></tr>'}
 </tbody></table></div><p class="small muted">Tap a box to filter. Orange = late (after shift start + grace). ${fmtD(ds)}.</p></div>`;
 };
@@ -5830,7 +5832,7 @@ if (p.length < 3) { toast('Write the purpose', true); $('#fdPurp')?.focus(); ret
 if (($('#fdPlace')?.value || '').trim().length < 3) { toast('Type the place where you are now', true); $('#fdPlace')?.focus(); return; }
 b.disabled = true; try { const gg = S._gmG || {}; await rpc('go_field', { p_purpose: p, p_lat: gg.lat ?? null, p_lng: gg.lng ?? null, p_acc: gg.acc ?? null }); S.fieldToday = { purpose: p }; const gm = document.createElement('button'); gm.setAttribute('data-gmgo', ''); gm.hidden = true; $('#dlg .df').append(gm); gm.click(); }
 catch (er) { b.disabled = false; toast(errMsg(er), true); } });
-{ const _rdd = regDayData; regDayData = async function (ds) { const rows = await _rdd(ds); try { const fd = await q(sb.from('field_days').select('employee_id,purpose,lat,lng,created_at').eq('day', ds)); const M = new Map((fd || []).map(x => [x.employee_id, x])); rows.forEach(r => { const x = M.get(r.e.id); if (x) { r.place = '🚗 Field: ' + x.purpose + ' · from ' + hm(x.created_at) + (r.place ? ' · ' + r.place : ''); r.fdLoc = x.lat ? `https://www.google.com/maps?q=${x.lat},${x.lng}` : ''; } }); } catch { } return rows; }; }
+{ const _rdd = regDayData; regDayData = async function (ds) { const rows = await _rdd(ds); try { const fd = await q(sb.from('field_days').select('employee_id,purpose,lat,lng,created_at').eq('day', ds)); const M = new Map((fd || []).map(x => [x.employee_id, x])); rows.forEach(r => { const x = M.get(r.e.id); if (x) { r.place = '🚗 Field: ' + x.purpose + ' · from ' + hm12(x.created_at) + (r.place ? ' · ' + r.place : ''); r.fdLoc = x.lat ? `https://www.google.com/maps?q=${x.lat},${x.lng}` : ''; } }); } catch { } return rows; }; }
 { const GN = lsGet('geoNames', {}); let busy = false;
 async function fillGeoNames() { if (busy) return; const els = [...document.querySelectorAll('a[data-gl]:not([data-gd])')]; if (!els.length) return; busy = true;
 try { for (const el of els) { const [la, lo] = el.dataset.gl.split(',').map(Number); if (!isFinite(la)) continue; const key = la.toFixed(3) + ',' + lo.toFixed(3);
