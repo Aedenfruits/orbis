@@ -585,6 +585,7 @@ dialog[open]::backdrop{animation:pmFade .18s ease}
 @keyframes pmFade{from{opacity:0}}
 }
 @media (prefers-reduced-motion:no-preference) and (max-width:760px){#dlg[open]{animation:pmUp .26s var(--ease)}@keyframes pmUp{from{transform:translateY(100%)}}}
+.rpf .rpfr{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}.rpf .rpfr label{flex:1 1 150px;margin:0}.rpf .rpfr label.chk{flex:0 0 auto;display:flex;gap:6px;align-items:center;padding-bottom:10px}.rpf .rpfr label.chk input{width:auto;margin:0}.rpf .rpfr span{font-size:12px;color:var(--muted)}.rpl{display:flex;flex-direction:column}.rpi{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.rpi:first-child{border-top:0}.rpt{flex:0 0 auto;max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:10px;margin:6px 0 12px}.rpt table{font-size:12.5px}.rpt td,.rpt th{white-space:nowrap;padding:6px 9px}@media(max-width:760px){.rpi{flex-wrap:wrap}.rpi .hstack{width:100%}.rpi .hstack .btn{flex:1}}
 .testbar{position:fixed;left:50%;top:0;transform:translateX(-50%);z-index:99999;background:#ff8a00;color:#fff;font:800 11px/1 Poppins,sans-serif;letter-spacing:.14em;padding:5px 14px 6px;border-radius:0 0 10px 10px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}html{box-shadow:inset 0 3px 0 #ff8a00}</style>
 <link rel="preload" href="/dmsans.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://yjcouatcnvhlxnemcacg.supabase.co" crossorigin>
 <style id="ios">
@@ -5826,5 +5827,153 @@ GN[key] = nm; lsSet('geoNames', GN); await new Promise(z => setTimeout(z, 1100))
 el.dataset.gd = '1'; if (nm) el.innerHTML = `📍 ${esc(nm)} <span class="muted">· ${esc(el.dataset.gk || '')}</span>`; } }
 finally { busy = false; } if (document.querySelector('a[data-gl]:not([data-gd])')) setTimeout(fillGeoNames, 500); }
 const _rrG = render; render = async function () { const r = await _rrG.apply(this, arguments); setTimeout(fillGeoNames, 300); return r; };
+}
+{
+const RP = [
+['Attendance', [
+['att', 'Monthly attendance summary', 'Present, absent, leave, half days, late marks, missed check-outs and hours worked for each person.'],
+['late', 'Late coming report', 'Every late check-in with the person\'s shift, the late limit and minutes late, plus a total per person.'],
+['miss', 'Missing check-out & corrections', 'Days with no check-out and whether they were fixed, plus every correction request and its status.'],
+['brk', 'Break report', 'Lunch and tea breaks taken, time over the limit and extra break requests.'],
+['fld', 'Field duty report', 'Days worked outside the office with purpose, typed place and map location.']]],
+['Leave', [
+['lbal', 'Leave balance report', 'Each person\'s leave for the year by type: allowed, used, pending and left.'],
+['lvt', 'Leave taken report', 'All leave in the period with type, days, status, reason and who approved it.']]],
+['Work', [
+['wp', 'Work plan report', 'Work plans submitted and missed per person, with the reviews and ratings they got.'],
+['tsk', 'Task report', 'Tasks given, done, open and overdue per person and per manager, with the full task list.']]],
+['Payroll & staff', [
+['sal', 'Salary input sheet', 'Payable days, LOP, half days, leave and late cuts per person, ready for payroll.'],
+['staff', 'Staff list', 'Code, name, designation, department, location, shift, reporting manager and joining date.'],
+['adv', 'Advances & loans report', 'Advances and loans with amount, monthly recovery, recovered so far and balance.']]]];
+const RPN = Object.fromEntries(RP.flatMap(g => g[1]).map(r => [r[0], r[1]]));
+const ymOf = () => S.rpM || todayStr().slice(0, 7);
+const rng = () => { const ym = ymOf(), [y, m] = ym.split('-').map(Number), last = new Date(y, m, 0).getDate();
+return S.rpCustom && S.rpF && S.rpT ? { from: S.rpF <= S.rpT ? S.rpF : S.rpT, to: S.rpF <= S.rpT ? S.rpT : S.rpF, ym: (S.rpF <= S.rpT ? S.rpF : S.rpT).slice(0, 7), custom: true } : { from: ym + '-01', to: `${ym}-${pad(last)}`, ym, custom: false }; };
+const rpEmps = () => S.emps.filter(e => (S.rpInact || e.active) && (!S.rpD || (e.dept || 'Other') === S.rpD) && (!S.rpL || (e.office || '') === S.rpL));
+const nm = id => empById(id)?.name || '';
+const cd = id => empById(id)?.code || '';
+const days = (f, t) => { const o = []; for (let d = f; d <= t; d = addDays(d, 1)) o.push(d); return o; };
+const shTxt = (e, d) => { const s = shiftOf(e, d); return s ? `${s.name} (${brT12(s.start)}–${brT12(s.end)})` : ''; };
+const ist = ts => ts ? new Date(ts).toLocaleString('en-IN', { timeZone: TZ, day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+const hrs = m => m > 0 ? `${Math.floor(m / 60)}h ${pad(Math.round(m % 60))}m` : '';
+const dmy = d => d ? fmtD(d) : '';
+const mapL = (la, ln) => la && ln ? `https://www.google.com/maps?q=${la},${ln}` : '';
+let RC = {};
+const ld = (k, f) => RC[k] || (RC[k] = f().catch(er => { delete RC[k]; throw er; }));
+const all = async qy => { const out = []; for (let i = 0; ; i += 1000) { const r = await q(qy().range(i, i + 999)); out.push(...r); if (r.length < 1000) break; } return out; };
+const inR = (f, t) => rows => rows.filter(x => !x.day || (x.day >= f && x.day <= t));
+const mEnd = ym => { const [y, m] = ym.split('-').map(Number); return `${ym}-${pad(new Date(y, m, 0).getDate())}`; };
+const L = {
+att: (f, t) => ld('att' + f + t, () => all(() => sb.from('attendance').select('*').gte('day', f).lte('day', t).order('day')).then(inR(f, t))),
+brk: (f, t) => ld('brk' + f + t, () => all(() => sb.from('breaks').select('*').gte('day', f).lte('day', t).order('day')).then(inR(f, t))),
+xbrk: (f, t) => ld('xb' + f + t, () => all(() => sb.from('extra_breaks').select('*').gte('day', f).lte('day', t).order('day')).then(inR(f, t)).catch(() => [])),
+fix: (f, t) => ld('fx' + f + t, () => all(() => sb.from('punch_fixes').select('*').gte('day', f).lte('day', t).order('day')).then(inR(f, t)).catch(() => [])),
+fld: (f, t) => ld('fd' + f + t, () => all(() => sb.from('field_days').select('*').gte('day', f).lte('day', t).order('day')).then(inR(f, t)).catch(() => [])),
+lv: (f, t) => ld('lv' + f + t, () => all(() => sb.from('leave_requests').select('*').lte('from_date', t).gte('to_date', f).order('from_date'))),
+adj: yr => ld('adj' + yr, () => all(() => sb.from('leave_adjust').select('*').eq('year', Number(yr))).catch(() => [])),
+wp: (f, t) => ld('wp' + f + t, () => all(() => sb.from('work_plans').select('employee_id,day,items').gte('day', f).lte('day', t)).then(inR(f, t)).catch(() => [])),
+prv: (f, t) => ld('pr' + f + t, () => all(() => sb.from('plan_reviews').select('*').gte('day', f).lte('day', t)).then(inR(f, t)).catch(() => [])),
+tsk: (f, t) => ld('tk' + f + t, () => all(() => sb.from('tasks').select('id,title,assigned_to,assigned_by,due,priority,status,created_at,done_at,first_due,due_edits').gte('created_at', f + 'T00:00:00+05:30').lte('created_at', t + 'T23:59:59+05:30').order('created_at')).catch(() => [])),
+sal: ym => ld('sal' + ym, () => salaryRows(ym)) };
+const worked = (a, bs) => a?.in_at && a?.out_at ? mins(a.in_at, a.out_at) - bs.filter(b => b.employee_id === a.employee_id && b.day === a.day).reduce((s, b) => s + mins(b.start_at, b.end_at), 0) : 0;
+const lateM = (e, a) => a?.in_at && !e.no_punch ? Math.max(0, toMin(hm(a.in_at)) - toMin(lateLim(e, a.day))) : 0;
+const GEN = {
+async att(R, E) { const [{ sum }, att, brk] = await Promise.all([L.sal(R.ym), L.att(R.ym + '-01', mEnd(R.ym)), L.brk(R.ym + '-01', mEnd(R.ym))]);
+const ids = new Set(E.map(e => e.code));
+const rows = sum.filter(r => ids.has(r.Code)).map(r => { const e = S.emps.find(x => x.code === r.Code); const mine = att.filter(a => a.employee_id === e?.id); const wm = mine.reduce((s, a) => s + worked(a, brk), 0);
+return { Code: r.Code, Name: r.Name, Department: r.Department, Location: r.Office, Shift: e ? shTxt(e, R.ym + '-01') : '', 'Working days': r['Working days'], Present: r.Present, 'Late days': r['Late days'], 'Half days': r['Half days'], 'Leave taken (days)': r['Leave taken (days)'], 'Absent / LOP': r['Absent / LOP days'], 'Missed check-outs': r['Missed check-outs'], 'Break over limit (min)': r['Break over limit (min)'], 'Hours worked': hrs(wm), 'Avg hours / day': hrs(mine.filter(a => a.out_at).length ? wm / mine.filter(a => a.out_at).length : 0) }; });
+return [{ name: 'Attendance summary', rows }]; },
+async late(R, E) { const att = await L.att(R.from, R.to); const out = [];
+E.forEach(e => att.filter(a => a.employee_id === e.id).forEach(a => { const m = lateM(e, a); if (m > 0) { const s = shiftOf(e, a.day); out.push({ Date: dmy(a.day), Code: e.code, Name: e.name, Department: e.dept || '', Shift: s?.name || '', 'Shift start': s ? brT12(s.start) : '', 'Late after': brT12(lateLim(e, a.day)), 'Checked in': brT12(hm(a.in_at)), 'Minutes late': m }); } }));
+const per = E.map(e => { const mine = out.filter(r => r.Code === e.code); return { Code: e.code, Name: e.name, Department: e.dept || '', Shift: shTxt(e, R.to), 'Late days': mine.length, 'Total minutes late': mine.reduce((s, r) => s + r['Minutes late'], 0), 'Average minutes late': mine.length ? Math.round(mine.reduce((s, r) => s + r['Minutes late'], 0) / mine.length) : 0 }; }).filter(r => r['Late days']).sort((a, b) => b['Late days'] - a['Late days']);
+return [{ name: 'Late per person', rows: per }, { name: 'Every late check-in', rows: out }]; },
+async miss(R, E) { const [att, fx] = await Promise.all([L.att(R.from, R.to), L.fix(R.from, R.to)]); const ids = new Set(E.map(e => e.id)), t = todayStr();
+const miss = att.filter(a => ids.has(a.employee_id) && a.in_at && !a.out_at && a.day < t).map(a => { const f = fx.filter(x => x.employee_id === a.employee_id && x.day === a.day).sort((m, n) => String(n.created_at).localeCompare(String(m.created_at)))[0];
+return { Date: dmy(a.day), Code: cd(a.employee_id), Name: nm(a.employee_id), 'Checked in': brT12(hm(a.in_at)), Status: !f ? 'Not fixed yet' : f.status === 'approved' ? 'Fixed (approved)' : f.status === 'pending' ? 'Correction waiting for approval' : 'Correction ' + f.status }; });
+const fixes = fx.filter(x => ids.has(x.employee_id)).map(x => ({ Date: dmy(x.day), Code: cd(x.employee_id), Name: nm(x.employee_id), Type: x.kind || 'correction', 'In time': x.in_time ? brT12(String(x.in_time).slice(0, 5)) : '', 'Out time': x.out_time ? brT12(String(x.out_time).slice(0, 5)) : '', Place: x.place || '', Reason: x.reason || '', Status: x.status, 'Decided by': nm(x.decided_by), 'Asked on': ist(x.created_at) }));
+return [{ name: 'Missing check-outs', rows: miss }, { name: 'Corrections', rows: fixes }]; },
+async brk(R, E) { const [bs, xb] = await Promise.all([L.brk(R.from, R.to), L.xbrk(R.from, R.to)]); const ids = new Set(E.map(e => e.id)), cfg = brCfg(), allow = cfg.reduce((s, b) => s + b.min, 0);
+const list = bs.filter(b => ids.has(b.employee_id)).map(b => { const lim = (cfg.find(c => c.k === b.kind) || {}).min || 0, m = b.end_at ? mins(b.start_at, b.end_at) : 0;
+return { Date: dmy(b.day), Code: cd(b.employee_id), Name: nm(b.employee_id), Break: (cfg.find(c => c.k === b.kind) || {}).name || b.kind || 'Break', Start: brT12(hm(b.start_at)), End: b.end_at ? brT12(hm(b.end_at)) : 'not ended', Minutes: m, 'Allowed (min)': lim, 'Over limit (min)': lim ? Math.max(0, m - lim) : '' }; });
+const per = E.map(e => { const mine = bs.filter(b => b.employee_id === e.id); const byDay = {}; mine.forEach(b => byDay[b.day] = (byDay[b.day] || 0) + (b.end_at ? mins(b.start_at, b.end_at) : 0));
+const over = Object.values(byDay).reduce((s, m) => s + Math.max(0, m - allow), 0);
+return { Code: e.code, Name: e.name, Department: e.dept || '', 'Breaks taken': mine.length, 'Total break time': hrs(Object.values(byDay).reduce((s, m) => s + m, 0)), 'Days over limit': Object.values(byDay).filter(m => m > allow).length, 'Minutes over limit': over, 'Extra breaks asked': xb.filter(x => x.employee_id === e.id).length }; }).filter(r => r['Breaks taken'] || r['Extra breaks asked']);
+const extra = xb.filter(x => ids.has(x.employee_id)).map(x => ({ Date: dmy(x.day), Code: cd(x.employee_id), Name: nm(x.employee_id), 'Minutes asked': x.minutes_req, 'Minutes allowed': x.minutes_ok ?? '', Reason: x.reason || '', Status: x.status, 'Decided by': nm(x.decided_by) }));
+return [{ name: 'Breaks per person', rows: per }, { name: 'Every break', rows: list }, { name: 'Extra breaks', rows: extra }]; },
+async fld(R, E) { const [fd, att] = await Promise.all([L.fld(R.from, R.to), L.att(R.from, R.to)]); const ids = new Set(E.map(e => e.id));
+const rows = fd.filter(x => ids.has(x.employee_id)).map(x => { const a = att.find(y => y.employee_id === x.employee_id && y.day === x.day) || {}, gi = a.in_geo || {}, go = a.out_geo || {};
+return { Date: dmy(x.day), Code: cd(x.employee_id), Name: nm(x.employee_id), Department: empById(x.employee_id)?.dept || '', Purpose: x.purpose || '', 'Started at': mapL(x.lat, x.lng), 'Checked in': a.in_at ? brT12(hm(a.in_at)) : '', 'Check-in place': gi.place || '', 'Check-in map': mapL(gi.lat, gi.lng), 'Checked out': a.out_at ? brT12(hm(a.out_at)) : '', 'Check-out place': go.place || '', 'Check-out map': mapL(go.lat, go.lng) }; });
+return [{ name: 'Field duty', rows }]; },
+async lbal(R, E) { const yr = R.to.slice(0, 4), [lv, adj] = await Promise.all([L.lv(yr + '-01-01', yr + '-12-31'), L.adj(yr)]), T = ltypes();
+const rows = E.map(e => { const r = { Code: e.code, Name: e.name, Department: e.dept || '' };
+T.forEach(t => { const mine = lv.filter(l => l.employee_id === e.id && l.type === t.k && l.from_date.slice(0, 4) === yr), used = mine.filter(l => l.status === 'approved').reduce((s, l) => s + Number(l.days), 0), pend = mine.filter(l => l.status === 'pending').reduce((s, l) => s + Number(l.days), 0);
+const q2 = Number(t.days) + Number(adj.find(a => a.employee_id === e.id && a.type === t.k)?.days || 0);
+r[`${t.k} allowed`] = q2; r[`${t.k} used`] = used; r[`${t.k} pending`] = pend; r[`${t.k} left`] = q2 - used; });
+return r; });
+return [{ name: 'Leave balance ' + yr, rows }]; },
+async lvt(R, E) { const lv = await L.lv(R.from, R.to); const ids = new Set(E.map(e => e.id));
+const rows = lv.filter(l => ids.has(l.employee_id)).map(l => ({ Code: cd(l.employee_id), Name: nm(l.employee_id), Department: empById(l.employee_id)?.dept || '', Type: ltName(l.type), From: dmy(l.from_date), To: dmy(l.to_date), Days: Number(l.days), 'Half day': l.half ? (l.half === 'am' ? 'Morning' : l.half === 'pm' ? 'Afternoon' : 'Yes') : '', Status: l.status, Reason: l.reason || '', 'Approved / decided by': nm(l.decided_by), 'Applied on': ist(l.created_at) }));
+const per = E.map(e => { const r = { Code: e.code, Name: e.name }; let tot = 0; ltypes().forEach(t => { const d = lv.filter(l => l.employee_id === e.id && l.type === t.k && l.status === 'approved').reduce((s, l) => s + Number(l.days), 0); r[t.name] = d; tot += d; }); r['Total approved'] = tot; return r; }).filter(r => r['Total approved']);
+return [{ name: 'Leave taken', rows }, { name: 'Approved per person', rows: per }]; },
+async wp(R, E) { const [wp, pr, att] = await Promise.all([L.wp(R.from, R.to), L.prv(R.from, R.to), L.att(R.from, R.to)]); const t = todayStr();
+const rows = E.map(e => { const wd = att.filter(a => a.employee_id === e.id && a.in_at && a.day <= t).map(a => a.day), mine = wp.filter(w => w.employee_id === e.id && (!Array.isArray(w.items) || w.items.length)), rv = pr.filter(p => p.employee_id === e.id);
+const sub = new Set(mine.map(w => w.day)); return { Code: e.code, Name: e.name, Department: e.dept || '', 'Days worked': wd.length, 'Plans submitted': sub.size, 'Plans missed (worked, no plan)': wd.filter(d => !sub.has(d)).length, 'Reviews got': rv.length, 'Average rating': rv.length ? Math.round(rv.reduce((s, p) => s + Number(p.rating || 0), 0) / rv.length * 10) / 10 : '' }; });
+const rev = pr.filter(p => E.some(e => e.id === p.employee_id)).map(p => ({ Date: dmy(p.day), Code: cd(p.employee_id), Name: nm(p.employee_id), Reviewer: nm(p.reviewer), Rating: p.rating, Comment: p.comment || '' }));
+return [{ name: 'Work plans per person', rows }, { name: 'Plan reviews', rows: rev }]; },
+async tsk(R, E) { const tk = await L.tsk(R.from, R.to); const t = todayStr(), ids = new Set(E.map(e => e.id)), mine = tk.filter(x => ids.has(x.assigned_to) || ids.has(x.assigned_by));
+const st = x => x.status === 'done' ? 'Done' : x.status === 'review' ? 'Waiting for review' : x.due && x.due < t ? 'Overdue' : 'Open';
+const dd = x => x.done_at ? Math.max(0, Math.round((new Date(x.done_at) - new Date(x.created_at)) / 864e5 * 10) / 10) : null;
+const agg = (key) => E.map(e => { const l = mine.filter(x => x[key] === e.id), dn = l.filter(x => x.status === 'done'), d2 = dn.map(dd).filter(v => v !== null);
+return { Code: e.code, Name: e.name, Department: e.dept || '', [key === 'assigned_to' ? 'Tasks got' : 'Tasks given']: l.length, Done: dn.length, Open: l.filter(x => st(x) === 'Open').length, 'Waiting for review': l.filter(x => st(x) === 'Waiting for review').length, Overdue: l.filter(x => st(x) === 'Overdue').length, 'Done late': dn.filter(x => x.due && x.done_at && new Date(x.done_at).toLocaleDateString('en-CA', { timeZone: TZ }) > x.due).length, 'Avg days to finish': d2.length ? Math.round(d2.reduce((s, v) => s + v, 0) / d2.length * 10) / 10 : '' }; }).filter(r => r['Tasks got'] || r['Tasks given']);
+const list = mine.map(x => ({ Task: x.title, 'Given to': nm(x.assigned_to), 'Given by': nm(x.assigned_by), Priority: x.priority || '', 'Given on': ist(x.created_at), Due: dmy(x.due), 'Due changed': x.due_edits || 0, Status: st(x), 'Done on': ist(x.done_at) }));
+return [{ name: 'Tasks per person', rows: agg('assigned_to') }, { name: 'Tasks per manager', rows: agg('assigned_by') }, { name: 'All tasks', rows: list }]; },
+async sal(R, E) { const { sum, grid } = await L.sal(R.ym); const ids = new Set(E.map(e => e.code));
+return [{ name: 'Salary input', rows: sum.filter(r => ids.has(r.Code)) }, { name: 'Daily', rows: grid.filter(r => ids.has(r.Code)) }]; },
+async staff(R, E) { const rows = E.map(e => ({ Code: e.code, Name: e.name, Designation: e.desig || '', Department: e.dept || '', Location: e.office || '', Shift: shTxt(e, todayStr()), 'Reports to': nm(e.reports_to), 'Joining date': dmy(e.join_date), Access: e.access === 'hr' ? 'HR' : e.access === 'md' ? 'MD / Director' : 'Employee', 'Field staff': e.field_punch ? 'Yes' : '', 'No punching': e.no_punch ? 'Yes' : '', Login: e.auth_uid ? 'Yes' : 'No', Status: e.active ? 'Active' : 'Left' }));
+return [{ name: 'Staff list', rows }]; },
+async adv(R, E) { const list = await ld('adv', () => advLoad()); const ids = new Set(E.map(e => e.id));
+const rows = list.filter(x => ids.has(x.employee_id)).map(x => ({ Code: cd(x.employee_id), Name: nm(x.employee_id), Type: x.kind || 'Advance', Amount: Number(x.amount) || 0, 'Monthly recovery': Number(x.emi) || 0, 'Starts from': x.start_month || '', 'Recovered so far': x.paid || 0, Balance: x.status === 'approved' || x.status === 'closed' ? x.bal : '', Status: x.status === 'approved' ? 'Being recovered' : x.status, Reason: x.reason || '', 'Decided by': nm(x.decided_by), 'Asked on': ist(x.created_at) }));
+return [{ name: 'Advances & loans', rows }]; } };
+const cols = rows => { const ks = Object.keys(rows[0] || { Note: 1 }); return ks.map(k => ({ wch: Math.min(48, Math.max(8, k.length + 2, ...rows.slice(0, 200).map(r => String(r[k] ?? '').length + 1))) })); };
+const scope = R => [R.custom ? `${fmtD(R.from)} – ${fmtD(R.to)}` : new Date(R.from + 'T00:00').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }), S.rpD || 'All departments', S.rpL || 'All locations'].join(' · ');
+const addSheets = (X, wb, sheets, prefix) => sheets.forEach(s => { const rows = s.rows.length ? s.rows : [{ Note: 'Nothing in this period' }]; const ws = X.utils.json_to_sheet(rows); ws['!cols'] = cols(rows);
+let n = (prefix ? prefix + ' - ' : '') + s.name; n = n.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31); while (wb.SheetNames.includes(n)) n = n.slice(0, 29) + Math.floor(Math.random() * 90 + 10); X.utils.book_append_sheet(wb, ws, n); });
+const about = (X, wb, title, R) => X.utils.book_append_sheet(wb, X.utils.aoa_to_sheet([[title], [scope(R)], [''], ['Made by ORBIS from its own attendance, leave, task and payroll records.'], ['Generated on ' + new Date().toLocaleString('en-IN', { timeZone: TZ }) + ' by ' + S.me.name], [''], ['Contains staff data – keep it private and delete it after use.']]), 'About');
+async function runRep(k) { RC = {}; const R = rng(), E = rpEmps(); return { R, E, sheets: await GEN[k](R, E) }; }
+async function rpExcel(k) { const X = await loadXLSX(), { R, sheets } = await runRep(k), wb = X.utils.book_new(); addSheets(X, wb, sheets); about(X, wb, RPN[k], R);
+X.writeFile(wb, `ORBIS-${RPN[k].replace(/[^A-Za-z0-9]+/g, '-')}-${R.custom ? R.from + '-to-' + R.to : R.ym}.xlsx`); }
+async function rpPack() { const X = await loadXLSX(), wb = X.utils.book_new(), R = rng(), E = rpEmps(); RC = {};
+for (const [k] of RP.flatMap(g => g[1])) { try { const sh = await GEN[k](R, E); addSheets(X, wb, [{ name: RPN[k], rows: sh[0].rows }]); } catch (er) { addSheets(X, wb, [{ name: RPN[k], rows: [{ Note: 'Could not load: ' + errMsg(er) }] }]); } }
+about(X, wb, 'ORBIS monthly report pack', R); X.writeFile(wb, `ORBIS-report-pack-${R.custom ? R.from + '-to-' + R.to : R.ym}.xlsx`); }
+async function rpView(k) { const { R, sheets } = await runRep(k); S.rpLast = { k, R, sheets };
+const tbl = (s, lim) => { const rows = s.rows; if (!rows.length) return '<p class="muted">Nothing in this period.</p>'; const ks = Object.keys(rows[0]);
+return `<div class="scroll rpt"><table><thead><tr>${ks.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.slice(0, lim).map(r => `<tr>${ks.map(x => { const v = r[x] ?? ''; return `<td>${/^https:\/\/www\.google\.com\/maps/.test(v) ? `<a href="${esc(v)}" target="_blank" rel="noopener">📍 Map</a>` : esc(v)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>${rows.length > lim ? `<p class="small muted">Showing ${lim} of ${rows.length} rows – download Excel for all.</p>` : ''}`; };
+dlg(esc(RPN[k]), `<p class="small muted">${esc(scope(R))}</p>${sheets.map((s, i) => `${sheets.length > 1 ? `<h4>${esc(s.name)} <span class="muted">(${s.rows.length})</span></h4>` : ''}${tbl(s, i ? 50 : 200)}`).join('')}`,
+`<button class="btn" data-rpx="pdf" data-k="${k}">🖨 Print / PDF</button><button class="btn pri" data-rpx="xls" data-k="${k}">⬇ Excel</button>`); }
+function rpPdf() { const z = S.rpLast; if (!z) return; const s = z.sheets[0], rows = s.rows, ks = Object.keys(rows[0] || {});
+const body = `<p style="text-align:center;color:#666;margin-top:-12px">${esc(scope(z.R))}</p>${rows.length ? `<table style="font-size:11px"><thead><tr>${ks.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${ks.map(x => `<td>${esc(r[x] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '<p>Nothing in this period.</p>'}`;
+openDoc(letterHTML(RPN[z.k], body).replace('max-width:780px', 'max-width:1100px').replace('</style>', '@page{size:A4 landscape;margin:10mm}th,td{padding:4px 6px!important}</style>')); }
+VIEWS.reports = async () => { if (!isAdmin()) return '<div class="card">Reports are for HR and management.</div>'; const R = rng(), act = S.emps.filter(e => e.active), dp = [...new Set(act.map(e => e.dept || 'Other'))].sort(), lc = [...new Set(act.map(e => e.office).filter(Boolean))].sort();
+return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · management</span><h2>Reports</h2></div><button class="btn pri" id="rpPack">⬇ Monthly pack – all reports in one Excel</button></div>
+<div class="card rpf"><div class="rpfr"><label><span>Month</span><input type="month" id="rpM" value="${ymOf()}" max="${todayStr().slice(0, 7)}" ${S.rpCustom ? 'disabled' : ''}></label>
+<label class="chk"><input type="checkbox" id="rpCustom" ${S.rpCustom ? 'checked' : ''}> Choose dates</label>${S.rpCustom ? `<label><span>From</span><input type="date" id="rpF" value="${S.rpF || R.from}"></label><label><span>To</span><input type="date" id="rpT" value="${S.rpT || R.to}"></label>` : ''}
+<label><span>Department</span><select id="rpD"><option value="">All departments</option>${dp.map(d => `<option ${S.rpD === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
+<label><span>Location</span><select id="rpL"><option value="">All locations</option>${lc.map(d => `<option ${S.rpL === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
+<label class="chk"><input type="checkbox" id="rpInact" ${S.rpInact ? 'checked' : ''}> Include staff who left</label></div>
+<p class="small muted">${esc(scope(R))} · ${rpEmps().length} staff${S.rpCustom ? ' · Attendance summary and Salary input always use the whole month of the From date.' : ''}</p></div>
+${RP.map(([g, list]) => `<div class="card"><h3>${esc(g)}</h3><div class="rpl">${list.map(([k, t, d]) => `<div class="rpi"><div class="grow"><b>${esc(t)}</b><div class="small muted">${esc(d)}</div></div><div class="hstack"><button class="btn sm" data-rpx="view" data-k="${k}">👁 View</button><button class="btn sm pri" data-rpx="xls" data-k="${k}">⬇ Excel</button></div></div>`).join('')}</div></div>`).join('')}
+<p class="small muted">Reports contain staff data – keep the files private and delete them after use.</p></div>`; };
+document.addEventListener('change', e => { const id = e.target.id; if (!['rpM', 'rpCustom', 'rpF', 'rpT', 'rpD', 'rpL', 'rpInact'].includes(id)) return;
+if (id === 'rpM') S.rpM = e.target.value || todayStr().slice(0, 7); else if (id === 'rpCustom') { S.rpCustom = e.target.checked; if (S.rpCustom && !S.rpF) { const R = rng(); S.rpF = R.from; S.rpT = R.to; } } else if (id === 'rpF') S.rpF = e.target.value; else if (id === 'rpT') S.rpT = e.target.value;
+else if (id === 'rpD') S.rpD = e.target.value; else if (id === 'rpL') S.rpL = e.target.value; else S.rpInact = e.target.checked; render(); });
+document.addEventListener('click', async e => { const b = e.target.closest('[data-rpx],#rpPack'); if (!b || b.disabled) return; const k = b.dataset.k, a = b.dataset.rpx || 'pack';
+if (a === 'pdf') return rpPdf(); const t = b.innerHTML; b.disabled = true; b.innerHTML = 'Preparing…';
+try { if (a === 'view') await rpView(k); else if (a === 'xls') { await rpExcel(k); toast(RPN[k] + ' downloaded'); } else { await rpPack(); toast('Monthly report pack downloaded'); } } catch (er) { toast(errMsg(er), true); }
+b.disabled = false; b.innerHTML = t; });
+const _navRp = navList; navList = function () { const n = _navRp.apply(this, arguments); if (isAdmin() && !n.some(x => x[0] === 'reports')) { const i = n.findIndex(x => x[0] === 'register'); n.splice(i >= 0 ? i + 1 : n.length, 0, ['reports', 'Reports', '📑']); } return n; };
+try { const P = '<path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-11A.5.5 0 0 1 6 20V4a.5.5 0 0 1 .5-.5z"/><path d="M14 3.5V8h4"/><path class="a" d="M9 17v-3M12 17v-5M15 17v-2"/>';
+if (typeof MI === 'object') MI.reports = P; if (typeof ICP === 'object') ICP.reports = P; if (typeof ICGRP === 'object') ICGRP.reports = 'b'; if (typeof MCOL === 'object') MCOL.reports = '#5b3f8f'; if (typeof EMO2IC === 'object') EMO2IC['📑'] = 'reports';
+const hr = MGROUPS.find(g => g[0] === 'HR & admin'); if (hr && !hr[1].includes('reports')) hr[1].splice(Math.max(0, hr[1].indexOf('register') + 1), 0, 'reports'); } catch { }
 }
 </script></body></html>
