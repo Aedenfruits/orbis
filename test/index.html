@@ -678,7 +678,7 @@ if (on) { QC.slow = Date.now(); if (!el) { document.body.insertAdjacentHTML('bef
 else if (el && Date.now() - QC.slow > 600) el.remove(); }
 function qcRerender() { clearTimeout(QC.rr); QC.rr = setTimeout(async () => { qcPill(false);
 const ae = document.activeElement; if (document.querySelector('dialog[open]') || (ae && /input|textarea|select/i.test(ae.tagName)) || S.view === 'games') return;
-const y = scrollY; try { await render(); } catch { } scrollTo(0, y); }, 400); }
+try { await quietRender(); } catch { } }, 400); }
 const qcNetErr = e => e?.name === 'AbortError' || /load failed|failed to fetch|networkerror|network request failed|aborted|timed? ?out/i.test(String(e?.message || e));
 async function q(p) {
 const isGet = p && p.method === 'GET' && p.url && S.me;
@@ -876,13 +876,21 @@ document.body.className = 'app';
 const v = VIEWS[S.view] || VIEWS.punch;
 const navY = document.querySelector('nav.side')?.scrollTop || S.navY || 0; S.navY = navY;
 const LOADH = '<div class="loading"><div class="ldorb"><span class="ldr"><i></i></span><b>' + LOGO + '</b></div><div class="skel"><i></i><i></i><i></i></div></div>', prevMain = $('#main') && S.me ? $('#main').innerHTML : '';
-clearTimeout(S.ldT); try { $('#app').innerHTML = shell(prevMain && !prevMain.includes('class="loading"') ? prevMain : LOADH); if (prevMain) { $('#main').classList.add('stale'); S.ldT = setTimeout(() => { const m = $('#main'); if (m?.classList.contains('stale')) { m.innerHTML = LOADH; m.classList.remove('stale'); } }, 700); } { const ns = document.querySelector('nav.side'); if (ns) { ns.scrollTop = navY; ns.addEventListener('scroll', () => { S.navY = ns.scrollTop; }, { passive: true }); const on = ns.querySelector('a.on'); if (on && (on.offsetTop < ns.scrollTop || on.offsetTop + on.offsetHeight > ns.scrollTop + ns.clientHeight)) on.scrollIntoView({ block: 'nearest' }); } } const rid = S.rid = (S.rid || 0) + 1; const html = await v(); if (rid !== S.rid) return; clearTimeout(S.ldT); $('#main').classList.remove('stale'); $('#main').innerHTML = html; $('#main').scrollTop = 0;
-if (S.view === 'punch' && S.me && !S.me.photo_at) $('#main').insertAdjacentHTML('afterbegin', `<div class="card phnudge"><span class="ava ib" style="--ib:#ffeef3">${ico('photo')}</span><div class="grow"><b>Add your photo</b><div class="small muted">It goes on your Aeden ID card. Takes 10 seconds.</div></div><button class="btn pri sm" data-photo="${S.me.id}">Add photo</button></div>`);
-if (S.view === 'punch' && (S.badge || {}).news) $('#main').insertAdjacentHTML('afterbegin', `<a class="card phnudge" href="#news" style="text-decoration:none;color:inherit"><span class="ava ib" style="--ib:#ffeef3">${ico('news')}</span><div class="grow"><b>${S.badge.news} new announcement${S.badge.news > 1 ? 's' : ''}</b><div class="small muted">Tap to read</div></div><span class="btn sm">Open</span></a>`);
-after(); fillAvatars(); paintBadges(); pmEnter(); }
+clearTimeout(S.ldT); try { $('#app').innerHTML = shell(prevMain && !prevMain.includes('class="loading"') ? prevMain : LOADH); if (prevMain) { $('#main').classList.add('stale'); S.ldT = setTimeout(() => { const m = $('#main'); if (m?.classList.contains('stale')) { m.innerHTML = LOADH; m.classList.remove('stale'); } }, 700); } { const ns = document.querySelector('nav.side'); if (ns) { ns.scrollTop = navY; ns.addEventListener('scroll', () => { S.navY = ns.scrollTop; }, { passive: true }); const on = ns.querySelector('a.on'); if (on && (on.offsetTop < ns.scrollTop || on.offsetTop + on.offsetHeight > ns.scrollTop + ns.clientHeight)) on.scrollIntoView({ block: 'nearest' }); } } const rid = S.rid = (S.rid || 0) + 1; const html = await v(); if (rid !== S.rid) return; clearTimeout(S.ldT); $('#main').classList.remove('stale'); $('#main').innerHTML = html; S.mainHtml = html; S.mainView = S.view; $('#main').scrollTop = 0;
+finishMain(); pmEnter(); }
 catch (e) { clearTimeout(S.ldT); const m = $('#main'); if (!m) return; m.classList.remove('stale'); const net = isNetErr(e) || e?.name === 'AbortError' || /abort|fetch|network/i.test(String(e?.message || e));
 m.innerHTML = `<div class="card" style="text-align:center"><h3>${net ? 'Slow or no internet' : 'Something went wrong'}</h3><p class="muted">${net ? 'ORBIS could not load this page. Check your internet and try again.' : esc(errMsg(e))}</p><button class="btn pri" onclick="render()">Try again</button></div>`; }
 }
+addEventListener('pointerdown', () => { S.lastTouch = Date.now(); }, { capture: true, passive: true });
+async function quietRender() { const m = $('#main'); if (!m || !S.me || S.mainView !== S.view || m.classList.contains('stale') || m.querySelector('.loading')) return render();
+const v = VIEWS[S.view] || VIEWS.punch, rid = S.rid = (S.rid || 0) + 1; let html; try { html = await v(); } catch { afterFns = []; return; } if (rid !== S.rid) return;
+if (html === S.mainHtml) { afterFns = []; paintBadges(); return; }
+const wait = 1500 - (Date.now() - (S.lastTouch || 0)); if (wait > 0) await new Promise(r => setTimeout(r, wait)); if (rid !== S.rid || S.mainView !== S.view) { afterFns = []; return; }
+const y = scrollY; m.innerHTML = html; S.mainHtml = html; finishMain(); scrollTo(0, y); }
+function finishMain() {
+if (S.view === 'punch' && S.me && !S.me.photo_at) $('#main').insertAdjacentHTML('afterbegin', `<div class="card phnudge"><span class="ava ib" style="--ib:#ffeef3">${ico('photo')}</span><div class="grow"><b>Add your photo</b><div class="small muted">It goes on your Aeden ID card. Takes 10 seconds.</div></div><button class="btn pri sm" data-photo="${S.me.id}">Add photo</button></div>`);
+if (S.view === 'punch' && (S.badge || {}).news) $('#main').insertAdjacentHTML('afterbegin', `<a class="card phnudge" href="#news" style="text-decoration:none;color:inherit"><span class="ava ib" style="--ib:#ffeef3">${ico('news')}</span><div class="grow"><b>${S.badge.news} new announcement${S.badge.news > 1 ? 's' : ''}</b><div class="small muted">Tap to read</div></div><span class="btn sm">Open</span></a>`);
+after(); fillAvatars(); paintBadges(); }
 function pmEnter() { if (S.pmV === S.view) return; S.pmV = S.view; if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; const m = $('#main'); if (!m || !m.animate) return;
 try { m.animate([{ opacity: .7, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 180, easing: 'cubic-bezier(.22,1,.36,1)' }); } catch { }
 m.querySelectorAll('.kpis b').forEach(b => { const t = b.textContent.trim(); if (!/^\d{1,5}$/.test(t) || +t < 2) return; const n = +t, t0 = performance.now(), D = 450;
@@ -5789,7 +5797,7 @@ const busy = () => !!document.querySelector('dialog[open]') || !!document.active
 let lastLive = 0; async function liveRender() { if (!S.me || document.hidden) { pend = true; return; } if (Date.now() - lastLive < 5000) { clearTimeout(liveRender.t); liveRender.t = setTimeout(liveRender, 5000 - (Date.now() - lastLive)); return; } lastLive = Date.now(); if (busy()) { pend = true; return; } try { await authFresh(); } catch { }
 pend = false;
 try { if (typeof refreshBadges === 'function') refreshBadges(); } catch { }
-if (['games'].includes(S.view)) return; const y = scrollY; try { await render(); scrollTo(0, y); } catch { } }
+if (['games'].includes(S.view)) return; try { await quietRender(); } catch { } }
 const kick = p => { const t = p?.table; if (t === 'employees' || t === 'app_settings' || t === 'holidays') { S.coreStale = true; }
 clearTimeout(tmr); tmr = setTimeout(async () => { if (S.coreStale && !busy()) { S.coreStale = false; try { await loadCore(); } catch { } } liveRender(); }, 1200); };
 const liveRt = () => { if (lch || !S.me || !S.session || !sb.channel) return;
