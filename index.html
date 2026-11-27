@@ -5821,6 +5821,7 @@ const RP = [
 ['sal', 'Salary input sheet', 'Payable days, LOP, half days, leave and late cuts per person, ready for payroll.'],
 ['staff', 'Staff list', 'Code, name, designation, department, location, shift, reporting manager and joining date.'],
 ['adv', 'Advances & loans report', 'Advances and loans with amount, monthly recovery, recovered so far and balance.']]]];
+const rpOk = k => k !== 'wp' || isDev();
 const RPN = Object.fromEntries(RP.flatMap(g => g[1]).map(r => [r[0], r[1]]));
 const ymOf = () => S.rpM || todayStr().slice(0, 7);
 const rng = () => { const ym = ymOf(), [y, m] = ym.split('-').map(Number), last = new Date(y, m, 0).getDate();
@@ -5891,7 +5892,7 @@ async lvt(R, E) { const lv = await L.lv(R.from, R.to); const ids = new Set(E.map
 const rows = lv.filter(l => ids.has(l.employee_id)).map(l => ({ Code: cd(l.employee_id), Name: nm(l.employee_id), Department: empById(l.employee_id)?.dept || '', Type: ltName(l.type), From: dmy(l.from_date), To: dmy(l.to_date), Days: Number(l.days), 'Half day': l.half ? (l.half === 'am' ? 'Morning' : l.half === 'pm' ? 'Afternoon' : 'Yes') : '', Status: l.status, Reason: l.reason || '', 'Approved / decided by': nm(l.decided_by), 'Applied on': ist(l.created_at) }));
 const per = E.map(e => { const r = { Code: e.code, Name: e.name }; let tot = 0; ltypes().forEach(t => { const d = lv.filter(l => l.employee_id === e.id && l.type === t.k && l.status === 'approved').reduce((s, l) => s + Number(l.days), 0); r[t.name] = d; tot += d; }); r['Total approved'] = tot; return r; }).filter(r => r['Total approved']);
 return [{ name: 'Leave taken', rows }, { name: 'Approved per person', rows: per }]; },
-async wp(R, E) { const [wp, pr, att] = await Promise.all([L.wp(R.from, R.to), L.prv(R.from, R.to), L.att(R.from, R.to)]); const t = todayStr();
+async wp(R, E) { if (!isDev()) return [{ name: 'Work plans', rows: [] }]; const [wp, pr, att] = await Promise.all([L.wp(R.from, R.to), L.prv(R.from, R.to), L.att(R.from, R.to)]); const t = todayStr();
 const rows = E.map(e => { const wd = att.filter(a => a.employee_id === e.id && a.in_at && a.day <= t).map(a => a.day), mine = wp.filter(w => w.employee_id === e.id && (!Array.isArray(w.items) || w.items.length)), rv = pr.filter(p => p.employee_id === e.id);
 const sub = new Set(mine.map(w => w.day)); return { Code: e.code, Name: e.name, Department: e.dept || '', 'Days worked': wd.length, 'Plans submitted': sub.size, 'Plans missed (worked, no plan)': wd.filter(d => !sub.has(d)).length, 'Reviews got': rv.length, 'Average rating': rv.length ? Math.round(rv.reduce((s, p) => s + Number(p.rating || 0), 0) / rv.length * 10) / 10 : '' }; });
 const rev = pr.filter(p => E.some(e => e.id === p.employee_id)).map(p => ({ Date: dmy(p.day), Code: cd(p.employee_id), Name: nm(p.employee_id), Reviewer: nm(p.reviewer), Rating: p.rating, Comment: p.comment || '' }));
@@ -5919,7 +5920,7 @@ async function runRep(k) { RC = {}; const R = rng(), E = rpEmps(); return { R, E
 async function rpExcel(k) { const X = await loadXLSX(), { R, sheets } = await runRep(k), wb = X.utils.book_new(); addSheets(X, wb, sheets); about(X, wb, RPN[k], R);
 X.writeFile(wb, `ORBIS-${RPN[k].replace(/[^A-Za-z0-9]+/g, '-')}-${R.custom ? R.from + '-to-' + R.to : R.ym}.xlsx`); }
 async function rpPack() { const X = await loadXLSX(), wb = X.utils.book_new(), R = rng(), E = rpEmps(); RC = {};
-for (const [k] of RP.flatMap(g => g[1])) { try { const sh = await GEN[k](R, E); addSheets(X, wb, [{ name: RPN[k], rows: sh[0].rows }]); } catch (er) { addSheets(X, wb, [{ name: RPN[k], rows: [{ Note: 'Could not load: ' + errMsg(er) }] }]); } }
+for (const [k] of RP.flatMap(g => g[1]).filter(r => rpOk(r[0]))) { try { const sh = await GEN[k](R, E); addSheets(X, wb, [{ name: RPN[k], rows: sh[0].rows }]); } catch (er) { addSheets(X, wb, [{ name: RPN[k], rows: [{ Note: 'Could not load: ' + errMsg(er) }] }]); } }
 about(X, wb, 'ORBIS monthly report pack', R); X.writeFile(wb, `ORBIS-report-pack-${R.custom ? R.from + '-to-' + R.to : R.ym}.xlsx`); }
 async function rpView(k) { const { R, sheets } = await runRep(k); S.rpLast = { k, R, sheets };
 const tbl = (s, lim) => { const rows = s.rows; if (!rows.length) return '<p class="muted">Nothing in this period.</p>'; const ks = Object.keys(rows[0]);
@@ -5937,7 +5938,7 @@ return `<div class="stack"><div class="row"><div><span class="eyebrow">HR · man
 <label><span>Location</span><select id="rpL"><option value="">All locations</option>${lc.map(d => `<option ${S.rpL === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select></label>
 <label class="chk"><input type="checkbox" id="rpInact" ${S.rpInact ? 'checked' : ''}> Include staff who left</label></div>
 <p class="small muted">${esc(scope(R))} · ${rpEmps().length} staff${S.rpCustom ? ' · Attendance summary and Salary input always use the whole month of the From date.' : ''}</p></div>
-${RP.map(([g, list]) => `<div class="card"><h3>${esc(g)}</h3><div class="rpl">${list.map(([k, t, d]) => `<div class="rpi"><div class="grow"><b>${esc(t)}</b><div class="small muted">${esc(d)}</div></div><div class="hstack"><button class="btn sm" data-rpx="view" data-k="${k}">👁 View</button><button class="btn sm pri" data-rpx="xls" data-k="${k}">⬇ Excel</button></div></div>`).join('')}</div></div>`).join('')}
+${RP.map(([g, list]) => [g, list.filter(r => rpOk(r[0]))]).filter(([, list]) => list.length).map(([g, list]) => `<div class="card"><h3>${esc(g)}</h3><div class="rpl">${list.map(([k, t, d]) => `<div class="rpi"><div class="grow"><b>${esc(t)}</b><div class="small muted">${esc(d)}</div></div><div class="hstack"><button class="btn sm" data-rpx="view" data-k="${k}">👁 View</button><button class="btn sm pri" data-rpx="xls" data-k="${k}">⬇ Excel</button></div></div>`).join('')}</div></div>`).join('')}
 <p class="small muted">Reports contain staff data – keep the files private and delete them after use.</p></div>`; };
 document.addEventListener('change', e => { const id = e.target.id; if (!['rpM', 'rpCustom', 'rpF', 'rpT', 'rpD', 'rpL', 'rpInact'].includes(id)) return;
 if (id === 'rpM') S.rpM = e.target.value || todayStr().slice(0, 7); else if (id === 'rpCustom') { S.rpCustom = e.target.checked; if (S.rpCustom && !S.rpF) { const R = rng(); S.rpF = R.from; S.rpT = R.to; } } else if (id === 'rpF') S.rpF = e.target.value; else if (id === 'rpT') S.rpT = e.target.value;
