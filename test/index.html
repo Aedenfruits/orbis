@@ -6371,11 +6371,12 @@ return h; };
 document.addEventListener('click', async e => {
 const b = e.target.closest('[data-tksub],[data-tksubgo]'); if (!b) return;
 const id = b.dataset.tksub || b.dataset.tksubgo, t = (S.tasks || []).find(x => x.id === id); if (!t) return;
-if (b.dataset.tksub) { const ppl = S.emps.filter(p => p.active && p.id !== S.me.id).sort((a, c) => (a.dept || '').localeCompare(c.dept || '') || a.name.localeCompare(c.name));
+if (b.dataset.tksub) { const ppl = S.emps.filter(p => p.active && p.id !== S.me.id && (p.dept || '') === (S.me.dept || '')).sort((a, c) => (a.dept || '').localeCompare(c.dept || '') || a.name.localeCompare(c.name));
+if (!ppl.length) return toast('There is no one else in your department to pass this to', true);
 const mn = todayStr() <= (t.due || '9999') ? todayStr() : '';
-return dlg('↳ Pass on as subtask', `<p class="small muted" style="margin:0 0 8px">Main task: <b>${esc(t.title)}</b>${t.due ? ` · deadline ${fmtD(t.due)}` : ''}. You stay responsible for the main task — you check the subtask when it's done.</p>
+return dlg('↳ Pass on as subtask', `<p class="small muted" style="margin:0 0 8px">Main task: <b>${esc(t.title)}</b>${t.due ? ` · deadline ${fmtD(t.due)}` : ''}. You can pass it to someone in your own department${S.me.dept ? ` (${esc(S.me.dept)})` : ''}. You stay responsible for the main task — you check the subtask when it's done.</p>
 <label>Subtask<input id="sb_t" maxlength="160" value="${esc(t.title)}"></label><label>Details (optional)<textarea id="sb_n" rows="2"></textarea></label>
-<div class="grid3"><label>Give to<select id="sb_to">${ppl.map(p => `<option value="${p.id}">${esc(p.name)} · ${esc(p.dept || 'Other')}</option>`).join('')}</select></label><label>Deadline<input type="date" id="sb_d" value="${t.due || ''}" ${mn ? `min="${mn}"` : ''} ${t.due ? `max="${t.due}"` : ''}></label><label>Priority<select id="sb_p">${['normal', 'medium', 'high'].map(k => `<option value="${k}" ${(t.priority || 'normal') === k ? 'selected' : ''}>${prName(k)}</option>`).join('')}</select></label></div>
+<div class="grid3"><label>Give to<select id="sb_to">${ppl.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></label><label>Deadline<input type="date" id="sb_d" value="${t.due || ''}" ${mn ? `min="${mn}"` : ''} ${t.due ? `max="${t.due}"` : ''}></label><label>Priority<select id="sb_p">${['normal', 'medium', 'high'].map(k => `<option value="${k}" ${(t.priority || 'normal') === k ? 'selected' : ''}>${prName(k)}</option>`).join('')}</select></label></div>
 ${t.due ? `<p class="small muted" style="margin:4px 0 0">The subtask deadline can't be after ${fmtD(t.due)} (the main task deadline).</p>` : ''}
 <label>When the subtask is finished<select id="sb_rv"><option value="1">🔍 Submit for review – I check and approve</option><option value="0">✅ No review needed – they can close it</option></select></label>`,
 `<button class="btn pri" data-tksubgo="${t.id}">Pass on</button>`); }
